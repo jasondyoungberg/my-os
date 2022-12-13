@@ -12,9 +12,18 @@ clean:
 	make -C kernel clean
 	rm -rf .iso os.iso
 
+
+### Dependencies ###
+
+limine/:
+	git clone https://github.com/limine-bootloader/limine.git \
+		--branch=v4.x-branch-binary --depth=1
+	make -C limine --no-print-directory
+
+
 ### Compile images ###
 
-os.iso: kernel/kernel.elf
+os.iso: kernel/kernel.elf limine.cfg limine/
 	rm -rf .iso
 	mkdir -p .iso/boot/
 
@@ -32,5 +41,5 @@ os.iso: kernel/kernel.elf
 
 	limine/limine-deploy $@
 
-kernel/kernel.elf: kernel/*
+kernel/kernel.elf: kernel/* limine/
 	make -C kernel
