@@ -5,7 +5,7 @@ override C_FLAGS += \
 
 override CFILES := $(shell find . -type f -name '*.c')
 override OBJ    := $(CFILES:.c=.o)
-override DEP         := $(OBJ:.o=.d)
+override DEP    := $(OBJ:.o=.d)
 
 # Don't try to auto-compile
 .SUFFIXES:
