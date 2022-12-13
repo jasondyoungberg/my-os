@@ -10,8 +10,8 @@
 static volatile struct limine_framebuffer_request framebuffer_request = {
     .id = LIMINE_FRAMEBUFFER_REQUEST, .revision = 0};
 
-static uint32_t* framebuffer;
-static uint32_t backbuffer[10000000];  // TODO: Dynamically allocate this
+static color_t* framebuffer;
+static color_t backbuffer[10000000];  // TODO: Dynamically allocate this
 
 static int width;
 static int height;
