@@ -2,11 +2,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "graphics.h"
 #include "serial.h"
-
-// Request the terminal from limine
-static volatile struct limine_terminal_request terminal_request = {
-    .id = LIMINE_TERMINAL_REQUEST, .revision = 0};
 
 // Halt the CPU
 static void halt(void) {
@@ -16,15 +13,6 @@ static void halt(void) {
 }
 
 void _start(void) {
-    // Ensure we got a terminal
-    if (terminal_request.response == NULL ||
-        terminal_request.response->terminal_count < 1)
-        halt();
-
-    // Print to the terminal
-    struct limine_terminal *terminal = terminal_request.response->terminals[0];
-    terminal_request.response->write(terminal, "Hello, World! I'm a console!",
-                                     28);
     // Initialize serial ports
     if (serial_init(SERIAL_COM1, 115200)) halt();
     if (serial_init(SERIAL_COM2, 115200)) halt();
@@ -36,6 +24,19 @@ void _start(void) {
     serial_println(SERIAL_COM2, "Hello, world! I'm COM2!");
     serial_println(SERIAL_COM3, "Hello, world! I'm COM3!");
     serial_println(SERIAL_COM4, "Hello, world! I'm COM4!");
+
+    // Initialize display
+    graphics_init();
+
+    // Draw a cool pattern
+    for (int i = 0;; i++) {
+        for (int x = 0; x < graphics_width; x++) {
+            for (int y = 0; y < graphics_height; y++) {
+                draw_pix(x, y, color_rgb(x, y, i));
+            }
+        }
+        graphics_refresh();
+    }
 
     halt();
 }
