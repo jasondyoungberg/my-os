@@ -15,12 +15,14 @@ all: kernel.elf
 
 .PHONY: clean
 clean:
-	rm -f kernel.elf $(OBJ) $(DEP)
+	@rm -f kernel.elf $(OBJ) $(DEP)
 
 kernel.elf: $(OBJ)
-	$(LD) $(OBJ) $(LD_FLAGS) -o $@
+	@echo \| Linking objects
+	@$(LD) $(OBJ) $(LD_FLAGS) -o $@
 
 %.o: %.c
-	$(CC) $(C_FLAGS) -c $< -o $@
+	@echo \| Compiling $<
+	@$(CC) $(C_FLAGS) -c $< -o $@
 
 -include $(DEP)
