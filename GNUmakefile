@@ -1,4 +1,4 @@
--include .config
+-include qemu.config
 
 .PHONY: all
 all: os.iso
