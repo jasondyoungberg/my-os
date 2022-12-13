@@ -35,13 +35,13 @@ color_t color_rgb(uint8_t r, uint8_t g, uint8_t b);
  * @param y The y coordinate.
  * @param color The color.
  */
-void draw_pix(int x, int y, uint32_t color);
+void draw_pix(int x, int y, color_t color);
 
 /**
  * Fills the screen with a color.
  * @param color The color.
  * @return 0 on success, -1 on failure.
  */
-int draw_fill(uint32_t color);
+int draw_fill(color_t color);
 
 #endif

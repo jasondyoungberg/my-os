@@ -9,6 +9,11 @@ run: os.iso
 	@echo Running qemu with $<
 	@qemu-system-x86_64 $(QEMU_FLAGS) -cdrom os.iso
 
+.PHONY: run-fast
+run-fast: os.iso
+	@echo Running qemu with $< and kvm
+	@qemu-system-x86_64 $(QEMU_FLAGS) --enable-kvm -cdrom os.iso
+
 .PHONY: clean
 clean:
 	@echo Cleaning up files
