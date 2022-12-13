@@ -4,10 +4,6 @@
 
 #include "serial.h"
 
-// Request the terminal from limine
-static volatile struct limine_terminal_request terminal_request = {
-    .id = LIMINE_TERMINAL_REQUEST, .revision = 0};
-
 // Halt the CPU
 static void halt(void) {
     for (;;) {
@@ -16,15 +12,6 @@ static void halt(void) {
 }
 
 void _start(void) {
-    // Ensure we got a terminal
-    if (terminal_request.response == NULL ||
-        terminal_request.response->terminal_count < 1)
-        halt();
-
-    // Print to the terminal
-    struct limine_terminal *terminal = terminal_request.response->terminals[0];
-    terminal_request.response->write(terminal, "Hello, World! I'm a console!",
-                                     28);
     // Initialize serial ports
     if (serial_init(SERIAL_COM1, 115200)) halt();
     if (serial_init(SERIAL_COM2, 115200)) halt();
