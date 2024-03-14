@@ -15,10 +15,17 @@ bootloader_api::entry_point!(main, config = &CONFIG);
 
 fn main(_boot_info: &'static mut bootloader_api::BootInfo) -> ! {
     println!("Hello, world!");
-    cpu::halt()
+    halt()
 }
 
 #[panic_handler]
-fn panic(_info: &core::panic::PanicInfo) -> ! {
-    cpu::halt()
+fn panic(panic_info: &core::panic::PanicInfo) -> ! {
+    println!("{}", panic_info);
+    halt()
+}
+
+fn halt() -> ! {
+    loop {
+        x86_64::instructions::hlt()
+    }
 }

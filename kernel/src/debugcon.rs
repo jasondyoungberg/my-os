@@ -1,12 +1,16 @@
 use core::fmt;
 
+use x86_64::instructions::port::PortWriteOnly;
+
 struct Writer();
 
 impl fmt::Write for Writer {
     fn write_str(&mut self, s: &str) -> fmt::Result {
+        let mut port = PortWriteOnly::new(0xE9);
+
         for byte in s.bytes() {
             unsafe {
-                cpu::io::outb(0xE9, byte);
+                port.write(byte);
             }
         }
         Ok(())
