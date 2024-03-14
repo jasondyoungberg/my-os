@@ -16,6 +16,7 @@ impl fmt::Write for Writer {
     }
 }
 
+#[doc(hidden)]
 pub fn _print(args: core::fmt::Arguments) {
     use fmt::Write;
     Writer().write_fmt(args).unwrap();
