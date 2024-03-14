@@ -1,5 +1,7 @@
 #![no_std]
 #![no_main]
+#![warn(unused_unsafe)]
+#![deny(unsafe_op_in_unsafe_fn)]
 
 const CONFIG: bootloader_api::BootloaderConfig = {
     let mut config = bootloader_api::BootloaderConfig::new_default();
