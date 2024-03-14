@@ -6,6 +6,7 @@ fn main() {
     let mut cmd = std::process::Command::new("qemu-system-x86_64");
 
     let uefi = std::env::args().any(|arg| arg == "uefi");
+    let debug = std::env::args().any(|arg| arg == "debug");
 
     if uefi {
         cmd.arg("-bios")
@@ -15,6 +16,10 @@ fn main() {
     } else {
         cmd.arg("-drive")
             .arg(format!("format=raw,file={bios_path}"));
+    }
+
+    if debug {
+        cmd.args(["-d", "int,cpu_reset,unimp,guest_errors"]);
     }
 
     cmd.args(["-m", "4G"])
