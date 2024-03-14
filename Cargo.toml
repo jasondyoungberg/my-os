@@ -1,4 +1,4 @@
-workspace = { members = ["kernel"] }
+workspace = { members = ["cpu", "kernel"] }
 [package]
 name = "my-os"
 version = "0.1.0"

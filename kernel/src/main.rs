@@ -12,10 +12,10 @@ const CONFIG: bootloader_api::BootloaderConfig = {
 bootloader_api::entry_point!(main, config = &CONFIG);
 
 fn main(_boot_info: &'static mut bootloader_api::BootInfo) -> ! {
-    loop {}
+    cpu::halt()
 }
 
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
-    loop {}
+    cpu::halt()
 }
