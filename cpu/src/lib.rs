@@ -4,6 +4,9 @@
 
 use core::arch::asm;
 
+pub mod io;
+
+/// Halts the CPU
 pub fn halt() -> ! {
     loop {
         unsafe {
