@@ -1,7 +1,7 @@
 use spin::Lazy;
 use x86_64::{
     instructions::tables::load_tss,
-    registers::segmentation::{Segment, CS, DS, ES, FS, GS, SS},
+    registers::segmentation::{Segment, CS, SS},
     structures::gdt::{Descriptor, GlobalDescriptorTable, SegmentSelector},
 };
 
