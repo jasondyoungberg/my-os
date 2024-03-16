@@ -1,12 +1,18 @@
 use spin::Lazy;
 use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame, PageFaultErrorCode};
 
-static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
+pub const DOUBLE_FAULT_IST_INDEX: u16 = 0;
+
+pub static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
     let mut idt = InterruptDescriptorTable::new();
 
     macro_rules! set_handler {
         ($name:ident) => {
-            idt.$name.set_handler_fn($name);
+            idt.$name.set_handler_fn($name)
+        };
+        ($name:ident, $idx:expr) => {
+            let opt = set_handler!($name);
+            unsafe { opt.set_stack_index($idx) }
         };
     }
 
@@ -18,7 +24,7 @@ static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
     set_handler!(bound_range_exceeded);
     set_handler!(invalid_opcode);
     set_handler!(device_not_available);
-    set_handler!(double_fault);
+    set_handler!(double_fault, DOUBLE_FAULT_IST_INDEX);
     set_handler!(invalid_tss);
     set_handler!(segment_not_present);
     set_handler!(stack_segment_fault);
@@ -37,7 +43,7 @@ static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
     idt
 });
 
-pub fn init() {
+pub fn load() {
     IDT.load();
 }
 
