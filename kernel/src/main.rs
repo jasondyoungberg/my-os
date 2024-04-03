@@ -5,9 +5,12 @@
 #![deny(unsafe_op_in_unsafe_fn)]
 #![allow(dead_code)] // TODO: remove this later
 
-use graphics::PixelBuffer;
+use graphics::Drawable;
 
-use crate::{bench::benchmark, graphics::color};
+use crate::{
+    bench::benchmark,
+    graphics::color::{self, Color},
+};
 
 mod bench;
 mod debugcon;
@@ -36,11 +39,24 @@ fn main(boot_info: &'static mut bootloader_api::BootInfo) -> ! {
         display.clear(&color::BLACK);
     });
 
+    benchmark("rainbow", || {
+        let size = display.size();
+        for y in 0..size.1 {
+            for x in 0..size.0 {
+                display
+                    .set_pixel((x, y), &Color::new(x as u8, y as u8, 128))
+                    .unwrap()
+            }
+        }
+    });
+
     benchmark("hello", || {
         for (i, c) in "Hello, world!".chars().enumerate() {
             let x = i * 8;
             let y = 0;
-            display.draw((x, y), &font::get_char_icon(c).unwrap());
+            display
+                .blit((x, y), font::get_char_icon(c).unwrap())
+                .unwrap();
         }
     });
 

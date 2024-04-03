@@ -1,5 +1,6 @@
-mod buffer;
+mod bitmap;
 pub mod color;
+mod drawable;
 
-pub use buffer::PixelBuffer;
-pub use color::Color;
+pub use bitmap::Bitmap;
+pub use drawable::*;
