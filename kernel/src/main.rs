@@ -4,7 +4,7 @@
 #![warn(unused_unsafe)]
 #![deny(unsafe_op_in_unsafe_fn)]
 
-use graphics::Color;
+use graphics::{Color, PixelBuffer};
 
 mod debugcon;
 mod display;
@@ -30,7 +30,7 @@ fn main(boot_info: &'static mut bootloader_api::BootInfo) -> ! {
     for t in 0..=255 {
         for y in 0..display.info().height {
             for x in 0..display.info().width {
-                display.set_pixel(x, y, &Color::new(x as u8, y as u8, t as u8));
+                display.set_pixel((x, y), &Color::new(x as u8, y as u8, t as u8));
             }
         }
     }
