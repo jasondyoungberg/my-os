@@ -5,6 +5,8 @@
 #![deny(unsafe_op_in_unsafe_fn)]
 #![allow(dead_code)] // TODO: remove this later
 
+extern crate alloc;
+
 use graphics::Drawable;
 
 use crate::{
@@ -12,6 +14,7 @@ use crate::{
     graphics::color::{self, Color},
 };
 
+mod allocator;
 mod bench;
 mod debugcon;
 mod display;
