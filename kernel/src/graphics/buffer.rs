@@ -14,10 +14,3 @@ pub trait PixelBuffer {
         }
     }
 }
-
-pub struct PixelBufferInfo {
-    pub width: usize,
-    pub height: usize,
-    pub bytes_per_pixel: usize,
-    pub stride: usize,
-}
