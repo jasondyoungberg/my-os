@@ -9,6 +9,7 @@ use graphics::{Color, PixelBuffer};
 
 mod debugcon;
 mod display;
+mod font;
 mod gdt;
 mod graphics;
 mod idt;
@@ -28,12 +29,10 @@ fn main(boot_info: &'static mut bootloader_api::BootInfo) -> ! {
 
     let mut display = display::DISPLAY.get().unwrap().lock();
 
-    for t in 0..=255 {
-        for y in 0..display.info().height {
-            for x in 0..display.info().width {
-                display.set_pixel((x, y), &Color::new(x as u8, y as u8, t as u8));
-            }
-        }
+    for (i, c) in "Hello, world!".chars().enumerate() {
+        let x = i * 8;
+        let y = 0;
+        display.draw((x, y), &font::get_char_icon(c).unwrap());
     }
 
     halt()
