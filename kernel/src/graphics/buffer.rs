@@ -13,4 +13,17 @@ pub trait PixelBuffer {
             }
         }
     }
+
+    fn draw<T>(&mut self, pos: (usize, usize), other: &T)
+    where
+        T: PixelBuffer,
+    {
+        let (width, height) = other.size();
+        for y in 0..height {
+            for x in 0..width {
+                let color = other.get_pixel((x, y));
+                self.set_pixel((pos.0 + x, pos.1 + y), &color);
+            }
+        }
+    }
 }
