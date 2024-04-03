@@ -5,8 +5,11 @@
 #![deny(unsafe_op_in_unsafe_fn)]
 #![allow(dead_code)] // TODO: remove this later
 
-use graphics::{Color, PixelBuffer};
+use graphics::PixelBuffer;
 
+use crate::{bench::benchmark, graphics::color};
+
+mod bench;
 mod debugcon;
 mod display;
 mod font;
@@ -29,11 +32,17 @@ fn main(boot_info: &'static mut bootloader_api::BootInfo) -> ! {
 
     let mut display = display::DISPLAY.get().unwrap().lock();
 
-    for (i, c) in "Hello, world!".chars().enumerate() {
-        let x = i * 8;
-        let y = 0;
-        display.draw((x, y), &font::get_char_icon(c).unwrap());
-    }
+    benchmark("clear", || {
+        display.clear(&color::BLACK);
+    });
+
+    benchmark("hello", || {
+        for (i, c) in "Hello, world!".chars().enumerate() {
+            let x = i * 8;
+            let y = 0;
+            display.draw((x, y), &font::get_char_icon(c).unwrap());
+        }
+    });
 
     halt()
 }
