@@ -4,8 +4,12 @@
 #![warn(unused_unsafe)]
 #![deny(unsafe_op_in_unsafe_fn)]
 
+use graphics::Color;
+
 mod debugcon;
+mod display;
 mod gdt;
+mod graphics;
 mod idt;
 mod tss;
 
@@ -20,12 +24,25 @@ bootloader_api::entry_point!(main, config = &CONFIG);
 fn main(boot_info: &'static mut bootloader_api::BootInfo) -> ! {
     init(boot_info);
     println!("Hello, world!");
+
+    let mut display = display::DISPLAY.get().unwrap().lock();
+
+    for t in 0..=255 {
+        for y in 0..display.info().height {
+            for x in 0..display.info().width {
+                display.set_pixel(x, y, &Color::new(x as u8, y as u8, t as u8));
+            }
+        }
+    }
+
     halt()
 }
 
-fn init(_boot_info: &'static mut bootloader_api::BootInfo) {
+fn init(boot_info: &'static mut bootloader_api::BootInfo) {
     idt::load();
     gdt::load();
+
+    display::init(boot_info.framebuffer.take().expect("no framebuffer"));
 }
 
 #[panic_handler]
