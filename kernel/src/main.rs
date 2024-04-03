@@ -3,6 +3,7 @@
 #![feature(abi_x86_interrupt)]
 #![warn(unused_unsafe)]
 #![deny(unsafe_op_in_unsafe_fn)]
+#![allow(dead_code)] // TODO: remove this later
 
 use graphics::{Color, PixelBuffer};
 
