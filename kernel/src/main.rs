@@ -7,11 +7,10 @@
 
 extern crate alloc;
 
-use graphics::Drawable;
-
 use crate::{
-    bench::benchmark,
+    bench::profile,
     graphics::color::{self, Color},
+    graphics::Drawable,
 };
 
 mod allocator;
@@ -36,13 +35,15 @@ fn main(boot_info: &'static mut bootloader_api::BootInfo) -> ! {
     init(boot_info);
     println!("Hello, world!");
 
-    let mut display = display::DISPLAY.get().unwrap().lock();
+    profile("clear", 5, || {
+        let mut display = display::DISPLAY.get().unwrap().lock();
 
-    benchmark("clear", || {
         display.clear(&color::BLACK);
     });
 
-    benchmark("rainbow", || {
+    profile("rainbow", 5, || {
+        let mut display = display::DISPLAY.get().unwrap().lock();
+
         let size = display.size();
         for y in 0..size.1 {
             for x in 0..size.0 {
@@ -53,7 +54,9 @@ fn main(boot_info: &'static mut bootloader_api::BootInfo) -> ! {
         }
     });
 
-    benchmark("hello", || {
+    profile("hello", 20, || {
+        let mut display = display::DISPLAY.get().unwrap().lock();
+
         for (i, c) in "Hello, world!".chars().enumerate() {
             let x = i * 8;
             let y = 0;
