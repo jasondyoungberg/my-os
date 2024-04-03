@@ -4,9 +4,9 @@ pub trait Drawable {
     fn size(&self) -> (usize, usize);
     fn set_pixel_unchecked(&mut self, pos: (usize, usize), color: &Color);
 
-    fn set_pixel(&mut self, pos: (usize, usize), color: &Color) -> Result<(), DrawError> {
+    fn set_pixel(&mut self, pos: (usize, usize), color: &Color) -> Result<(), &'static str> {
         if pos.0 >= self.size().0 || pos.1 >= self.size().1 {
-            return Err(DrawError::OutOfBounds);
+            return Err("Out of bounds");
         }
 
         self.set_pixel_unchecked(pos, color);
@@ -22,18 +22,14 @@ pub trait Drawable {
         }
     }
 
-    fn blit<const W: usize, const H: usize>(
-        &mut self,
-        pos: (usize, usize),
-        other: Bitmap<W, H>,
-    ) -> Result<(), DrawError> {
-        if pos.0 + W >= self.size().0 || pos.1 + H >= self.size().1 {
-            return Err(DrawError::OutOfBounds);
+    fn blit<T: Bitmap>(&mut self, pos: (usize, usize), other: T) -> Result<(), &'static str> {
+        if pos.0 + other.size().0 >= self.size().0 || pos.1 + other.size().1 >= self.size().1 {
+            return Err("out of bounds");
         }
 
-        for (y, row) in other.data().iter().enumerate() {
-            for (x, color) in row.iter().enumerate() {
-                self.set_pixel_unchecked((pos.0 + x, pos.1 + y), color)
+        for y in 0..other.size().1 {
+            for x in 0..other.size().0 {
+                self.set_pixel_unchecked((pos.0 + x, pos.1 + y), &other.get_pixel((x, y))?)
             }
         }
         Ok(())
