@@ -40,6 +40,10 @@ fn main() {
         .arg("--no-reboot")
         .arg("--no-shutdown");
 
+    for arg in config.qemu_args {
+        cmd.arg(arg);
+    }
+
     cmd.spawn().unwrap().wait().unwrap();
 }
 
@@ -67,6 +71,7 @@ fn get_config() -> Config {
     let mut kernel = PathBuf::from(env!("KERNEL_PATH"));
     let mut sys_type = SysType::Bios;
     let mut mode = Mode::Normal;
+    let mut qemu_args = Vec::new();
 
     let mut args = std::env::args();
     args.next(); // skip the first argument
@@ -86,7 +91,7 @@ fn get_config() -> Config {
                 sys_type = SysType::Bios;
             }
             "--help" => {
-                println!("Usage: cargo run -- [options]");
+                println!("Usage: cargo run -- [options] [-- qemu args]");
                 println!("Options:");
                 println!("  --kernel <path>  Path to the kernel binary");
                 println!("  --test           Run in test mode");
@@ -95,6 +100,10 @@ fn get_config() -> Config {
                 println!("  --bios           Use BIOS firmware");
                 println!("  --help           Print this help message");
                 std::process::exit(0);
+            }
+            "--" => {
+                qemu_args = args.collect();
+                break;
             }
             _ => {
                 panic!("Unknown argument: {arg}");
@@ -106,6 +115,7 @@ fn get_config() -> Config {
         kernel,
         sys_type,
         mode,
+        qemu_args,
     }
 }
 
@@ -114,6 +124,7 @@ struct Config {
     kernel: PathBuf,
     sys_type: SysType,
     mode: Mode,
+    qemu_args: Vec<String>,
 }
 
 #[derive(Debug)]
