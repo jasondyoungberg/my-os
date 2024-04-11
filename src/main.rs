@@ -2,8 +2,6 @@ use std::path::PathBuf;
 use std::process::Command;
 
 fn main() {
-    std::fs::create_dir_all("./build").unwrap();
-
     let config = get_config();
     let img_path = build(&config);
 
@@ -49,8 +47,7 @@ fn main() {
 }
 
 fn build(config: &Config) -> PathBuf {
-    let out_dir = PathBuf::from("./build");
-    let img_path = out_dir.join("os.img");
+    let img_path = PathBuf::from("./my-os.img");
 
     match config.sys_type {
         SysType::Uefi => {
