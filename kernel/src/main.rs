@@ -18,6 +18,7 @@ mod font;
 mod gdt;
 mod graphics;
 mod idt;
+#[cfg(test)]
 mod testing;
 mod tss;
 
@@ -52,6 +53,7 @@ fn init(boot_info: &'static mut bootloader_api::BootInfo) {
     display::init(boot_info.framebuffer.take().expect("no framebuffer"));
 }
 
+#[cfg(not(test))]
 #[panic_handler]
 fn panic(panic_info: &core::panic::PanicInfo) -> ! {
     println!("{}", panic_info);

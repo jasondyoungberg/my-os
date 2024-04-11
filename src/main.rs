@@ -17,7 +17,9 @@ fn main() {
     }
 
     match config.mode {
-        Mode::Normal => {}
+        Mode::Normal => {
+            cmd.args(["-display", "sdl"]);
+        }
         Mode::Debug => {
             cmd.args(["-d", "int,cpu_reset,unimp,guest_errors"]);
         }
@@ -31,14 +33,13 @@ fn main() {
         .arg(format!("format=raw,file={}", img_path.display()));
 
     cmd.args(["-m", "4G"])
-        .args(["-display", "sdl"])
         .args(["-nodefaults"])
         .args(["-vga", "std"])
         .args(["-debugcon", "stdio"])
         .arg("--no-reboot")
         .arg("--no-shutdown");
 
-    std::process::exit(cmd.spawn().unwrap().wait().unwrap().code().unwrap());
+    cmd.spawn().unwrap().wait().unwrap();
 }
 
 fn build(config: &Config) -> PathBuf {
