@@ -32,7 +32,8 @@ fn main() {
     cmd.arg("-drive")
         .arg(format!("format=raw,file={}", img_path.display()));
 
-    cmd.args(["-m", "4G"])
+    cmd.args(["-machine", "q35"])
+        .args(["-m", "4G"])
         .args(["-nodefaults"])
         .args(["-vga", "std"])
         .args(["-debugcon", "stdio"])
