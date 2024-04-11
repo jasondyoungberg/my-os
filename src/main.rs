@@ -21,7 +21,8 @@ fn main() {
             cmd.args(["-display", "sdl"]);
         }
         Mode::Debug => {
-            cmd.args(["-d", "int,cpu_reset,unimp,guest_errors"]);
+            cmd.args(["-display", "sdl"])
+                .args(["-d", "int,cpu_reset,unimp,guest_errors"]);
         }
         Mode::Test => {
             cmd.args(["-device", "isa-debug-exit,iobase=0xf4,iosize=0x04"])
