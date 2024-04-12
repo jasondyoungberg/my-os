@@ -13,6 +13,7 @@ extern crate alloc;
 mod allocator;
 mod bench;
 mod debugcon;
+mod disk;
 mod display;
 mod font;
 mod gdt;
@@ -42,8 +43,6 @@ fn start(boot_info: &'static mut bootloader_api::BootInfo) -> ! {
 
 fn main() {
     println!("Hello, world!");
-    #[cfg(test)]
-    println!("Running tests...");
 }
 
 fn init(boot_info: &'static mut bootloader_api::BootInfo) {
