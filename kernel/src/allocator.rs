@@ -6,7 +6,7 @@ use x86_64::instructions::interrupts::without_interrupts;
 
 const HEAP_SIZE: usize = 0x10_0000; // 1 MiB
 
-#[global_allocator]
+#[cfg_attr(not(test), global_allocator)]
 static ALLOCATOR: Allocator = Allocator::new();
 
 struct Allocator(Lazy<LockedHeap>);
