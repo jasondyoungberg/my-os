@@ -1,4 +1,3 @@
-use crate::dbg;
 use x86_64::instructions::port::{Port, PortReadOnly, PortWriteOnly};
 
 pub struct AtaDisk {
@@ -115,7 +114,6 @@ struct Ports {
 
 impl Ports {
     fn new(base: u16) -> Self {
-        dbg!(base);
         Self {
             data: Port::new(base),
             error: PortReadOnly::new(base + 1),
