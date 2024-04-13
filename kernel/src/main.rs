@@ -16,6 +16,7 @@ mod font;
 mod gdt;
 mod graphics;
 mod idt;
+mod pretty;
 mod tss;
 
 const CONFIG: bootloader_api::BootloaderConfig = {
