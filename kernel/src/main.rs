@@ -37,6 +37,11 @@ fn start(boot_info: &'static mut bootloader_api::BootInfo) -> ! {
 
 fn main() {
     println!("Hello, world!");
+
+    let mut disk = unsafe { disk::AtaDisk::new(0x1F0) };
+    let mut buffer = [69u8; 512];
+    disk.read_sectors(0, 1, &mut buffer);
+    println!("{}", pretty::Hexdump(&buffer));
 }
 
 fn init(boot_info: &'static mut bootloader_api::BootInfo) {
