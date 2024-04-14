@@ -1,9 +1,10 @@
+use std::env;
 use std::path::PathBuf;
 use std::process::Command;
 
 fn main() {
     let config = get_config();
-    let img_path = build(&config);
+    let img_path = config.img_path;
 
     let mut cmd = Command::new("qemu-system-x86_64");
 
@@ -46,27 +47,8 @@ fn main() {
     cmd.spawn().unwrap().wait().unwrap();
 }
 
-fn build(config: &Config) -> PathBuf {
-    let img_path = PathBuf::from("./my-os.img");
-
-    match config.sys_type {
-        SysType::Uefi => {
-            bootloader::UefiBoot::new(&config.kernel)
-                .create_disk_image(&img_path)
-                .unwrap();
-        }
-        SysType::Bios => {
-            bootloader::BiosBoot::new(&config.kernel)
-                .create_disk_image(&img_path)
-                .unwrap();
-        }
-    }
-
-    img_path
-}
-
 fn get_config() -> Config {
-    let mut kernel = PathBuf::from(env!("KERNEL_PATH"));
+    let mut kernel = "kernel".to_string();
     let mut sys_type = SysType::Bios;
     let mut mode = Mode::Normal;
     let mut qemu_args = Vec::new();
@@ -77,7 +59,7 @@ fn get_config() -> Config {
     while let Some(arg) = args.next() {
         match arg.as_str() {
             "--kernel" => {
-                kernel = PathBuf::from(args.next().expect("no kernel provided"));
+                kernel = args.next().expect("no kernel provided");
             }
             "--test" => mode = Mode::Test,
             "--debug" => mode = Mode::Debug,
@@ -91,7 +73,7 @@ fn get_config() -> Config {
             "--help" => {
                 println!("Usage: cargo run -- [options] [-- qemu args]");
                 println!("Options:");
-                println!("  --kernel <path>  Path to the kernel binary");
+                println!("  --kernel <path>  Kernel to use");
                 println!("  --test           Run in test mode");
                 println!("  --debug          Enable QEMU debug output");
                 println!("  --uefi           Use UEFI firmware");
@@ -108,9 +90,12 @@ fn get_config() -> Config {
             }
         }
     }
+    let img_path = PathBuf::from(
+        env::var_os(format!("IMG_{kernel}_{sys_type}")).expect("kernel image not found"),
+    );
 
     Config {
-        kernel,
+        img_path,
         sys_type,
         mode,
         qemu_args,
@@ -119,7 +104,7 @@ fn get_config() -> Config {
 
 #[derive(Debug)]
 struct Config {
-    kernel: PathBuf,
+    img_path: PathBuf,
     sys_type: SysType,
     mode: Mode,
     qemu_args: Vec<String>,
@@ -136,4 +121,13 @@ enum Mode {
     Normal,
     Debug,
     Test,
+}
+
+impl std::fmt::Display for SysType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SysType::Uefi => write!(f, "UEFI"),
+            SysType::Bios => write!(f, "BIOS"),
+        }
+    }
 }
