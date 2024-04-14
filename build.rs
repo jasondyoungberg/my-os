@@ -1,4 +1,4 @@
-use std::{env, path::PathBuf};
+use std::{env, fs, path::PathBuf};
 
 use bootloader::DiskImageBuilder;
 
@@ -19,7 +19,16 @@ fn main() {
         let bios_path = out_dir.join(format!("{}-bios.img", name));
         let uefi_path = out_dir.join(format!("{}-uefi.img", name));
 
-        let image = DiskImageBuilder::new(kernel_path.clone());
+        let mut image = DiskImageBuilder::new(kernel_path.clone());
+
+        let files_path = PathBuf::from("./files/");
+
+        for path in fs::read_dir(files_path.clone()).expect("failed to read files dir") {
+            let entry = path.expect("failed to read file");
+            let full_path = entry.path();
+            let rel_path = full_path.strip_prefix(&files_path).unwrap();
+            image.set_file(rel_path.to_str().unwrap().to_string(), full_path);
+        }
 
         image
             .create_bios_image(&bios_path)
