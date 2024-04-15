@@ -3,7 +3,7 @@ use core::ptr::addr_of;
 use spin::Lazy;
 use x86_64::{structures::tss::TaskStateSegment, VirtAddr};
 
-use crate::idt::DOUBLE_FAULT_IST_INDEX;
+use super::DOUBLE_FAULT_IST_INDEX;
 
 const STACK_SIZE: usize = 4096 * 5;
 

@@ -1,10 +1,9 @@
+use super::DOUBLE_FAULT_IST_INDEX;
 use spin::Lazy;
 use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame, PageFaultErrorCode};
 
-pub const DOUBLE_FAULT_IST_INDEX: u16 = 0;
-
 #[cfg_attr(test, allow(unreachable_code))]
-static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
+pub static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
     #[cfg(test)]
     panic!("IDT can not be loaded in test mode");
 

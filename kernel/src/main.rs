@@ -13,11 +13,9 @@ mod debugcon;
 mod disk;
 mod display;
 mod font;
-mod gdt;
 mod graphics;
-mod idt;
+mod interrupts;
 mod pretty;
-mod tss;
 
 const CONFIG: bootloader_api::BootloaderConfig = {
     let mut config = bootloader_api::BootloaderConfig::new_default();
@@ -45,8 +43,7 @@ fn main() {
 }
 
 fn init(boot_info: &'static mut bootloader_api::BootInfo) {
-    idt::load();
-    gdt::load();
+    interrupts::init();
 
     display::init(boot_info.framebuffer.take().expect("no framebuffer"));
 }

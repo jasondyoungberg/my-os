@@ -5,7 +5,7 @@ use x86_64::{
     structures::gdt::{Descriptor, GlobalDescriptorTable, SegmentSelector},
 };
 
-use crate::tss;
+use crate::interrupts::TSS;
 
 static GDT_INFO: Lazy<GdtInfo> = Lazy::new(|| {
     let mut gdt = GlobalDescriptorTable::new();
@@ -13,7 +13,7 @@ static GDT_INFO: Lazy<GdtInfo> = Lazy::new(|| {
     let kernel_data_selector = gdt.append(Descriptor::kernel_data_segment());
     let user_code_selector = gdt.append(Descriptor::user_code_segment());
     let user_data_selector = gdt.append(Descriptor::user_data_segment());
-    let tss = gdt.append(Descriptor::tss_segment(&tss::TSS));
+    let tss = gdt.append(Descriptor::tss_segment(&TSS));
 
     GdtInfo {
         gdt,
