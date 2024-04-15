@@ -44,6 +44,8 @@ fn main() {
         cmd.arg(arg);
     }
 
+    println!("Running QEMU with image: {}", img_path.display());
+
     cmd.spawn().unwrap().wait().unwrap();
 }
 
