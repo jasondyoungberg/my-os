@@ -1,52 +1,54 @@
-use spin::Once;
+use spin::Lazy;
 use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame, PageFaultErrorCode};
 
 pub const DOUBLE_FAULT_IST_INDEX: u16 = 0;
 
+#[cfg_attr(test, allow(unreachable_code))]
+static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
+    #[cfg(test)]
+    panic!("IDT can not be loaded in test mode");
+
+    let mut idt = InterruptDescriptorTable::new();
+
+    macro_rules! set_handler {
+        ($name:ident) => {
+            idt.$name.set_handler_fn($name)
+        };
+        ($name:ident, $idx:expr) => {
+            let opt = set_handler!($name);
+            unsafe { opt.set_stack_index($idx) }
+        };
+    }
+
+    set_handler!(divide_error);
+    set_handler!(debug);
+    set_handler!(non_maskable_interrupt);
+    set_handler!(breakpoint);
+    set_handler!(overflow);
+    set_handler!(bound_range_exceeded);
+    set_handler!(invalid_opcode);
+    set_handler!(device_not_available);
+    set_handler!(double_fault, DOUBLE_FAULT_IST_INDEX);
+    set_handler!(invalid_tss);
+    set_handler!(segment_not_present);
+    set_handler!(stack_segment_fault);
+    set_handler!(general_protection_fault);
+    set_handler!(page_fault);
+    set_handler!(x87_floating_point);
+    set_handler!(alignment_check);
+    set_handler!(machine_check);
+    set_handler!(simd_floating_point);
+    set_handler!(virtualization);
+    set_handler!(cp_protection_exception);
+    set_handler!(hv_injection_exception);
+    set_handler!(vmm_communication_exception);
+    set_handler!(security_exception);
+
+    idt
+});
+
 pub fn load() {
-    static IDT: Once<InterruptDescriptorTable> = Once::new();
-
-    IDT.call_once(|| {
-        let mut idt = InterruptDescriptorTable::new();
-
-        macro_rules! set_handler {
-            ($name:ident) => {
-                idt.$name.set_handler_fn($name)
-            };
-            ($name:ident, $idx:expr) => {
-                let opt = set_handler!($name);
-                unsafe { opt.set_stack_index($idx) }
-            };
-        }
-
-        set_handler!(divide_error);
-        set_handler!(debug);
-        set_handler!(non_maskable_interrupt);
-        set_handler!(breakpoint);
-        set_handler!(overflow);
-        set_handler!(bound_range_exceeded);
-        set_handler!(invalid_opcode);
-        set_handler!(device_not_available);
-        set_handler!(double_fault, DOUBLE_FAULT_IST_INDEX);
-        set_handler!(invalid_tss);
-        set_handler!(segment_not_present);
-        set_handler!(stack_segment_fault);
-        set_handler!(general_protection_fault);
-        set_handler!(page_fault);
-        set_handler!(x87_floating_point);
-        set_handler!(alignment_check);
-        set_handler!(machine_check);
-        set_handler!(simd_floating_point);
-        set_handler!(virtualization);
-        set_handler!(cp_protection_exception);
-        set_handler!(hv_injection_exception);
-        set_handler!(vmm_communication_exception);
-        set_handler!(security_exception);
-
-        idt
-    });
-
-    IDT.get().unwrap().load();
+    IDT.load();
 }
 
 macro_rules! handler {
