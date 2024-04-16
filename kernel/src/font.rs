@@ -23,6 +23,7 @@ pub fn get_char_icon(c: char) -> Option<CharIcon> {
 }
 
 // https://github.com/susam/pcface/blob/main/out/moderndos-8x16/fontmap.js
+#[allow(clippy::unreadable_literal)]
 const DATA: [(char, CharIcon); 256] = [
     ('\u{FFFD}', CharIcon(0x00000000000000000000000000000000)),
     ('\u{263A}', CharIcon(0x00007e81a58181bd9981817e00000000)),

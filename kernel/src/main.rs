@@ -1,9 +1,16 @@
 #![no_std]
 #![cfg_attr(not(test), no_main)]
 #![feature(abi_x86_interrupt)]
-#![warn(unused_unsafe)]
+//
+#![warn(clippy::nursery)]
+#![warn(clippy::pedantic)]
 #![deny(unsafe_op_in_unsafe_fn)]
+#![deny(clippy::enum_glob_use)]
+#![warn(unused_unsafe)]
+#![warn(clippy::missing_const_for_fn)]
 #![allow(dead_code)] // TODO: remove this later
+#![allow(clippy::semicolon_if_nothing_returned)]
+#![allow(clippy::module_name_repetitions)]
 
 use crate::task::{SimpleExecutor, Task};
 

@@ -16,7 +16,7 @@ impl Drawable for FrameBuffer {
         (info.width, info.height)
     }
 
-    fn set_pixel_unchecked(&mut self, pos: (usize, usize), color: &Color) {
+    fn set_pixel_unchecked(&mut self, pos: (usize, usize), color: Color) {
         let info = self.info();
         let index = (pos.1 * info.stride + pos.0) * info.bytes_per_pixel;
         let buffer = self.buffer_mut();

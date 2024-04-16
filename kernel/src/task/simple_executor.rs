@@ -9,8 +9,8 @@ pub struct SimpleExecutor {
 }
 
 impl SimpleExecutor {
-    pub fn new() -> Self {
-        SimpleExecutor {
+    pub const fn new() -> Self {
+        Self {
             tast_queue: VecDeque::new(),
         }
     }
@@ -33,7 +33,7 @@ impl SimpleExecutor {
 }
 
 fn dummy_raw_waker() -> RawWaker {
-    fn no_op(_: *const ()) {}
+    const fn no_op(_: *const ()) {}
     fn clone(_: *const ()) -> RawWaker {
         dummy_raw_waker()
     }

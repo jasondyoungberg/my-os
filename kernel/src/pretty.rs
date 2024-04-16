@@ -5,9 +5,6 @@ pub struct Hexdump<'a>(pub &'a [u8]);
 
 impl Display for Hexdump<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let lines = self.0.len() / 16;
-        let remainder = self.0.len() % 16;
-
         // Convert a byte to a printable ASCII character,
         // or a '.' if it's not printable.
         fn byte2char(byte: u8) -> char {
@@ -18,14 +15,17 @@ impl Display for Hexdump<'_> {
             }
         }
 
+        let lines = self.0.len() / 16;
+        let remainder = self.0.len() % 16;
+
         for i in 0..lines {
             let offset = i * 16;
-            write!(f, "{:08x}: ", offset)?;
+            write!(f, "{offset:08x}: ")?;
 
             let data = &self.0[offset..offset + 16];
 
             for byte in data {
-                write!(f, "{:02x} ", byte)?;
+                write!(f, "{byte:02x} ")?;
             }
 
             write!(f, " ")?;
@@ -44,10 +44,10 @@ impl Display for Hexdump<'_> {
         }
 
         let offset = lines * 16;
-        write!(f, "{:08x}: ", offset)?;
+        write!(f, "{offset:08x}: ")?;
 
         for byte in &self.0[offset..] {
-            write!(f, "{:02x} ", byte)?;
+            write!(f, "{byte:02x} ")?;
         }
 
         write!(f, " ")?;
@@ -63,7 +63,7 @@ impl Display for Hexdump<'_> {
                 '.'
             };
 
-            write!(f, "{}", c)?;
+            write!(f, "{c}")?;
         }
 
         Ok(())

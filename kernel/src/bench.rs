@@ -14,7 +14,7 @@ pub fn profile<F: Fn()>(msg: &'static str, iters: usize, code: F) {
             })
         })
         .collect::<Vec<u64>>();
-    results.sort();
+    results.sort_unstable();
 
     let min = results[0];
     let q1 = results[iters / 4];

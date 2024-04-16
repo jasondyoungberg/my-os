@@ -7,7 +7,7 @@ pub struct AtaDisk {
 // https://wiki.osdev.org/ATA_read/write_sectors#Read_in_LBA_mode
 
 impl AtaDisk {
-    pub unsafe fn new(base: u16) -> Self {
+    pub const unsafe fn new(base: u16) -> Self {
         Self {
             ports: Ports::new(base),
         }
@@ -67,6 +67,8 @@ impl AtaDisk {
     }
 }
 
+// todo: maybe there's a better way to do this
+#[allow(clippy::struct_excessive_bools)]
 struct Status {
     error: bool,
     index: bool,
@@ -113,7 +115,7 @@ struct Ports {
 }
 
 impl Ports {
-    fn new(base: u16) -> Self {
+    const fn new(base: u16) -> Self {
         Self {
             data: Port::new(base),
             error: PortReadOnly::new(base + 1),

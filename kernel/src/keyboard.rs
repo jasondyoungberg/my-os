@@ -19,7 +19,7 @@ pub fn init() {
 pub fn add_scancode(scancode: u8) {
     if let Some(queue) = SCANCODE_QUEUE.get() {
         match queue.push(scancode) {
-            Ok(_) => WAKER.wake(),
+            Ok(()) => WAKER.wake(),
             Err(_) => println!("WARNING: scancode queue full; dropping scancode"),
         }
     } else {
@@ -32,8 +32,8 @@ pub struct ScancodeStream {
 }
 
 impl ScancodeStream {
-    pub fn new() -> Self {
-        ScancodeStream { _private: () }
+    pub const fn new() -> Self {
+        Self { _private: () }
     }
 }
 
@@ -49,12 +49,9 @@ impl Stream for ScancodeStream {
 
         WAKER.register(cx.waker());
 
-        match queue.pop() {
-            Some(scancode) => {
-                WAKER.take();
-                Poll::Ready(Some(scancode))
-            }
-            None => Poll::Pending,
-        }
+        queue.pop().map_or(Poll::Pending, |scancode| {
+            WAKER.take();
+            Poll::Ready(Some(scancode))
+        })
     }
 }
