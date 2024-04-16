@@ -5,6 +5,8 @@
 #![deny(unsafe_op_in_unsafe_fn)]
 #![allow(dead_code)] // TODO: remove this later
 
+use crate::task::{SimpleExecutor, Task};
+
 extern crate alloc;
 
 mod allocator;
@@ -15,7 +17,9 @@ mod display;
 mod font;
 mod graphics;
 mod interrupts;
+mod keyboard;
 mod pretty;
+mod task;
 
 const CONFIG: bootloader_api::BootloaderConfig = {
     let mut config = bootloader_api::BootloaderConfig::new_default();
@@ -27,7 +31,9 @@ const CONFIG: bootloader_api::BootloaderConfig = {
 bootloader_api::entry_point!(start, config = &CONFIG);
 
 fn start(boot_info: &'static mut bootloader_api::BootInfo) -> ! {
-    init(boot_info);
+    interrupts::init();
+    keyboard::init();
+    display::init(boot_info.framebuffer.take().expect("no framebuffer"));
 
     main();
     halt()
@@ -40,12 +46,30 @@ fn main() {
     let mut buffer = [69u8; 512];
     disk.read_sectors(0, 1, &mut buffer);
     println!("{}", pretty::Hexdump(&buffer));
+
+    let mut executor = SimpleExecutor::new();
+    executor.spawn(Task::new(print_keypresses()));
+    executor.run();
 }
 
-fn init(boot_info: &'static mut bootloader_api::BootInfo) {
-    interrupts::init();
+async fn print_keypresses() {
+    use futures::StreamExt;
+    use pc_keyboard::{layouts::Us104Key, HandleControl, Keyboard, ScancodeSet1};
 
-    display::init(boot_info.framebuffer.take().expect("no framebuffer"));
+    let mut scancodes = keyboard::ScancodeStream::new();
+    let mut keyboard: Keyboard<Us104Key, ScancodeSet1> =
+        Keyboard::new(ScancodeSet1::new(), Us104Key, HandleControl::Ignore);
+
+    while let Some(scancode) = scancodes.next().await {
+        if let Some(key_event) = keyboard.add_byte(scancode).unwrap() {
+            if let Some(key) = keyboard.process_keyevent(key_event) {
+                match key {
+                    pc_keyboard::DecodedKey::Unicode(character) => print!("{}", character),
+                    pc_keyboard::DecodedKey::RawKey(key) => print!("[{:?}]", key),
+                }
+            }
+        }
+    }
 }
 
 #[cfg_attr(not(test), panic_handler)]

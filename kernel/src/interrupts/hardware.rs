@@ -1,4 +1,4 @@
-use crate::print;
+use crate::{keyboard, print};
 use pic8259::ChainedPics;
 use spin::Mutex;
 use x86_64::structures::idt::InterruptStackFrame;
@@ -38,27 +38,11 @@ pub extern "x86-interrupt" fn timer_interrupt(_stack_frame: InterruptStackFrame)
 }
 
 pub extern "x86-interrupt" fn keyboard_interrupt(_stack_frame: InterruptStackFrame) {
-    use pc_keyboard::{layouts::Us104Key, DecodedKey, HandleControl, Keyboard, ScancodeSet1};
     use x86_64::instructions::port::Port;
 
-    static KEYBOARD: Mutex<Keyboard<Us104Key, ScancodeSet1>> = Mutex::new(Keyboard::new(
-        ScancodeSet1::new(),
-        Us104Key,
-        HandleControl::Ignore,
-    ));
+    let scancode: u8 = unsafe { Port::new(0x60).read() };
 
-    let mut port = Port::new(0x60);
-    let scancode: u8 = unsafe { port.read() };
-
-    let mut keyboard = KEYBOARD.try_lock().expect("Failed to get keyboard lock");
-    if let Ok(Some(key_event)) = keyboard.add_byte(scancode) {
-        if let Some(key) = keyboard.process_keyevent(key_event) {
-            match key {
-                DecodedKey::Unicode(character) => print!("{}", character),
-                DecodedKey::RawKey(key) => print!("{:?}", key),
-            }
-        }
-    }
+    keyboard::add_scancode(scancode);
 
     end_interrupt(InterruptIndex::Keyboard);
 }

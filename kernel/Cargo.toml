@@ -10,3 +10,7 @@ pc-keyboard = "0.7.0"
 pic8259 = "0.11.0"
 spin = "0.9.8"
 x86_64 = "0.15.0"
+futures = { version = "0.3.30", default-features = false, features = ["alloc"] }
+crossbeam = { version = "0.8.4", default-features = false, features = [
+    "alloc",
+] }
