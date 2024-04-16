@@ -12,7 +12,7 @@
 #![allow(clippy::semicolon_if_nothing_returned)]
 #![allow(clippy::module_name_repetitions)]
 
-use crate::task::{Executor, SimpleExecutor, Task};
+use crate::task::{Executor, Task};
 
 extern crate alloc;
 

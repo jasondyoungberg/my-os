@@ -4,10 +4,8 @@ use core::pin::Pin;
 use core::task::{Context, Poll};
 
 pub mod executor;
-pub mod simple_executor;
 
 pub use executor::Executor;
-pub use simple_executor::SimpleExecutor;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 struct TaskId(u64);
