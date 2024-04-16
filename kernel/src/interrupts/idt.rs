@@ -1,3 +1,7 @@
+use crate::println;
+
+use super::hardware::{self, InterruptIndex};
+
 use super::DOUBLE_FAULT_IST_INDEX;
 use spin::Lazy;
 use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame, PageFaultErrorCode};
@@ -43,6 +47,10 @@ pub static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
     set_handler!(vmm_communication_exception);
     set_handler!(security_exception);
 
+    idt[InterruptIndex::Timer as u8].set_handler_fn(hardware::timer_interrupt);
+    idt[InterruptIndex::Keyboard as u8].set_handler_fn(hardware::keyboard_interrupt);
+    idt[InterruptIndex::PrimaryAta as u8].set_handler_fn(hardware::primary_ata_interrupt);
+
     idt
 });
 
@@ -75,7 +83,6 @@ macro_rules! handler {
 handler!(divide_error, "DIVIDE BY ZERO");
 handler!(debug, "DEBUG");
 handler!(non_maskable_interrupt, "NON-MASKABLE INTERRUPT");
-handler!(breakpoint, "BREAKPOINT");
 handler!(overflow, "OVERFLOW");
 handler!(bound_range_exceeded, "BOUND RANGE EXCEEDED");
 handler!(invalid_opcode, "INVALID OPCODE");
@@ -95,3 +102,7 @@ handler!(cp_protection_exception, "CP PROTECTION", u64);
 handler!(hv_injection_exception, "HV INJECTION");
 handler!(vmm_communication_exception, "VMM COMMUNICATION", u64);
 handler!(security_exception, "SECURITY", u64);
+
+extern "x86-interrupt" fn breakpoint(stack_frame: InterruptStackFrame) {
+    println!("BREAKPOINT\n{:#?}", stack_frame);
+}
