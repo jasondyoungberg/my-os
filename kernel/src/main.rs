@@ -12,7 +12,7 @@
 #![allow(clippy::semicolon_if_nothing_returned)]
 #![allow(clippy::module_name_repetitions)]
 
-use crate::task::{SimpleExecutor, Task};
+use crate::task::{Executor, SimpleExecutor, Task};
 
 extern crate alloc;
 
@@ -54,7 +54,7 @@ fn main() {
     disk.read_sectors(0, 1, &mut buffer);
     println!("{}", pretty::Hexdump(&buffer));
 
-    let mut executor = SimpleExecutor::new();
+    let mut executor = Executor::new();
     executor.spawn(Task::new(print_keypresses()));
     executor.run();
 }
