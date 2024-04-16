@@ -90,15 +90,3 @@ fn halt() -> ! {
         x86_64::instructions::hlt()
     }
 }
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn trivial() {}
-
-    #[test]
-    #[should_panic]
-    fn panic() {
-        panic!()
-    }
-}
