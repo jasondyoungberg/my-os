@@ -96,6 +96,15 @@ fn get_config() -> Config {
         env::var_os(format!("IMG_{kernel}_{sys_type}")).expect("kernel image not found"),
     );
 
+    println!(
+        "Kernel size: {} kB",
+        env::var(format!("KERNEL_SIZE_{kernel}"))
+            .unwrap()
+            .parse::<usize>()
+            .unwrap()
+            / 1024
+    );
+
     Config {
         img_path,
         sys_type,

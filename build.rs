@@ -19,6 +19,10 @@ fn main() {
         let bios_path = out_dir.join(format!("{}-bios.img", name));
         let uefi_path = out_dir.join(format!("{}-uefi.img", name));
 
+        let kernel_size = fs::metadata(&kernel_path)
+            .expect("failed to get kernel size")
+            .len();
+
         let mut image = DiskImageBuilder::new(kernel_path.clone());
 
         let files_path = PathBuf::from("./files/");
@@ -39,5 +43,6 @@ fn main() {
 
         println!("cargo:rustc-env=IMG_{}_BIOS={}", name, bios_path.display());
         println!("cargo:rustc-env=IMG_{}_UEFI={}", name, uefi_path.display());
+        println!("cargo:rustc-env=KERNEL_SIZE_{}={}", name, kernel_size);
     }
 }
