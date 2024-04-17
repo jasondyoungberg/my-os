@@ -48,7 +48,7 @@ pub extern "x86-interrupt" fn keyboard_interrupt(_stack_frame: InterruptStackFra
 }
 
 pub extern "x86-interrupt" fn primary_ata_interrupt(_stack_frame: InterruptStackFrame) {
-    print!("p");
+    crate::disk::ata::wake();
 
     end_interrupt(InterruptIndex::PrimaryAta);
 }

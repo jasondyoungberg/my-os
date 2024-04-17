@@ -42,21 +42,19 @@ fn start(boot_info: &'static mut bootloader_api::BootInfo) -> ! {
     keyboard::init();
     display::init(boot_info.framebuffer.take().expect("no framebuffer"));
 
-    main();
-    halt()
-}
-
-fn main() {
     println!("Hello, world!");
-
-    let mut disk = unsafe { disk::AtaDisk::new(0x1F0) };
-    let mut buffer = [69u8; 512];
-    disk.read_sectors(0, 1, &mut buffer);
-    println!("{}", pretty::Hexdump(&buffer));
 
     let mut executor = Executor::new();
     executor.spawn(Task::new(print_keypresses()));
+    executor.spawn(Task::new(print_bootsector()));
     executor.run();
+}
+
+async fn print_bootsector() {
+    let mut disk = unsafe { disk::AtaDisk::new(0x1F0) };
+    let mut buffer = [0u8; 512];
+    disk.read_sectors(0, 1, &mut buffer).await;
+    println!("{}", pretty::Hexdump(&buffer));
 }
 
 async fn print_keypresses() {

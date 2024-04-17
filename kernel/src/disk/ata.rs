@@ -1,4 +1,13 @@
+use crate::dbg;
+use core::{future::poll_fn, task::Poll};
+use futures::task::AtomicWaker;
 use x86_64::instructions::port::{Port, PortReadOnly, PortWriteOnly};
+
+static WAKER: AtomicWaker = AtomicWaker::new();
+
+pub fn wake() {
+    WAKER.wake();
+}
 
 pub struct AtaDisk {
     ports: Ports,
@@ -13,12 +22,10 @@ impl AtaDisk {
         }
     }
 
-    pub fn read_sectors(&mut self, lba: u32, sectors: u8, buffer: &mut [u8]) {
+    pub async fn read_sectors(&mut self, lba: u32, sectors: u8, buffer: &mut [u8]) {
         self.set_rw_address(lba, sectors);
         self.send_commannd(Command::ReadSectorsWithRetry);
-
-        // spin until drive is ready
-        while self.check_status().data_request {}
+        self.wait_for_data_request().await;
 
         for i in 0..(256 * sectors as usize) {
             let data = unsafe { self.ports.data.read() };
@@ -28,12 +35,10 @@ impl AtaDisk {
         }
     }
 
-    pub fn write_sectors(&mut self, lba: u32, sectors: u8, buffer: &[u8]) {
+    pub async fn write_sectors(&mut self, lba: u32, sectors: u8, buffer: &[u8]) {
         self.set_rw_address(lba, sectors);
         self.send_commannd(Command::WriteSectorsWithRetry);
-
-        // spin until drive is ready
-        while self.check_status().data_request {}
+        self.wait_for_data_request().await;
 
         for i in 0..(256 * sectors as usize) {
             let bytes = [buffer[2 * i], buffer[2 * i + 1]];
@@ -64,6 +69,25 @@ impl AtaDisk {
 
     fn check_status(&mut self) -> Status {
         unsafe { self.ports.status.read() }.into()
+    }
+
+    async fn wait_for_data_request(&mut self) {
+        poll_fn(|cx| {
+            dbg!("poll disk");
+
+            if self.check_status().data_request {
+                return Poll::Ready(());
+            }
+
+            WAKER.register(cx.waker());
+
+            if self.check_status().data_request {
+                Poll::Ready(())
+            } else {
+                Poll::Pending
+            }
+        })
+        .await
     }
 }
 
