@@ -1,4 +1,3 @@
-use crate::dbg;
 use core::{future::poll_fn, task::Poll};
 use futures::task::AtomicWaker;
 use x86_64::instructions::port::{Port, PortReadOnly, PortWriteOnly};
@@ -73,8 +72,6 @@ impl AtaDisk {
 
     async fn wait_for_data_request(&mut self) {
         poll_fn(|cx| {
-            dbg!("poll disk");
-
             if self.check_status().data_request {
                 return Poll::Ready(());
             }
