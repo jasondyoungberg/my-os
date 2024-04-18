@@ -3,8 +3,10 @@ use core::future::Future;
 use core::pin::Pin;
 use core::task::{Context, Poll};
 
+pub mod delay;
 pub mod executor;
 
+pub use delay::delay;
 pub use executor::Executor;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]

@@ -12,6 +12,8 @@
 #![allow(clippy::semicolon_if_nothing_returned)]
 #![allow(clippy::module_name_repetitions)]
 
+use core::time::Duration;
+
 use crate::task::{Executor, Task};
 
 extern crate alloc;
@@ -47,6 +49,7 @@ fn start(boot_info: &'static mut bootloader_api::BootInfo) -> ! {
     let mut executor = Executor::new();
     executor.spawn(Task::new(print_keypresses()));
     executor.spawn(Task::new(print_bootsector()));
+    executor.spawn(Task::new(count()));
     executor.run();
 }
 
@@ -55,6 +58,20 @@ async fn print_bootsector() {
     let mut buffer = [0u8; 512];
     disk.read_sectors(0, 1, &mut buffer).await;
     println!("{}", pretty::Hexdump(&buffer));
+}
+
+async fn count() {
+    use task::delay;
+
+    for i in 0.. {
+        if i % 2 == 0 {
+            println!("tick {i}");
+        } else {
+            println!("tock {i}");
+        }
+
+        delay(Duration::from_secs(1)).await;
+    }
 }
 
 async fn print_keypresses() {

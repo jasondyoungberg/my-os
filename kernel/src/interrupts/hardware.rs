@@ -1,4 +1,4 @@
-use crate::{keyboard, print};
+use crate::keyboard;
 use pic8259::ChainedPics;
 use spin::Mutex;
 use x86_64::structures::idt::InterruptStackFrame;
@@ -32,7 +32,15 @@ fn end_interrupt(index: InterruptIndex) {
 }
 
 pub extern "x86-interrupt" fn timer_interrupt(_stack_frame: InterruptStackFrame) {
-    print!(".");
+    use core::time::Duration;
+
+    const FREQUENCY: f64 = 1_193_181.666_666;
+    const DIVIDER: f64 = 65_536.0;
+    const NS_PER_S: f64 = 1_000_000_000.0;
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    const NS_PER_TICK: u64 = (NS_PER_S / (FREQUENCY / DIVIDER)) as u64;
+
+    crate::task::delay::add_time(Duration::from_nanos(NS_PER_TICK));
 
     end_interrupt(InterruptIndex::Timer);
 }

@@ -12,11 +12,15 @@ pub struct Executor {
 
 impl Executor {
     pub fn new() -> Self {
-        Self {
+        let mut this = Self {
             tasks: BTreeMap::new(),
             task_queue: Arc::new(ArrayQueue::new(256)),
             waker_cache: BTreeMap::new(),
-        }
+        };
+
+        this.spawn(Task::new(super::delay::main_task()));
+
+        this
     }
 
     pub fn spawn(&mut self, task: Task) {
