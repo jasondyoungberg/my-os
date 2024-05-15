@@ -46,6 +46,12 @@ fn start(boot_info: &'static mut bootloader_api::BootInfo) -> ! {
 
     println!("Hello, world!");
 
+    debug!("Debug message");
+    trace!("Trace message");
+    info!("Info message");
+    warn!("Warning message");
+    error!("Error message");
+
     let mut executor = Executor::new();
     executor.spawn(Task::new(print_keypresses()));
     executor.spawn(Task::new(print_bootsector()));
@@ -96,6 +102,7 @@ async fn print_keypresses() {
 
 #[cfg_attr(not(test), panic_handler)]
 fn panic(panic_info: &core::panic::PanicInfo) -> ! {
+    error!("Kernel panic");
     println!("{}", panic_info);
     halt()
 }

@@ -3,7 +3,7 @@ use core::{
     task::{Context, Poll},
 };
 
-use crate::println;
+use crate::{error, warn};
 use crossbeam::queue::ArrayQueue;
 use futures::{task::AtomicWaker, Stream};
 use spin::Once;
@@ -20,10 +20,10 @@ pub fn add_scancode(scancode: u8) {
     if let Some(queue) = SCANCODE_QUEUE.get() {
         match queue.push(scancode) {
             Ok(()) => WAKER.wake(),
-            Err(_) => println!("WARNING: scancode queue full; dropping scancode"),
+            Err(_) => warn!("scancode queue full; dropping scancode"),
         }
     } else {
-        println!("WARNING: scancode queue uninitialized");
+        warn!("scancode queue uninitialized");
     }
 }
 
@@ -41,17 +41,22 @@ impl Stream for ScancodeStream {
     type Item = u8;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
-        let queue = SCANCODE_QUEUE.get().expect("scancode queue uninitialized");
+        if let Some(queue) = SCANCODE_QUEUE.get() {
+            // fast path
+            if let Some(scancode) = queue.pop() {
+                return Poll::Ready(Some(scancode));
+            }
 
-        if let Some(scancode) = queue.pop() {
-            return Poll::Ready(Some(scancode));
+            WAKER.register(cx.waker());
+
+            queue.pop().map_or(Poll::Pending, |scancode| {
+                WAKER.take();
+                Poll::Ready(Some(scancode))
+            })
+        } else {
+            error!("scancode queue uninitialized");
+            WAKER.register(cx.waker());
+            Poll::Pending
         }
-
-        WAKER.register(cx.waker());
-
-        queue.pop().map_or(Poll::Pending, |scancode| {
-            WAKER.take();
-            Poll::Ready(Some(scancode))
-        })
     }
 }
