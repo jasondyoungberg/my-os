@@ -102,12 +102,8 @@ async fn print_keypresses() {
 
 #[cfg_attr(not(test), panic_handler)]
 fn panic(panic_info: &core::panic::PanicInfo) -> ! {
-    error!("Kernel panic");
-    println!("{}", panic_info);
-    halt()
-}
+    error!("{}", panic_info);
 
-fn halt() -> ! {
     loop {
         x86_64::instructions::hlt()
     }
