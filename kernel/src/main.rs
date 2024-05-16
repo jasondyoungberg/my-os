@@ -44,13 +44,7 @@ fn start(boot_info: &'static mut bootloader_api::BootInfo) -> ! {
     keyboard::init();
     display::init(boot_info.framebuffer.take().expect("no framebuffer"));
 
-    println!("Hello, world!");
-
-    debug!("Debug message");
-    trace!("Trace message");
-    info!("Info message");
-    warn!("Warning message");
-    error!("Error message");
+    info!("Hello, world!");
 
     let mut executor = Executor::new();
     executor.spawn(Task::new(print_keypresses()));
