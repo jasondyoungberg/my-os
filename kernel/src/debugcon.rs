@@ -55,7 +55,7 @@ macro_rules! dbg {
 #[macro_export]
 macro_rules! debug {
     ($($arg:tt)*) => {
-        $crate::println!("\x1B[34m[D] {}\x1B[0m", format_args!($($arg)*))
+        $crate::println!("\x1B[32m[D] {}\x1B[0m", format_args!($($arg)*))
     };
 }
 
@@ -69,20 +69,20 @@ macro_rules! trace {
 #[macro_export]
 macro_rules! info {
     ($($arg:tt)*) => {
-        $crate::println!("\x1B[32m[I] {}\x1B[0m", format_args!($($arg)*))
+        $crate::println!("\x1B[39m[I] {}\x1B[0m", format_args!($($arg)*))
     };
 }
 
 #[macro_export]
 macro_rules! warn {
     ($($arg:tt)*) => {
-        $crate::println!("\x1B[33m[W] {}\x1B[0m", format_args!($($arg)*))
+        $crate::println!("\x1B[1;33m[W] {}\x1B[0m", format_args!($($arg)*))
     };
 }
 
 #[macro_export]
 macro_rules! error {
     ($($arg:tt)*) => {
-        $crate::println!("\x1B[31m[E] {}\x1B[0m", format_args!($($arg)*))
+        $crate::println!("\x1B[1;31m[E] {}\x1B[0m", format_args!($($arg)*))
     };
 }
