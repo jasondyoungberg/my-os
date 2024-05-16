@@ -1,4 +1,4 @@
-use alloc::vec::Vec;
+use alloc::collections::BTreeMap;
 use core::{
     future::poll_fn,
     sync::atomic::{AtomicU64, Ordering},
@@ -11,11 +11,13 @@ use spin::Mutex;
 static NOW: AtomicU64 = AtomicU64::new(0);
 
 static MAIN_WAKER: AtomicWaker = AtomicWaker::new();
-static WAKERS: Mutex<Vec<(Id, u64, AtomicWaker)>> = Mutex::new(Vec::new());
 
-pub fn add_time(time: Duration) {
-    let ns = u64::try_from(time.as_nanos()).unwrap();
-    NOW.fetch_add(ns, Ordering::Relaxed);
+static SLEEP_WAKERS: Mutex<BTreeMap<u64, AtomicWaker>> = Mutex::new(BTreeMap::new());
+
+pub fn add_time(delta: Duration) {
+    let delta_ns = u64::try_from(delta.as_nanos()).unwrap();
+
+    NOW.fetch_add(delta_ns, Ordering::Relaxed);
 
     MAIN_WAKER.wake();
 }
@@ -25,11 +27,16 @@ pub async fn main_task() {
         MAIN_WAKER.register(cx.waker());
 
         let now = NOW.load(Ordering::Relaxed);
+        let mut sleep_wakers = SLEEP_WAKERS.lock();
 
-        for (_, wake_time, waker) in WAKERS.lock().iter_mut() {
-            if now >= *wake_time {
-                waker.wake();
+        while let Some(sleep_wakers_entry) = sleep_wakers.first_entry() {
+            let wake_time = sleep_wakers_entry.key();
+            if *wake_time > now {
+                break;
             }
+
+            let (_, sleep_waker) = sleep_wakers_entry.remove_entry();
+            sleep_waker.wake();
         }
 
         Poll::<()>::Pending
@@ -37,47 +44,42 @@ pub async fn main_task() {
     .await;
 }
 
-pub async fn delay(time: Duration) {
-    let ns = u64::try_from(time.as_nanos()).unwrap();
-    let wake_time = NOW.load(Ordering::Relaxed) + ns;
-    let waker = AtomicWaker::new();
-    let id = Id::new();
+pub async fn delay(duration: Duration) {
+    let duration_ns = u64::try_from(duration.as_nanos()).unwrap();
+    let mut wake_time = NOW.load(Ordering::Relaxed) + duration_ns;
+    let this_waker = AtomicWaker::new();
 
-    WAKERS.lock().push((id, wake_time, waker));
+    let mut sleep_wakers = SLEEP_WAKERS.lock();
+
+    // only one waker can exist per wake time,
+    // so we need to increment the wake time until we find an empty slot
+    while sleep_wakers.contains_key(&wake_time) {
+        wake_time += 1;
+    }
+
+    sleep_wakers.insert(wake_time, this_waker);
+
+    drop(sleep_wakers);
 
     poll_fn(|cx| {
+        // fast path
         if NOW.load(Ordering::Relaxed) >= wake_time {
             return Poll::Ready(());
         }
 
-        let mut wakers = WAKERS.lock();
+        let mut sleep_wakers = SLEEP_WAKERS.lock();
+        let this_waker = sleep_wakers.get(&wake_time).unwrap();
 
-        let (idx, (_, _, waker)) = &wakers
-            .iter()
-            .enumerate()
-            .find(|(_, (other_id, _, _))| id == *other_id)
-            .unwrap();
+        this_waker.register(cx.waker());
 
-        waker.register(cx.waker());
-
+        // check if the time has already passed to avoid race conditions
         if NOW.load(Ordering::Relaxed) >= wake_time {
-            waker.take();
-            wakers.remove(*idx);
+            this_waker.take();
+            sleep_wakers.remove(&wake_time);
             Poll::Ready(())
         } else {
             Poll::Pending
         }
     })
     .await
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-struct Id(u64);
-
-impl Id {
-    fn new() -> Self {
-        static NEXT_ID: AtomicU64 = AtomicU64::new(0);
-
-        Self(NEXT_ID.fetch_add(1, Ordering::Relaxed))
-    }
 }
