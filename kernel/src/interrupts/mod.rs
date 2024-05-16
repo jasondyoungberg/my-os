@@ -1,3 +1,4 @@
+mod exception;
 mod gdt;
 mod hardware;
 mod idt;
