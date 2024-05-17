@@ -30,7 +30,7 @@ pub fn syscall(request: &Request) -> Result<Response, Error> {
         asm!(
             "int 0x80",
             in("rsi") request_ptr,
-            in("rdx") result_ptr,
+            in("rdi") result_ptr,
             options(preserves_flags)
         );
     }
