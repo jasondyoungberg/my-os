@@ -2,6 +2,7 @@ mod exception;
 mod gdt;
 mod hardware;
 mod idt;
+mod syscall;
 mod tss;
 
 use idt::IDT;

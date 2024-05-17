@@ -1,6 +1,7 @@
 use super::{
     exception,
     hardware::{self, InterruptIndex},
+    syscall::syscall_handler,
     DOUBLE_FAULT_IST_INDEX,
 };
 use spin::Lazy;
@@ -32,6 +33,8 @@ pub static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
     idt[InterruptIndex::Timer as u8].set_handler_fn(hardware::timer_interrupt);
     idt[InterruptIndex::Keyboard as u8].set_handler_fn(hardware::keyboard_interrupt);
     idt[InterruptIndex::PrimaryAta as u8].set_handler_fn(hardware::primary_ata_interrupt);
+
+    idt[0x80].set_handler_fn(syscall_handler);
 
     idt
 });

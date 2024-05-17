@@ -1,18 +1,13 @@
 #![no_std]
 #![cfg_attr(not(test), no_main)]
 #![feature(abi_x86_interrupt)]
+#![feature(naked_functions)]
 //
-#![warn(clippy::nursery)]
-#![warn(clippy::pedantic)]
-#![deny(unsafe_op_in_unsafe_fn)]
-#![deny(clippy::enum_glob_use)]
-#![warn(unused_unsafe)]
-#![warn(clippy::missing_const_for_fn)]
 #![allow(dead_code)] // TODO: remove this later
-#![allow(clippy::semicolon_if_nothing_returned)]
-#![allow(clippy::module_name_repetitions)]
 
 use core::time::Duration;
+
+use stdlib::prelude::*;
 
 use crate::task::{Executor, Task};
 
@@ -45,12 +40,13 @@ fn start(boot_info: &'static mut bootloader_api::BootInfo) -> ! {
     display::init(boot_info.framebuffer.take().expect("no framebuffer"));
 
     info!("Hello, world!");
+    syscall::print("Hello, syscall!").unwrap();
 
     let mut executor = Executor::new();
     executor.spawn(Task::new(print_keypresses()));
     executor.spawn(Task::new(print_bootsector()));
     executor.spawn(Task::new(count()));
-    executor.run();
+    executor.run()
 }
 
 async fn print_bootsector() {

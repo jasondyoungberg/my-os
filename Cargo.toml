@@ -1,4 +1,18 @@
-workspace = { members = ["kernel"] }
+[workspace]
+members = ["kernel", "stdlib"]
+
+[workspace.lints.rust]
+unsafe_op_in_unsafe_fn = "forbid"
+unused_unsafe = "warn"
+
+[workspace.lints.clippy]
+enum_glob_use = "deny"
+nursery = "warn"
+pedantic = "warn"
+missing_const_for_fn = "warn"
+semicolon_if_nothing_returned = { level = "allow", priority = 1 }
+module_name_repetitions = { level = "allow", priority = 1 }
+
 [package]
 name = "my-os"
 version = "0.1.0"
