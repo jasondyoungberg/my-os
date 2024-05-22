@@ -1,6 +1,5 @@
 use x86_64::structures::idt::InterruptStackFrame;
 
-use crate::{info, trace};
 use stdlib::syscall::{Error, Request, Response};
 
 #[naked]

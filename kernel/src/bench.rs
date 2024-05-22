@@ -1,8 +1,6 @@
 use alloc::vec::Vec;
 use x86_64::instructions::interrupts::without_interrupts;
 
-use crate::println;
-
 pub fn profile<F: Fn()>(msg: &'static str, iters: usize, code: F) {
     let mut results = (0..iters)
         .map(|_| {

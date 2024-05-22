@@ -4,8 +4,6 @@ use linked_list_allocator::LockedHeap;
 use spin::Lazy;
 use x86_64::instructions::interrupts::without_interrupts;
 
-use crate::trace;
-
 const HEAP_SIZE: usize = 0x10_0000; // 1 MiB
 
 #[cfg_attr(not(test), global_allocator)]

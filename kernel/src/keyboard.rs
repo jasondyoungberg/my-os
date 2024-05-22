@@ -3,7 +3,6 @@ use core::{
     task::{Context, Poll},
 };
 
-use crate::{error, warn};
 use crossbeam::queue::ArrayQueue;
 use futures::{task::AtomicWaker, Stream};
 use spin::Once;
@@ -54,7 +53,7 @@ impl Stream for ScancodeStream {
                 Poll::Ready(Some(scancode))
             })
         } else {
-            error!("scancode queue uninitialized");
+            // error!("scancode queue uninitialized");
             WAKER.register(cx.waker());
             Poll::Pending
         }

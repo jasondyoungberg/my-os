@@ -1,27 +1,3 @@
-use core::fmt;
-
-use x86_64::instructions::port::PortWriteOnly;
-
-struct Writer();
-
-impl fmt::Write for Writer {
-    fn write_str(&mut self, s: &str) -> fmt::Result {
-        let mut port = PortWriteOnly::new(0xE9);
-        for byte in s.bytes() {
-            unsafe {
-                port.write(byte);
-            }
-        }
-        Ok(())
-    }
-}
-
-#[doc(hidden)]
-pub fn _print(args: core::fmt::Arguments) {
-    use fmt::Write;
-    Writer().write_fmt(args).unwrap();
-}
-
 #[macro_export]
 macro_rules! print {
     ($($arg:tt)*) => ($crate::debugcon::_print(format_args!($($arg)*)));
@@ -53,36 +29,36 @@ macro_rules! dbg {
 }
 
 #[macro_export]
-macro_rules! debug {
+macro_rules! error {
     ($($arg:tt)*) => {
-        $crate::println!("\x1B[32m[D] {}\x1B[0m", format_args!($($arg)*))
-    };
-}
-
-#[macro_export]
-macro_rules! trace {
-    ($($arg:tt)*) => {
-        $crate::println!("\x1B[36m[T] {}\x1B[0m", format_args!($($arg)*))
-    };
-}
-
-#[macro_export]
-macro_rules! info {
-    ($($arg:tt)*) => {
-        $crate::println!("\x1B[39m[I] {}\x1B[0m", format_args!($($arg)*))
+        println!("\x1B[1;31m[ERROR] {}\x1B[0m", format_args!($($arg)*))
     };
 }
 
 #[macro_export]
 macro_rules! warn {
     ($($arg:tt)*) => {
-        $crate::println!("\x1B[1;33m[W] {}\x1B[0m", format_args!($($arg)*))
+        println!("\x1B[1;33m[WARN] {}\x1B[0m", format_args!($($arg)*))
     };
 }
 
 #[macro_export]
-macro_rules! error {
+macro_rules! info {
     ($($arg:tt)*) => {
-        $crate::println!("\x1B[1;31m[E] {}\x1B[0m", format_args!($($arg)*))
+        println!("\x1B[36m[INFO] {}\x1B[0m", format_args!($($arg)*))
+    };
+}
+
+#[macro_export]
+macro_rules! debug {
+    ($($arg:tt)*) => {
+        println!("\x1B[35m[DEBUG] {}\x1B[0m", format_args!($($arg)*))
+    };
+}
+
+#[macro_export]
+macro_rules! trace {
+    ($($arg:tt)*) => {
+        println!("\x1B[39m[TRACE] {}\x1B[0m", format_args!($($arg)*))
     };
 }

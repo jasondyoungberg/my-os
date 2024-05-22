@@ -7,6 +7,8 @@
 
 use core::time::Duration;
 
+#[macro_use]
+extern crate stdlib;
 use stdlib::prelude::*;
 
 use crate::task::{Executor, Task};
@@ -15,7 +17,6 @@ extern crate alloc;
 
 mod allocator;
 mod bench;
-mod debugcon;
 mod disk;
 mod display;
 mod font;
@@ -39,8 +40,14 @@ fn start(boot_info: &'static mut bootloader_api::BootInfo) -> ! {
     keyboard::init();
     display::init(boot_info.framebuffer.take().expect("no framebuffer"));
 
-    info!("Hello, world!");
+    // info!("Hello, world!");
     syscall::print("Hello, syscall!").unwrap();
+
+    error!("This is an error message");
+    warn!("This is a warning message");
+    info!("This is an info message");
+    debug!("This is a debug message");
+    trace!("This is a trace message");
 
     let mut executor = Executor::new();
     executor.spawn(Task::new(print_keypresses()));
