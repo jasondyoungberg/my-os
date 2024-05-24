@@ -7,7 +7,7 @@ use x86_64::{
 
 use crate::interrupts::TSS;
 
-static GDT_INFO: Lazy<GdtInfo> = Lazy::new(|| {
+pub static GDT_INFO: Lazy<GdtInfo> = Lazy::new(|| {
     let mut gdt = GlobalDescriptorTable::new();
     let kernel_code_selector = gdt.append(Descriptor::kernel_code_segment());
     let kernel_data_selector = gdt.append(Descriptor::kernel_data_segment());
@@ -35,11 +35,11 @@ pub fn load() {
 }
 
 #[allow(dead_code)] // TODO: remove this later
-struct GdtInfo {
-    gdt: GlobalDescriptorTable,
-    kernel_code_selector: SegmentSelector,
-    kernel_data_selector: SegmentSelector,
-    user_code_selector: SegmentSelector,
-    user_data_selector: SegmentSelector,
-    tss: SegmentSelector,
+pub struct GdtInfo {
+    pub gdt: GlobalDescriptorTable,
+    pub kernel_code_selector: SegmentSelector,
+    pub kernel_data_selector: SegmentSelector,
+    pub user_code_selector: SegmentSelector,
+    pub user_data_selector: SegmentSelector,
+    pub tss: SegmentSelector,
 }

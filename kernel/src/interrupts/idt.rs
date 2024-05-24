@@ -1,8 +1,11 @@
+use crate::interrupts::PAGEFAULT_IST_INDEX;
+
 use super::{
+    breakpoint::breakpoint_handler,
     exception,
     hardware::{self, InterruptIndex},
     syscall::syscall_handler,
-    DOUBLE_FAULT_IST_INDEX,
+    BREAKPOINT_IST_INDEX, DOUBLE_FAULT_IST_INDEX,
 };
 use spin::Lazy;
 use x86_64::{
@@ -24,8 +27,14 @@ pub static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
 
     set_general_handler!(&mut idt, general_handler);
 
-    idt.breakpoint.set_handler_fn(exception::breakpoint);
-    idt.page_fault.set_handler_fn(exception::page_fault);
+    let options = idt.breakpoint.set_handler_fn(breakpoint_handler);
+    unsafe { options.set_stack_index(BREAKPOINT_IST_INDEX) };
+
+    idt.general_protection_fault
+        .set_handler_fn(exception::general_protection_fault);
+
+    let options = idt.page_fault.set_handler_fn(exception::page_fault);
+    unsafe { options.set_stack_index(PAGEFAULT_IST_INDEX) };
 
     let options = idt.double_fault.set_handler_fn(exception::double_fault);
     unsafe { options.set_stack_index(DOUBLE_FAULT_IST_INDEX) };
