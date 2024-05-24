@@ -40,7 +40,7 @@ pub extern "x86-interrupt" fn syscall_handler(stack_frame: InterruptStackFrame) 
 extern "C" fn syscall_handler_inner(
     response: &mut Result<Response, Error>,
     request: &Request,
-    stack_frame: &InterruptStackFrame,
+    _stack_frame: &InterruptStackFrame,
 ) {
     *response = match request {
         Request::Print(x) => print(x).map(|()| Response::Print),

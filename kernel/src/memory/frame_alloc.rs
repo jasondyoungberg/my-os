@@ -1,6 +1,4 @@
-use core::ops::Range;
 
-use alloc::vec::Vec;
 use bootloader_api::info::{MemoryRegion, MemoryRegionKind, MemoryRegions};
 use x86_64::{
     structures::paging::{FrameAllocator, PhysFrame, Size4KiB},

@@ -1,7 +1,7 @@
 use core::alloc::GlobalAlloc;
 
-use linked_list_allocator::{Heap, LockedHeap};
-use spin::{Lazy, Mutex};
+use linked_list_allocator::LockedHeap;
+use spin::Lazy;
 use x86_64::instructions::interrupts::without_interrupts;
 
 const HEAP_SIZE: usize = 0x10_0000; // 1 MiB
@@ -23,7 +23,6 @@ impl Allocator {
 unsafe impl GlobalAlloc for Allocator {
     unsafe fn alloc(&self, layout: core::alloc::Layout) -> *mut u8 {
         let res = without_interrupts(|| unsafe { self.0.alloc(layout) });
-        return res;
         trace!(
             "alloc {:p}[{}] (align {})",
             res,
@@ -35,7 +34,6 @@ unsafe impl GlobalAlloc for Allocator {
 
     unsafe fn dealloc(&self, ptr: *mut u8, layout: core::alloc::Layout) {
         without_interrupts(|| unsafe { self.0.dealloc(ptr, layout) });
-        return;
         trace!(
             "dealloc {:p}[{}] (align {})",
             ptr,

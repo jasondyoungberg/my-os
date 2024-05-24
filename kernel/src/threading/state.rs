@@ -1,4 +1,3 @@
-use core::clone;
 
 use x86_64::structures::idt::InterruptStackFrame;
 

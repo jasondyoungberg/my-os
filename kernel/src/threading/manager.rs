@@ -1,4 +1,4 @@
-use alloc::{boxed::Box, collections::BTreeMap};
+use alloc::collections::BTreeMap;
 use spin::{Lazy, Mutex};
 use x86_64::{
     registers::{
@@ -16,7 +16,7 @@ use x86_64::{
     VirtAddr,
 };
 
-use crate::memory::{phys_to_ptr, PHYSICAL_MEMORY_OFFSET};
+use crate::memory::phys_to_ptr;
 
 use super::{
     state::{GeneralPurposeRegisters, ProcessState},
@@ -31,7 +31,7 @@ pub static MANAGER: Lazy<Mutex<ProcessManager>> = Lazy::new(|| {
 
     let kernel_process = Process {
         state: ProcessState {
-            registers: Default::default(),
+            registers: GeneralPurposeRegisters::default(),
             stack_frame: InterruptStackFrame::new(
                 VirtAddr::new(0),
                 SegmentSelector::new(0, Ring0),

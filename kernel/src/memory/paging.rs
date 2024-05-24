@@ -1,7 +1,4 @@
-use spin::Mutex;
-use x86_64::{structures::paging::PageTable, VirtAddr};
-
-use crate::memory::PHYSICAL_MEMORY_OFFSET;
+use x86_64::structures::paging::PageTable;
 
 pub unsafe fn active_level_4_table() -> &'static mut PageTable {
     use x86_64::registers::control::Cr3;
@@ -12,7 +9,7 @@ pub unsafe fn active_level_4_table() -> &'static mut PageTable {
 }
 
 pub fn print_table(table: &PageTable, level: usize) {
-    let indent = "    ".repeat(level as usize);
+    let indent = "    ".repeat(level);
 
     for (i, entry) in table.iter().enumerate() {
         if entry.is_unused() {

@@ -13,9 +13,8 @@ extern crate stdlib;
 
 use bootloader_api::config::Mapping::FixedAddress;
 use memory::PHYSICAL_MEMORY_OFFSET;
+use stdlib::syscall;
 use x86_64::instructions::interrupts::int3;
-
-use crate::pretty::Hexdump;
 
 extern crate alloc;
 
@@ -97,8 +96,8 @@ fn start(boot_info: &'static mut bootloader_api::BootInfo) -> ! {
 
     // memory::print();
 
-    let thread_1 = manager.spawn(&TEST_THREAD_1);
-    let thread_2 = manager.spawn(&TEST_THREAD_2);
+    manager.spawn(include_bytes!("../../test-app/test_a"));
+    manager.spawn(include_bytes!("../../test-app/test_b"));
 
     drop(manager);
 
@@ -109,11 +108,6 @@ fn start(boot_info: &'static mut bootloader_api::BootInfo) -> ! {
     print!("Kernel 3");
 
     exit_qemu();
-    // memory::print();
-    println!(
-        "{}",
-        Hexdump(unsafe { core::slice::from_raw_parts(4096 as *const u8, 256) })
-    );
 
     // error!("This is an error message");
     // warn!("This is a warning message");

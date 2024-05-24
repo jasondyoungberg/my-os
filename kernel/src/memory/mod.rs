@@ -1,7 +1,6 @@
 use bootloader_api::info::MemoryRegions;
 use spin::{Mutex, Once};
 use x86_64::{
-    structures::paging::{FrameAllocator, OffsetPageTable, PageTable, PageTableFlags},
     PhysAddr, VirtAddr,
 };
 
