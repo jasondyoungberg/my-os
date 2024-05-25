@@ -17,9 +17,10 @@ pub fn init() {
 
 pub fn add_scancode(scancode: u8) {
     if let Some(queue) = SCANCODE_QUEUE.get() {
-        match queue.push(scancode) {
-            Ok(()) => WAKER.wake(),
-            Err(_) => log::warn!("scancode queue full; dropping scancode"),
+        if queue.push(scancode).is_ok() {
+            WAKER.wake();
+        } else {
+            log::warn!("scancode queue full; dropping scancode");
         }
     } else {
         log::warn!("scancode queue uninitialized");

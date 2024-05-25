@@ -7,7 +7,7 @@ use x86_64::{
     VirtAddr,
 };
 
-use crate::{dbg, memory::MINI_STACK_SIZE, threading::state::GeneralPurposeRegisters};
+use crate::{memory::MINI_STACK_SIZE, threading::state::GeneralPurposeRegisters};
 
 #[repr(align(4096), C)]
 struct Stack([u8; MINI_STACK_SIZE]);

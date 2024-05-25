@@ -8,9 +8,6 @@
 
 use core::time::Duration;
 
-#[macro_use]
-extern crate stdlib;
-
 use bootloader_api::config::Mapping::FixedAddress;
 use memory::PHYSICAL_MEMORY_OFFSET;
 use x86_64::instructions::interrupts::int3;

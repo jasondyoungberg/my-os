@@ -1,0 +1,52 @@
+thread 'rustc' panicked at /rustc/36153f1a4e3162f0a143c7b3e468ecb3beb0008e\compiler\rustc_codegen_ssa\src\mir\statement.rs:55:63:
+index out of bounds: the len is 3 but the index is 3
+stack backtrace:
+   0:     0x7fff0ed1d5f3 - std::backtrace_rs::backtrace::dbghelp64::trace
+                               at /rustc/36153f1a4e3162f0a143c7b3e468ecb3beb0008e/library\std\src\..\..\backtrace\src\backtrace\dbghelp64.rs:91
+   1:     0x7fff0ed1d5f3 - std::backtrace_rs::backtrace::trace_unsynchronized
+                               at /rustc/36153f1a4e3162f0a143c7b3e468ecb3beb0008e/library\std\src\..\..\backtrace\src\backtrace\mod.rs:66
+   2:     0x7fff0ed1d5f3 - std::backtrace::Backtrace::create
+                               at /rustc/36153f1a4e3162f0a143c7b3e468ecb3beb0008e/library\std\src\backtrace.rs:331
+   3:     0x7fff0ed1d53a - std::backtrace::Backtrace::force_capture
+                               at /rustc/36153f1a4e3162f0a143c7b3e468ecb3beb0008e/library\std\src\backtrace.rs:312
+   4:     0x7ffefd62d7f0 - memchr
+   5:     0x7fff0ed370c7 - alloc::boxed::impl$50::call
+                               at /rustc/36153f1a4e3162f0a143c7b3e468ecb3beb0008e/library\alloc\src\boxed.rs:2077
+   6:     0x7fff0ed370c7 - std::panicking::rust_panic_with_hook
+                               at /rustc/36153f1a4e3162f0a143c7b3e468ecb3beb0008e/library\std\src\panicking.rs:799
+   7:     0x7fff0ed36f57 - std::panicking::begin_panic_handler::closure$0
+                               at /rustc/36153f1a4e3162f0a143c7b3e468ecb3beb0008e/library\std\src\panicking.rs:664
+   8:     0x7fff0ed3445f - std::sys_common::backtrace::__rust_end_short_backtrace<std::panicking::begin_panic_handler::closure_env$0,never$>
+                               at /rustc/36153f1a4e3162f0a143c7b3e468ecb3beb0008e/library\std\src\sys_common\backtrace.rs:171
+   9:     0x7fff0ed36c08 - std::panicking::begin_panic_handler
+                               at /rustc/36153f1a4e3162f0a143c7b3e468ecb3beb0008e/library\std\src\panicking.rs:652
+  10:     0x7fff0ed8e3c4 - core::panicking::panic_fmt
+                               at /rustc/36153f1a4e3162f0a143c7b3e468ecb3beb0008e/library\core\src\panicking.rs:72
+  11:     0x7fff0ed8e5be - core::panicking::panic_bounds_check
+                               at /rustc/36153f1a4e3162f0a143c7b3e468ecb3beb0008e/library\core\src\panicking.rs:274
+  12:     0x7ffefc2d3829 - <rustc_interface[3b2f34fc053ae530]::passes::LintStoreExpandImpl as rustc_expand[638ba64908faf932]::base::LintStoreExpand>::pre_expansion_lint
+  13:     0x7ffefc324cf3 - <rustc_target[33c3778ab090726f]::abi::call::FnAbi<rustc_middle[da93cb5b5717e1e9]::ty::Ty> as rustc_codegen_llvm[cdc59ea1597e007a]::abi::FnAbiLlvmExt>::apply_attrs_callsite
+  14:     0x7ffef9529507 - llvm::DenseMap<llvm::StructType * __ptr64,llvm::detail::DenseSetEmpty,llvm::IRMover::StructTypeKeyInfo,llvm::detail::DenseSetPair<llvm::StructType * __ptr64> >::~DenseMap<llvm::StructType * __ptr64,llvm::detail::DenseSetEmpty,llvm::IRMover::StructTypeKeyI
+  15:     0x7ffef958e5ac - <rustc_codegen_llvm[cdc59ea1597e007a]::LlvmCodegenBackend as rustc_codegen_ssa[b8f77a53df86994d]::traits::backend::ExtraBackendMethods>::compile_codegen_unit
+  16:     0x7ffef9511802 - llvm::DenseMap<llvm::StructType * __ptr64,llvm::detail::DenseSetEmpty,llvm::IRMover::StructTypeKeyInfo,llvm::detail::DenseSetPair<llvm::StructType * __ptr64> >::~DenseMap<llvm::StructType * __ptr64,llvm::detail::DenseSetEmpty,llvm::IRMover::StructTypeKeyI
+  17:     0x7ffef95910f1 - <rustc_codegen_llvm[cdc59ea1597e007a]::LlvmCodegenBackend as rustc_codegen_ssa[b8f77a53df86994d]::traits::backend::CodegenBackend>::codegen_crate
+  18:     0x7ffef94daab3 - rustc_interface[3b2f34fc053ae530]::passes::start_codegen
+  19:     0x7ffef94e3c60 - <rustc_interface[3b2f34fc053ae530]::queries::Queries>::codegen_and_build_linker
+  20:     0x7ffef9493c2e - llvm::function_ref<void __cdecl(llvm::Value const * __ptr64)>::callback_fn<`llvm::Value::stripInBoundsOffsets'::`1'::<lambda_1_1> >
+  21:     0x7ffef9490def - llvm::function_ref<void __cdecl(llvm::Value const * __ptr64)>::callback_fn<`llvm::Value::stripInBoundsOffsets'::`1'::<lambda_1_1> >
+  22:     0x7ffef9498c49 - llvm::function_ref<void __cdecl(llvm::Value const * __ptr64)>::callback_fn<`llvm::Value::stripInBoundsOffsets'::`1'::<lambda_1_1> >
+  23:     0x7fff0ed4811d - alloc::boxed::impl$48::call_once
+                               at /rustc/36153f1a4e3162f0a143c7b3e468ecb3beb0008e/library\alloc\src\boxed.rs:2063
+  24:     0x7fff0ed4811d - alloc::boxed::impl$48::call_once
+                               at /rustc/36153f1a4e3162f0a143c7b3e468ecb3beb0008e/library\alloc\src\boxed.rs:2063
+  25:     0x7fff0ed4811d - std::sys::pal::windows::thread::impl$0::new::thread_start
+                               at /rustc/36153f1a4e3162f0a143c7b3e468ecb3beb0008e/library\std\src\sys\pal\windows\thread.rs:52
+  26:     0x7fffdc76257d - BaseThreadInitThunk
+  27:     0x7fffdccaaa48 - RtlUserThreadStart
+
+
+rustc version: 1.80.0-nightly (36153f1a4 2024-05-24)
+platform: x86_64-pc-windows-msvc
+
+query stack during panic:
+end of query stack
