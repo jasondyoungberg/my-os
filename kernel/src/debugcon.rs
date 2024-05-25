@@ -1,11 +1,15 @@
 use core::fmt;
+use spin::Mutex;
 
-use x86_64::instructions::port::PortWriteOnly;
+use x86_64::instructions::{interrupts::without_interrupts, port::PortWriteOnly};
+
+static WRITER: Mutex<Writer> = Mutex::new(Writer);
 
 #[doc(hidden)]
-pub fn _print(args: core::fmt::Arguments) {
+pub fn _print(args: fmt::Arguments) {
     use fmt::Write;
-    Writer.write_fmt(args).unwrap();
+
+    without_interrupts(|| WRITER.lock().write_fmt(args).unwrap());
 }
 
 struct Writer;
