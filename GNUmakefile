@@ -13,6 +13,19 @@ define DEFAULT_VAR =
     endif
 endef
 
+ifeq ($(RUST_TARGET),)
+    override RUST_TARGET := x86_64-unknown-none
+endif
+
+ifeq ($(RUST_PROFILE),)
+    override RUST_PROFILE := dev
+endif
+
+override RUST_PROFILE_SUBDIR := $(RUST_PROFILE)
+ifeq ($(RUST_PROFILE),dev)
+    override RUST_PROFILE_SUBDIR := debug
+endif
+
 QEMU_ARGS := -M q35 -m 2G -debugcon stdio
 
 .PHONY: all
@@ -53,7 +66,10 @@ limine/limine:
 .PHONY: kernel
 kernel:
 	@echo "Building the kernel..."
-	$(MAKE) -C kernel
+	
+	cd kernel && cargo build --target $(RUST_TARGET) --profile $(RUST_PROFILE) \
+		-Z unstable-options --out-dir .
+	# $(MAKE) -C kernel
 
 $(IMAGE_NAME).iso: limine/limine kernel
 	@echo "Generating the ISO image..."
@@ -90,9 +106,9 @@ $(IMAGE_NAME).hdd: limine/limine kernel
 .PHONY: clean
 clean:
 	rm -rf iso_root $(IMAGE_NAME).iso $(IMAGE_NAME).hdd
-	$(MAKE) -C kernel clean
+	rm -rf kernel/kernel
 
 .PHONY: distclean
 distclean: clean
 	rm -rf limine ovmf
-	$(MAKE) -C kernel distclean
+	rm -rf kernel/kernel
