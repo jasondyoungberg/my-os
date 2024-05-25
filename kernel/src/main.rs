@@ -53,6 +53,10 @@ unsafe extern "C" fn _start() -> ! {
 
 fn print_memory_map() {
     kprintln!("Memory map:");
+
+    let mut reclaimable = 0;
+    let mut usable = 0;
+
     if let Some(memory_map_response) = MEMORY_MAP_REQUEST.get_response() {
         for entry in memory_map_response.entries() {
             let base = entry.base;
@@ -73,8 +77,18 @@ fn print_memory_map() {
                     _ => "Unknown",
                 }
             );
+
+            match EntryType::from(entry_type) {
+                EntryType::USABLE => usable += length,
+                EntryType::ACPI_RECLAIMABLE => reclaimable += length,
+                EntryType::BOOTLOADER_RECLAIMABLE => reclaimable += length,
+                _ => {}
+            }
         }
     }
+
+    kprintln!("Usable memory: {} KiB", usable / 1024);
+    kprintln!("Reclaimable memory: {} KiB", reclaimable / 1024);
 }
 
 #[panic_handler]
