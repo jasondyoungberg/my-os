@@ -584,6 +584,7 @@ dependencies = [
  "crossbeam",
  "futures",
  "linked_list_allocator",
+ "log",
  "pc-keyboard",
  "pic8259",
  "spin",

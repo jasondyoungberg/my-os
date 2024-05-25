@@ -20,5 +20,5 @@ pub fn profile<F: Fn()>(msg: &'static str, iters: usize, code: F) {
     let q3 = results[iters * 3 / 4];
     let max = results[iters - 1];
 
-    println!("{msg}: {min} / {q1} / {median} / {q3} / {max}");
+    log::info!("{msg}: {min} / {q1} / {median} / {q3} / {max}");
 }

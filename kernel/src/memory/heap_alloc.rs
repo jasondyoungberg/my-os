@@ -23,7 +23,7 @@ impl Allocator {
 unsafe impl GlobalAlloc for Allocator {
     unsafe fn alloc(&self, layout: core::alloc::Layout) -> *mut u8 {
         let res = without_interrupts(|| unsafe { self.0.alloc(layout) });
-        trace!(
+        log::trace!(
             "alloc {:p}[{}] (align {})",
             res,
             layout.size(),
@@ -34,7 +34,7 @@ unsafe impl GlobalAlloc for Allocator {
 
     unsafe fn dealloc(&self, ptr: *mut u8, layout: core::alloc::Layout) {
         without_interrupts(|| unsafe { self.0.dealloc(ptr, layout) });
-        trace!(
+        log::trace!(
             "dealloc {:p}[{}] (align {})",
             ptr,
             layout.size(),
@@ -44,7 +44,7 @@ unsafe impl GlobalAlloc for Allocator {
 
     unsafe fn alloc_zeroed(&self, layout: core::alloc::Layout) -> *mut u8 {
         let res = without_interrupts(|| unsafe { self.0.alloc_zeroed(layout) });
-        trace!(
+        log::trace!(
             "alloc {:p}[{}] (align {}) (zeroed)",
             res,
             layout.size(),
@@ -60,7 +60,7 @@ unsafe impl GlobalAlloc for Allocator {
         new_size: usize,
     ) -> *mut u8 {
         let res = without_interrupts(|| unsafe { self.0.realloc(ptr, layout, new_size) });
-        trace!(
+        log::trace!(
             "realloc {:p}[{}] -> {:p}[{}] (align {})",
             ptr,
             layout.size(),

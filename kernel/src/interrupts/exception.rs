@@ -20,18 +20,11 @@ pub extern "x86-interrupt" fn page_fault(
 ) {
     let address = x86_64::registers::control::Cr2::read();
 
-    error!(
+    panic!(
         "\
 Page Fault
 Accessed Address: {address:?}
 Error Code: {error_code:?}
 {stack_frame:#?}"
     );
-
-    // println!(
-    //     "{}",
-    //     Hexdump(&mut stack_frame.instruction_pointer.as_ptr::<u8>())
-    // );
-
-    panic!();
 }

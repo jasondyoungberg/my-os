@@ -5,7 +5,6 @@
 #![feature(asm_const)]
 // TODO: remove these later
 #![allow(dead_code)]
-// #![allow(unused_imports)]
 
 use core::time::Duration;
 
@@ -19,12 +18,14 @@ use x86_64::instructions::interrupts::int3;
 extern crate alloc;
 
 mod bench;
+mod debugcon;
 mod disk;
 mod display;
 mod font;
 mod graphics;
 mod interrupts;
 mod keyboard;
+mod macros;
 mod memory;
 mod pretty;
 mod syscall;
@@ -57,6 +58,8 @@ fn start(boot_info: &'static mut bootloader_api::BootInfo) -> ! {
         "physical memory is not mapped to the correct address"
     );
 
+    debugcon::init();
+
     interrupts::init();
     syscall::init();
     memory::init(&boot_info.memory_regions);
@@ -65,7 +68,8 @@ fn start(boot_info: &'static mut bootloader_api::BootInfo) -> ! {
     // keyboard::init();
     // display::init(boot_info.framebuffer.take().expect("no framebuffer"));
 
-    info!("Hello, world!");
+    kprintln!("Hello, world!");
+    log::info!("Hello, world!");
 
     // syscall::print("Hello, syscall!").unwrap();
 
@@ -83,11 +87,11 @@ fn start(boot_info: &'static mut bootloader_api::BootInfo) -> ! {
 
     drop(manager);
 
-    print!("Kernel 1");
+    kprint!("Kernel 1");
     int3();
-    print!("Kernel 2");
+    kprint!("Kernel 2");
     int3();
-    print!("Kernel 3");
+    kprint!("Kernel 3");
 
     exit_qemu();
 
@@ -108,7 +112,7 @@ async fn print_bootsector() {
     let mut disk = unsafe { disk::AtaDisk::new(0x1F0) };
     let mut buffer = [0u8; 512];
     disk.read_sectors(0, 1, &mut buffer).await;
-    println!("{}", pretty::Hexdump(&buffer));
+    kprintln!("{}", pretty::Hexdump(&buffer));
 }
 
 async fn count() {
@@ -116,9 +120,9 @@ async fn count() {
 
     for i in 0.. {
         if i % 2 == 0 {
-            println!("tick {i}");
+            kprintln!("tick {i}");
         } else {
-            println!("tock {i}");
+            kprintln!("tock {i}");
         }
 
         delay(Duration::from_secs(1)).await;
@@ -137,8 +141,8 @@ async fn print_keypresses() {
         if let Some(key_event) = keyboard.add_byte(scancode).unwrap() {
             if let Some(key) = keyboard.process_keyevent(key_event) {
                 match key {
-                    pc_keyboard::DecodedKey::Unicode(character) => print!("{}", character),
-                    pc_keyboard::DecodedKey::RawKey(key) => print!("[{:?}]", key),
+                    pc_keyboard::DecodedKey::Unicode(character) => kprint!("{}", character),
+                    pc_keyboard::DecodedKey::RawKey(key) => kprint!("[{:?}]", key),
                 }
             }
         }
@@ -147,7 +151,7 @@ async fn print_keypresses() {
 
 #[cfg_attr(not(test), panic_handler)]
 fn panic(panic_info: &core::panic::PanicInfo) -> ! {
-    error!("{}", panic_info);
+    kprintln!("{}", panic_info);
 
     exit_qemu()
 }

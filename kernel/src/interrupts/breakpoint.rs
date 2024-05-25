@@ -56,12 +56,9 @@ pub extern "x86-interrupt" fn breakpoint_handler(stack_frame: InterruptStackFram
 }
 
 extern "C" fn breakpoint_handler_inner(state: &mut ProcessState) {
-    info!("Breakpoint");
-    dbg!(&state);
+    log::info!("Breakpoint");
 
     let mut manager = crate::threading::manager::MANAGER.lock();
 
     manager.next(state);
-
-    dbg!(&state);
 }

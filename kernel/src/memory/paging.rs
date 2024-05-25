@@ -1,5 +1,7 @@
 use x86_64::structures::paging::PageTable;
 
+use crate::kprintln;
+
 pub unsafe fn active_level_4_table() -> &'static mut PageTable {
     use x86_64::registers::control::Cr3;
 
@@ -16,7 +18,7 @@ pub fn print_table(table: &PageTable, level: usize) {
             continue;
         }
 
-        println!("{indent} {i:3}: {entry:?}");
+        kprintln!("{indent} {i:3}: {entry:?}");
 
         if level == 3 {
             continue;

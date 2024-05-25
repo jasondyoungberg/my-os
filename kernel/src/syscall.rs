@@ -7,7 +7,7 @@ use x86_64::{
     VirtAddr,
 };
 
-use crate::{memory::MINI_STACK_SIZE, threading::state::GeneralPurposeRegisters};
+use crate::{dbg, memory::MINI_STACK_SIZE, threading::state::GeneralPurposeRegisters};
 
 #[repr(align(4096), C)]
 struct Stack([u8; MINI_STACK_SIZE]);
@@ -15,8 +15,6 @@ struct Stack([u8; MINI_STACK_SIZE]);
 static mut SYSCALL_STACK: Stack = Stack([0; MINI_STACK_SIZE]);
 
 pub fn init() {
-    trace!("Initializing syscall handler");
-
     LStar::write(VirtAddr::new(syscall_handler as usize as u64));
     Star::write(
         crate::interrupts::GDT_INFO.user_code_selector,
@@ -93,7 +91,16 @@ extern "C" fn syscall_handler() {
 }
 
 extern "C" fn syscall_handler_inner(state: &mut GeneralPurposeRegisters) {
-    info!("Syscall");
-    println!("{:p}", state);
-    dbg!(state);
+    log::info!(
+        "syscall {} ({}, {}, {}, {}, {}, {})",
+        state.rax,
+        state.rdi,
+        state.rsi,
+        state.rdx,
+        state.r10,
+        state.r8,
+        state.r9
+    );
+
+    log::info!("sysret {}", state.rax)
 }
