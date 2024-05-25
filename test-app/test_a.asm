@@ -2,14 +2,22 @@
 [org 0x1000]
 
 mov rax, 2
-mov rdi, msg
-mov rsi, msg.len
+mov rdi, hello
+mov rsi, hello.len
 syscall
-mov rax, 0
-mov rdi, 0
-syscall
-jmp $
+
+main:
+    mov rcx, 500_000_000
+    loop $
+    mov rax, 2
+    mov rdi, msg
+    mov rsi, msg.len
+    syscall
+    jmp main
 
 
-msg: db "Hello from userland!"
+hello: db `Hello from userland!\n`
+    .len EQU $ - hello
+
+msg: db `Thread A\n`
     .len EQU $ - msg

@@ -10,7 +10,6 @@ use core::time::Duration;
 
 use bootloader_api::config::Mapping::FixedAddress;
 use memory::PHYSICAL_MEMORY_OFFSET;
-use x86_64::instructions::interrupts::int3;
 
 extern crate alloc;
 
@@ -84,13 +83,9 @@ fn start(boot_info: &'static mut bootloader_api::BootInfo) -> ! {
 
     drop(manager);
 
-    kprint!("Kernel 1");
-    int3();
-    kprint!("Kernel 2");
-    int3();
-    kprint!("Kernel 3");
-
-    exit_qemu();
+    loop {
+        x86_64::instructions::hlt()
+    }
 
     // error!("This is an error message");
     // warn!("This is a warning message");

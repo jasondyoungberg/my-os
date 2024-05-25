@@ -123,8 +123,8 @@ impl ProcessManager {
                 stack_frame: InterruptStackFrame::new(
                     VirtAddr::new(0x1000),
                     crate::interrupts::GDT_INFO.user_code_selector,
-                    // RFlags::INTERRUPT_FLAG,
-                    RFlags::empty(),
+                    RFlags::INTERRUPT_FLAG,
+                    // RFlags::empty(),
                     VirtAddr::new(0x1_0000),
                     crate::interrupts::GDT_INFO.user_data_selector,
                 ),

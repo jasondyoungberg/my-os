@@ -23,7 +23,7 @@ pub fn load() {
     }
 }
 
-fn end_interrupt(index: InterruptIndex) {
+pub fn end_interrupt(index: InterruptIndex) {
     unsafe {
         PICS.try_lock()
             .expect("Failed to get PICS lock")
@@ -31,19 +31,19 @@ fn end_interrupt(index: InterruptIndex) {
     }
 }
 
-pub extern "x86-interrupt" fn timer_interrupt(_stack_frame: InterruptStackFrame) {
-    use core::time::Duration;
+// pub extern "x86-interrupt" fn timer_interrupt(_stack_frame: InterruptStackFrame) {
+//     use core::time::Duration;
 
-    const FREQUENCY: f64 = 1_193_181.666_666;
-    const DIVIDER: f64 = 65_536.0;
-    const NS_PER_S: f64 = 1_000_000_000.0;
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-    const NS_PER_TICK: u64 = (NS_PER_S / (FREQUENCY / DIVIDER)) as u64;
+//     const FREQUENCY: f64 = 1_193_181.666_666;
+//     const DIVIDER: f64 = 65_536.0;
+//     const NS_PER_S: f64 = 1_000_000_000.0;
+//     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+//     const NS_PER_TICK: u64 = (NS_PER_S / (FREQUENCY / DIVIDER)) as u64;
 
-    crate::task::delay::add_time(Duration::from_nanos(NS_PER_TICK));
+//     crate::task::delay::add_time(Duration::from_nanos(NS_PER_TICK));
 
-    end_interrupt(InterruptIndex::Timer);
-}
+//     end_interrupt(InterruptIndex::Timer);
+// }
 
 pub extern "x86-interrupt" fn keyboard_interrupt(_stack_frame: InterruptStackFrame) {
     use x86_64::instructions::port::Port;

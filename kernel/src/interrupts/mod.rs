@@ -3,6 +3,7 @@ mod exception;
 mod gdt;
 mod hardware;
 mod idt;
+mod timer;
 mod tss;
 
 pub use gdt::GDT_INFO;

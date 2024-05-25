@@ -2,6 +2,7 @@ use super::{
     breakpoint::breakpoint_handler,
     exception,
     hardware::{self, InterruptIndex},
+    timer,
 };
 use spin::Lazy;
 use x86_64::{
@@ -41,7 +42,7 @@ pub static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
             .set_stack_index(0)
     };
 
-    idt[InterruptIndex::Timer as u8].set_handler_fn(hardware::timer_interrupt);
+    idt[InterruptIndex::Timer as u8].set_handler_fn(timer::handler);
     idt[InterruptIndex::Keyboard as u8].set_handler_fn(hardware::keyboard_interrupt);
     idt[InterruptIndex::PrimaryAta as u8].set_handler_fn(hardware::primary_ata_interrupt);
 

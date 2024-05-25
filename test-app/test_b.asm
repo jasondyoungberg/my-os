@@ -1,13 +1,23 @@
 [bits 64]
 [org 0x1000]
 
-mov rax, 1000
-mov rdi, 1001
-mov rsi, 1002
-mov rdx, 1003
-mov r10, 1004
-mov r8, 1005
-mov r9, 1006
+mov rax, 2
+mov rdi, hello
+mov rsi, hello.len
 syscall
 
-jmp $
+main:
+    mov rcx, 200_000_000
+    loop $
+    mov rax, 2
+    mov rdi, msg
+    mov rsi, msg.len
+    syscall
+    jmp main
+
+
+hello: db `Hello from userland, again!\n`
+    .len EQU $ - hello
+
+msg: db `Thread B\n`
+    .len EQU $ - msg
