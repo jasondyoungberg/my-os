@@ -1,13 +1,15 @@
 [bits 64]
 [org 0x1000]
 
-mov al, 'A'
+mov rax, 2
+mov rdi, msg
+mov rsi, msg.len
+syscall
+mov rax, 0
+mov rdi, 0
+syscall
+jmp $
 
-loop:
 
-out 0xE9, al
-out 0xE9, al
-out 0xE9, al
-int3
-
-jmp loop
+msg: db "Hello from userland!"
+    .len EQU $ - msg

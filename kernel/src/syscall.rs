@@ -1,3 +1,4 @@
+use stdlib::syscall::SyscallId;
 use x86_64::{
     registers::{
         control::{Efer, EferFlags},
@@ -7,7 +8,7 @@ use x86_64::{
     VirtAddr,
 };
 
-use crate::{memory::MINI_STACK_SIZE, threading::state::GeneralPurposeRegisters};
+use crate::{kprint, memory::MINI_STACK_SIZE, threading::state::GeneralPurposeRegisters};
 
 #[repr(align(4096), C)]
 struct Stack([u8; MINI_STACK_SIZE]);
@@ -91,16 +92,35 @@ extern "C" fn syscall_handler() {
 }
 
 extern "C" fn syscall_handler_inner(state: &mut GeneralPurposeRegisters) {
-    log::info!(
-        "syscall {} ({}, {}, {}, {}, {}, {})",
-        state.rax,
-        state.rdi,
-        state.rsi,
-        state.rdx,
-        state.r10,
-        state.r8,
-        state.r9
-    );
+    let n = state.rax;
+    let arg1 = state.rdi;
+    let arg2 = state.rsi;
+    let arg3 = state.rdx;
+    let arg4 = state.r10;
+    let arg5 = state.r8;
+    let arg6 = state.r9;
 
-    log::info!("sysret {}", state.rax)
+    log::info!("syscall {n} ({arg1}, {arg2}, {arg3}, {arg4}, {arg5}, {arg6})");
+
+    let result: Result<u64, u64> = match n.try_into() {
+        Ok(SyscallId::Exit) => todo!(),
+        Ok(SyscallId::Read) => todo!(),
+        Ok(SyscallId::Write) => write(arg1, arg2),
+        Err(_) => Err(0),
+    };
+
+    log::info!("sysret {result:?}");
+
+    state.rax = match result {
+        Ok(value) => value & 0x7fff_ffff_ffff_ffff,
+        Err(error) => error | 0x8000_0000_0000_0000,
+    };
+}
+
+fn write(buf: u64, count: u64) -> Result<u64, u64> {
+    #[allow(clippy::cast_possible_truncation)]
+    let buf = unsafe { core::slice::from_raw_parts(buf as *const u8, count as usize) };
+    let string = core::str::from_utf8(buf).map_err(|_| 1u64)?;
+    kprint!("{}", string);
+    Ok(count)
 }

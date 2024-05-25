@@ -8,6 +8,19 @@ pub enum SyscallId {
     Write,
 }
 
+impl TryFrom<u64> for SyscallId {
+    type Error = u64;
+
+    fn try_from(value: u64) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Self::Exit),
+            1 => Ok(Self::Read),
+            2 => Ok(Self::Write),
+            _ => Err(value),
+        }
+    }
+}
+
 /// Issues a raw system call.
 ///
 /// # Errors

@@ -79,7 +79,7 @@ fn start(boot_info: &'static mut bootloader_api::BootInfo) -> ! {
 
     // memory::print();
 
-    // manager.spawn(include_bytes!("../../test-app/test_a"));
+    manager.spawn(include_bytes!("../../test-app/test_a"));
     manager.spawn(include_bytes!("../../test-app/test_b"));
 
     drop(manager);
