@@ -1,5 +1,5 @@
 [workspace]
-members = ["kernel", "stdlib"]
+members = ["app/demo", "kernel", "stdlib"]
 
 [workspace.lints.rust]
 unsafe_op_in_unsafe_fn = "forbid"
@@ -35,5 +35,10 @@ bootloader = "0.11.7"
 
 [build-dependencies.kernel]
 path = "kernel"
+artifact = "bin"
+target = "x86_64-unknown-none"
+
+[build-dependencies.app_demo]
+path = "app/demo"
 artifact = "bin"
 target = "x86_64-unknown-none"
