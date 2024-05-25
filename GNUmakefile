@@ -52,6 +52,7 @@ limine/limine:
 
 .PHONY: kernel
 kernel:
+	@echo "Building the kernel..."
 	$(MAKE) -C kernel
 
 $(IMAGE_NAME).iso: limine/limine kernel
@@ -62,22 +63,23 @@ $(IMAGE_NAME).iso: limine/limine kernel
 	mkdir -p iso_root/boot/limine
 	cp limine.cfg limine/limine-bios.sys limine/limine-bios-cd.bin limine/limine-uefi-cd.bin iso_root/boot/limine/
 	mkdir -p iso_root/EFI/BOOT
-	cp -v limine/BOOTX64.EFI iso_root/EFI/BOOT/
-	cp -v limine/BOOTIA32.EFI iso_root/EFI/BOOT/
-	xorriso -as mkisofs -b boot/limine/limine-bios-cd.bin \
+	cp limine/BOOTX64.EFI iso_root/EFI/BOOT/
+	cp limine/BOOTIA32.EFI iso_root/EFI/BOOT/
+	xorriso -as mkisofs -quiet \
+		-b boot/limine/limine-bios-cd.bin \
 		-no-emul-boot -boot-load-size 4 -boot-info-table \
 		--efi-boot boot/limine/limine-uefi-cd.bin \
 		-efi-boot-part --efi-boot-image --protective-msdos-label \
-		iso_root -o $(IMAGE_NAME).iso
-	./limine/limine bios-install $(IMAGE_NAME).iso
+		iso_root -o $(IMAGE_NAME).iso 2> /dev/null
+	./limine/limine bios-install $(IMAGE_NAME).iso --quiet
 	rm -rf iso_root
 
 $(IMAGE_NAME).hdd: limine/limine kernel
 	@echo "Generating the HDD image..."
 	rm -f $(IMAGE_NAME).hdd
-	dd if=/dev/zero bs=1M count=0 seek=64 of=$(IMAGE_NAME).hdd
-	sgdisk $(IMAGE_NAME).hdd -n 1:2048 -t 1:ef00
-	./limine/limine bios-install $(IMAGE_NAME).hdd
+	dd if=/dev/zero bs=1M count=0 seek=64 of=$(IMAGE_NAME).hdd status=none
+	sgdisk $(IMAGE_NAME).hdd -n 1:2048 -t 1:ef00 2> /dev/null
+	./limine/limine bios-install $(IMAGE_NAME).hdd --quiet
 	mformat -i $(IMAGE_NAME).hdd@@1M
 	mmd -i $(IMAGE_NAME).hdd@@1M ::/EFI ::/EFI/BOOT ::/boot ::/boot/limine
 	mcopy -i $(IMAGE_NAME).hdd@@1M kernel/kernel ::/boot
