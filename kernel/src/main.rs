@@ -8,6 +8,7 @@ use limine::{
     request::{FramebufferRequest, MemoryMapRequest},
     BaseRevision,
 };
+use x86_64::registers::control::Cr3;
 
 mod debugcon;
 mod macros;
@@ -31,6 +32,8 @@ unsafe extern "C" fn _start() -> ! {
     assert!(BASE_REVISION.is_supported());
 
     kprintln!("Hello, World!");
+
+    kprintln!("Cr3: {:?}", Cr3::read());
 
     // Print the memory map.
     print_memory_map();
