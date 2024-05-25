@@ -25,6 +25,9 @@ static FRAMEBUFFER_REQUEST: FramebufferRequest = FramebufferRequest::new();
 #[used]
 static MEMORY_MAP_REQUEST: MemoryMapRequest = MemoryMapRequest::new();
 
+#[used]
+static SMP_REQUEST: limine::request::SmpRequest = limine::request::SmpRequest::new();
+
 #[no_mangle]
 unsafe extern "C" fn _start() -> ! {
     // All limine requests must also be referenced in a called function, otherwise they may be
@@ -33,9 +36,12 @@ unsafe extern "C" fn _start() -> ! {
 
     kprintln!("Hello, World!");
 
+    kprintln!("CPUs: {}", SMP_REQUEST.get_response().unwrap().cpus().len());
+
     kprintln!("Cr3: {:?}", Cr3::read());
 
-    // Print the memory map.
+    assert!(SMP_REQUEST.get_response().is_some());
+
     print_memory_map();
 
     if let Some(framebuffer_response) = FRAMEBUFFER_REQUEST.get_response() {
