@@ -3,8 +3,11 @@
 
 use core::arch::asm;
 
-use limine::request::FramebufferRequest;
-use limine::BaseRevision;
+use limine::{
+    memory_map::EntryType,
+    request::{FramebufferRequest, MemoryMapRequest},
+    BaseRevision,
+};
 
 mod debugcon;
 mod macros;
@@ -18,6 +21,9 @@ static BASE_REVISION: BaseRevision = BaseRevision::new();
 #[used]
 static FRAMEBUFFER_REQUEST: FramebufferRequest = FramebufferRequest::new();
 
+#[used]
+static MEMORY_MAP_REQUEST: MemoryMapRequest = MemoryMapRequest::new();
+
 #[no_mangle]
 unsafe extern "C" fn _start() -> ! {
     // All limine requests must also be referenced in a called function, otherwise they may be
@@ -25,6 +31,9 @@ unsafe extern "C" fn _start() -> ! {
     assert!(BASE_REVISION.is_supported());
 
     kprintln!("Hello, World!");
+
+    // Print the memory map.
+    print_memory_map();
 
     if let Some(framebuffer_response) = FRAMEBUFFER_REQUEST.get_response() {
         if let Some(framebuffer) = framebuffer_response.framebuffers().next() {
@@ -40,6 +49,32 @@ unsafe extern "C" fn _start() -> ! {
     }
 
     hcf();
+}
+
+fn print_memory_map() {
+    kprintln!("Memory map:");
+    if let Some(memory_map_response) = MEMORY_MAP_REQUEST.get_response() {
+        for entry in memory_map_response.entries() {
+            let base = entry.base;
+            let length = entry.length;
+            let end = base + length - 1;
+            let entry_type = entry.entry_type;
+            kprintln!(
+                "{base:8x} - {end:8x} : {:?}",
+                match entry_type {
+                    EntryType::USABLE => "Usable",
+                    EntryType::RESERVED => "Reserved",
+                    EntryType::ACPI_RECLAIMABLE => "ACPI Reclaimable",
+                    EntryType::ACPI_NVS => "ACPI NVS",
+                    EntryType::BAD_MEMORY => "Bad Memory",
+                    EntryType::BOOTLOADER_RECLAIMABLE => "Bootloader Reclaimable",
+                    EntryType::KERNEL_AND_MODULES => "Kernel and Modules",
+                    EntryType::FRAMEBUFFER => "Framebuffer",
+                    _ => "Unknown",
+                }
+            );
+        }
+    }
 }
 
 #[panic_handler]
