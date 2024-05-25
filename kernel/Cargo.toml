@@ -3,6 +3,12 @@ name = "kernel"
 version = "0.1.0"
 edition = "2021"
 
+[profile.release]
+panic = "abort"
+
+[profile.dev]
+panic = "abort"
+
 [dependencies]
 limine = "0.2.0"
 x86_64 = "0.15.1"

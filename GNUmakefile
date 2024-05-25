@@ -13,17 +13,8 @@ define DEFAULT_VAR =
     endif
 endef
 
-ifeq ($(RUST_TARGET),)
-    override RUST_TARGET := x86_64-unknown-none
-endif
-
 ifeq ($(RUST_PROFILE),)
     override RUST_PROFILE := dev
-endif
-
-override RUST_PROFILE_SUBDIR := $(RUST_PROFILE)
-ifeq ($(RUST_PROFILE),dev)
-    override RUST_PROFILE_SUBDIR := debug
 endif
 
 QEMU_ARGS := -M q35 -m 2G -debugcon stdio
@@ -67,8 +58,7 @@ limine/limine:
 kernel:
 	@echo "Building the kernel..."
 	
-	cd kernel && cargo build --target $(RUST_TARGET) --profile $(RUST_PROFILE) \
-		-Z unstable-options --out-dir .
+	cd kernel && cargo build --profile $(RUST_PROFILE) -Z unstable-options --out-dir .
 	# $(MAKE) -C kernel
 
 $(IMAGE_NAME).iso: limine/limine kernel
