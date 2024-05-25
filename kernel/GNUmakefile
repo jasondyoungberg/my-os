@@ -18,7 +18,7 @@ endif
 .PHONY: all
 all:
 	cargo build --target $(RUST_TARGET) --profile $(RUST_PROFILE)
-	cp target/$(RUST_TARGET)/$(RUST_PROFILE_SUBDIR)/limine-rust-template kernel
+	cp target/$(RUST_TARGET)/$(RUST_PROFILE_SUBDIR)/kernel kernel
 
 # Remove object files and the final executable.
 .PHONY: clean
