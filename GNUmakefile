@@ -13,7 +13,7 @@ define DEFAULT_VAR =
     endif
 endef
 
-QEMU_ARGS := -M q35 -m 2G
+QEMU_ARGS := -M q35 -m 2G -debugcon stdio
 
 .PHONY: all
 all: $(IMAGE_NAME).iso
