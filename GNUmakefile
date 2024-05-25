@@ -23,18 +23,22 @@ all-hdd: $(IMAGE_NAME).hdd
 
 .PHONY: run
 run: $(IMAGE_NAME).iso
+	@echo "Launching QEMU..."
 	qemu-system-x86_64 $(QEMU_ARGS) -cdrom $(IMAGE_NAME).iso -boot d
 
 .PHONY: run-uefi
 run-uefi: ovmf $(IMAGE_NAME).iso
+	@echo "Launching QEMU..."
 	qemu-system-x86_64 $(QEMU_ARGS) -bios ovmf/OVMF.fd -cdrom $(IMAGE_NAME).iso -boot d
 
 .PHONY: run-hdd
 run-hdd: $(IMAGE_NAME).hdd
+	@echo "Launching QEMU..."
 	qemu-system-x86_64 $(QEMU_ARGS) -hda $(IMAGE_NAME).hdd
 
 .PHONY: run-hdd-uefi
 run-hdd-uefi: ovmf $(IMAGE_NAME).hdd
+	@echo "Launching QEMU..."
 	qemu-system-x86_64 $(QEMU_ARGS) -bios ovmf/OVMF.fd -hda $(IMAGE_NAME).hdd
 
 ovmf:
@@ -51,11 +55,12 @@ kernel:
 	$(MAKE) -C kernel
 
 $(IMAGE_NAME).iso: limine/limine kernel
+	@echo "Generating the ISO image..."
 	rm -rf iso_root
 	mkdir -p iso_root/boot
-	cp -v kernel/kernel iso_root/boot/
+	cp kernel/kernel iso_root/boot/
 	mkdir -p iso_root/boot/limine
-	cp -v limine.cfg limine/limine-bios.sys limine/limine-bios-cd.bin limine/limine-uefi-cd.bin iso_root/boot/limine/
+	cp limine.cfg limine/limine-bios.sys limine/limine-bios-cd.bin limine/limine-uefi-cd.bin iso_root/boot/limine/
 	mkdir -p iso_root/EFI/BOOT
 	cp -v limine/BOOTX64.EFI iso_root/EFI/BOOT/
 	cp -v limine/BOOTIA32.EFI iso_root/EFI/BOOT/
@@ -68,6 +73,7 @@ $(IMAGE_NAME).iso: limine/limine kernel
 	rm -rf iso_root
 
 $(IMAGE_NAME).hdd: limine/limine kernel
+	@echo "Generating the HDD image..."
 	rm -f $(IMAGE_NAME).hdd
 	dd if=/dev/zero bs=1M count=0 seek=64 of=$(IMAGE_NAME).hdd
 	sgdisk $(IMAGE_NAME).hdd -n 1:2048 -t 1:ef00
