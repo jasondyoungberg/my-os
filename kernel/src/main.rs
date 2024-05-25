@@ -6,6 +6,9 @@ use core::arch::asm;
 use limine::request::FramebufferRequest;
 use limine::BaseRevision;
 
+mod debugcon;
+mod macros;
+
 /// Sets the base revision to the latest revision supported by the crate.
 /// See specification for further info.
 // Be sure to mark all limine requests with #[used], otherwise they may be removed by the compiler.
@@ -20,6 +23,8 @@ unsafe extern "C" fn _start() -> ! {
     // All limine requests must also be referenced in a called function, otherwise they may be
     // removed by the linker.
     assert!(BASE_REVISION.is_supported());
+
+    kprintln!("Hello, World!");
 
     if let Some(framebuffer_response) = FRAMEBUFFER_REQUEST.get_response() {
         if let Some(framebuffer) = framebuffer_response.framebuffers().next() {
