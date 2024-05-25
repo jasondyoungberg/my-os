@@ -6,6 +6,7 @@ use core::arch::asm;
 use limine::{
     memory_map::EntryType,
     request::{FramebufferRequest, MemoryMapRequest},
+    smp::Cpu,
     BaseRevision,
 };
 use x86_64::registers::control::Cr3;
@@ -44,6 +45,8 @@ unsafe extern "C" fn _start() -> ! {
 
     print_memory_map();
 
+    start_cpus();
+
     if let Some(framebuffer_response) = FRAMEBUFFER_REQUEST.get_response() {
         if let Some(framebuffer) = framebuffer_response.framebuffers().next() {
             for i in 0..100_u64 {
@@ -58,6 +61,25 @@ unsafe extern "C" fn _start() -> ! {
     }
 
     hcf();
+}
+
+extern "C" fn _start_core(cpu: &Cpu) -> ! {
+    kprintln!("CPU{} started!", cpu.id);
+    hcf();
+}
+
+fn start_cpus() {
+    if let Some(smp_response) = SMP_REQUEST.get_response() {
+        for cpu in smp_response.cpus() {
+            if cpu.id == 0 {
+                continue;
+            }
+
+            kprintln!("Starting CPU{}...", cpu.id);
+
+            cpu.goto_address.write(_start_core);
+        }
+    }
 }
 
 fn print_memory_map() {
