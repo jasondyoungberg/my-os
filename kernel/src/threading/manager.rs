@@ -64,6 +64,9 @@ impl ProcessManager {
 
         let mut frame_allocator = crate::memory::FRAME_ALLOCATOR.get().unwrap().lock();
 
+        let page_table_flags =
+            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::USER_ACCESSIBLE;
+
         let cr3 = frame_allocator
             .allocate_frame()
             .expect("no frames available");
@@ -82,12 +85,11 @@ impl ProcessManager {
         let code_frame = frame_allocator
             .allocate_frame()
             .expect("no frames available");
-        let flags = PageTableFlags::PRESENT | PageTableFlags::WRITABLE;
         unsafe {
             mapper.map_to(
-                Page::containing_address(VirtAddr::new(4096)),
+                Page::containing_address(VirtAddr::new(0x1000)),
                 code_frame,
-                flags,
+                page_table_flags,
                 &mut *frame_allocator,
             )
         }
@@ -98,16 +100,33 @@ impl ProcessManager {
 
         code_ptr[..code.len()].copy_from_slice(code);
 
+        for i in 3..16 {
+            let frame = frame_allocator
+                .allocate_frame()
+                .expect("no frames available");
+
+            unsafe {
+                mapper.map_to(
+                    Page::containing_address(VirtAddr::new(i * 4096)),
+                    frame,
+                    page_table_flags,
+                    &mut *frame_allocator,
+                )
+            }
+            .unwrap()
+            .flush();
+        }
+
         let process = Process {
             state: ProcessState {
                 registers: GeneralPurposeRegisters::default(),
                 stack_frame: InterruptStackFrame::new(
-                    VirtAddr::new(4096),
-                    crate::interrupts::GDT_INFO.kernel_code_selector,
+                    VirtAddr::new(0x1000),
+                    crate::interrupts::GDT_INFO.user_code_selector,
                     // RFlags::INTERRUPT_FLAG,
                     RFlags::empty(),
-                    VirtAddr::new(0),
-                    crate::interrupts::GDT_INFO.kernel_data_selector,
+                    VirtAddr::new(0x1_0000),
+                    crate::interrupts::GDT_INFO.user_data_selector,
                 ),
             },
             cr3,

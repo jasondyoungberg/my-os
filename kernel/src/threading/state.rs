@@ -1,4 +1,3 @@
-
 use x86_64::structures::idt::InterruptStackFrame;
 
 #[derive(Debug)]
@@ -16,8 +15,8 @@ pub struct GeneralPurposeRegisters {
     rbx: u64,
     rcx: u64,
     rdx: u64,
-    rdi: u64,
     rsi: u64,
+    rdi: u64,
     rbp: u64,
     _rsp: u64,
     r8: u64,

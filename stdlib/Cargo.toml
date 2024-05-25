@@ -8,3 +8,6 @@ workspace = true
 
 [dependencies]
 x86_64 = "0.15.0"
+
+[features]
+syscall_raw = []

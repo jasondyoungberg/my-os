@@ -1,8 +1,6 @@
 use bootloader_api::info::MemoryRegions;
 use spin::{Mutex, Once};
-use x86_64::{
-    PhysAddr, VirtAddr,
-};
+use x86_64::{PhysAddr, VirtAddr};
 
 mod frame_alloc;
 mod heap_alloc;
@@ -14,6 +12,9 @@ pub const KERNEL_DYNAMIC: u64 = 0xffff_8000_0000_0000;
 pub const KERNEL_DYNAMIC_END: u64 = 0xffff_81ff_ffff_ffff;
 
 pub const PHYSICAL_MEMORY_OFFSET: u64 = 0xffff_f800_0000_0000;
+
+pub const MINI_STACK_SIZE: usize = 0x1_0000; // 64 KiB
+pub const FULL_STACK_SIZE: usize = 0x10_0000; // 1 MiB
 
 pub static FRAME_ALLOCATOR: Once<Mutex<frame_alloc::BootInfoFrameAllocator>> = Once::new();
 

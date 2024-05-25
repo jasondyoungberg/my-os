@@ -17,8 +17,8 @@ pub extern "x86-interrupt" fn breakpoint_handler(stack_frame: InterruptStackFram
                 push r8
                 push 0 // skip rsp
                 push rbp
-                push rsi
                 push rdi
+                push rsi
                 push rdx
                 push rcx
                 push rbx
@@ -34,8 +34,8 @@ pub extern "x86-interrupt" fn breakpoint_handler(stack_frame: InterruptStackFram
                 pop rbx
                 pop rcx
                 pop rdx
-                pop rdi
                 pop rsi
+                pop rdi
                 pop rbp
                 add rsp, 8 // skip rsp
                 pop r8
@@ -57,11 +57,11 @@ pub extern "x86-interrupt" fn breakpoint_handler(stack_frame: InterruptStackFram
 
 extern "C" fn breakpoint_handler_inner(state: &mut ProcessState) {
     info!("Breakpoint");
-    // dbg!(&state);
+    dbg!(&state);
 
     let mut manager = crate::threading::manager::MANAGER.lock();
 
     manager.next(state);
 
-    // dbg!(&state);
+    dbg!(&state);
 }

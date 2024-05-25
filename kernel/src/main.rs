@@ -2,6 +2,7 @@
 #![cfg_attr(not(test), no_main)]
 #![feature(abi_x86_interrupt)]
 #![feature(naked_functions)]
+#![feature(asm_const)]
 // TODO: remove these later
 #![allow(dead_code)]
 // #![allow(unused_imports)]
@@ -13,7 +14,6 @@ extern crate stdlib;
 
 use bootloader_api::config::Mapping::FixedAddress;
 use memory::PHYSICAL_MEMORY_OFFSET;
-use stdlib::syscall;
 use x86_64::instructions::interrupts::int3;
 
 extern crate alloc;
@@ -27,6 +27,7 @@ mod interrupts;
 mod keyboard;
 mod memory;
 mod pretty;
+mod syscall;
 mod task;
 mod threading;
 
@@ -41,26 +42,6 @@ const CONFIG: bootloader_api::BootloaderConfig = {
     config.kernel_stack_size = 0x10_0000; // 1 MiB
     config
 };
-
-#[rustfmt::skip]
-const TEST_THREAD_1: [u8; 11] = [
-    0xB0, b'A', // mov al, 'A'
-    0xE6, 0xE9, // out 0xE9, al
-    0xE6, 0xE9, // out 0xE9, al
-    0xE6, 0xE9, // out 0xE9, al
-    0xCC,       // int3
-    0xEB, 0xF5, // jmp $-11
-];
-
-#[rustfmt::skip]
-const TEST_THREAD_2: [u8; 11] = [
-    0xB0, b'B', // mov al, 'B'
-    0xE6, 0xE9, // out 0xE9, al
-    0xE6, 0xE9, // out 0xE9, al
-    0xE6, 0xE9, // out 0xE9, al
-    0xCC,       // int3
-    0xEB, 0xF5, // jmp $-11
-];
 
 #[cfg(not(test))]
 bootloader_api::entry_point!(start, config = &CONFIG);
@@ -77,6 +58,7 @@ fn start(boot_info: &'static mut bootloader_api::BootInfo) -> ! {
     );
 
     interrupts::init();
+    syscall::init();
     memory::init(&boot_info.memory_regions);
     // memory::print();
 
@@ -96,7 +78,7 @@ fn start(boot_info: &'static mut bootloader_api::BootInfo) -> ! {
 
     // memory::print();
 
-    manager.spawn(include_bytes!("../../test-app/test_a"));
+    // manager.spawn(include_bytes!("../../test-app/test_a"));
     manager.spawn(include_bytes!("../../test-app/test_b"));
 
     drop(manager);
