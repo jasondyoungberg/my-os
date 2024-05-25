@@ -43,7 +43,8 @@ unsafe extern "C" fn _start() -> ! {
 }
 
 #[panic_handler]
-fn rust_panic(_info: &core::panic::PanicInfo) -> ! {
+fn rust_panic(info: &core::panic::PanicInfo) -> ! {
+    kprintln!("{}", info);
     hcf();
 }
 
