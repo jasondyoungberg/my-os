@@ -25,14 +25,14 @@ use x86_64::{
 };
 
 use crate::{
-    coredata::CoreData,
+    gsdata::{CpuId, KernelGsData},
     process::{Manager, MANAGER},
 };
 
-mod coredata;
 mod debugcon;
 mod exception;
 mod gdt;
+mod gsdata;
 mod heap;
 mod idt;
 mod lapic;
@@ -108,18 +108,21 @@ extern "C" fn _start() -> ! {
 }
 
 extern "C" fn _start_cpu(cpu: &Cpu) -> ! {
-    log::info!("CPU{} started", cpu.id);
+    let cpuid = CpuId::new(cpu.id);
 
-    gdt::init(cpu.id);
+    log::info!("{} started", cpuid);
+
+    gdt::init(cpuid);
     idt::IDT.load();
     let lapic = lapic::init();
 
-    log::info!("cpu{} joining kernel", cpu.id);
+    log::info!("{} joining kernel", cpuid);
     let active_thread = MANAGER.get().unwrap().lock().join_kernel();
 
     // Setup core data
-    let core_data = Box::pin(CoreData {
-        id: cpu.id,
+    let core_data = Box::pin(KernelGsData {
+        cpuid,
+        syscall_stack: 0, // todo
         lapic: Box::new(lapic),
         active_thread,
     });
@@ -139,7 +142,7 @@ extern "C" fn _start_cpu(cpu: &Cpu) -> ! {
     }
 
     loop {
-        log::debug!("CPU{} {:?}", cpu.id, active_thread);
+        log::debug!("{} {:?}", cpuid, active_thread);
         hlt();
     }
 }

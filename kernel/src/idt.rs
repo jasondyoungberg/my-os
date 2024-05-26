@@ -62,10 +62,12 @@ macro_rules! wrap {
         ) {
             unsafe {
                 core::arch::asm!(
+                    "swapgs",
                     $crate::wrap!(push),
                     "mov rdi, rsp",
                     "call {inner}",
                     $crate::wrap!(pop),
+                    "swapgs",
                     "iretq",
 
                     inner = sym $i,

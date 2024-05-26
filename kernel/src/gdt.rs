@@ -10,7 +10,7 @@ use x86_64::{
     VirtAddr,
 };
 
-use crate::SMP_RESPONSE;
+use crate::{gsdata::CpuId, SMP_RESPONSE};
 
 const MAX_CORES: usize = 4;
 const GDT_SIZE: usize = 6 + 2 * MAX_CORES;
@@ -78,14 +78,14 @@ pub struct GdtInfo {
     pub tss: Vec<SegmentSelector>,
 }
 
-pub fn init(cpuid: u32) {
+pub fn init(cpuid: CpuId) {
     GDT.gdt.load();
 
     unsafe {
         CS::set_reg(GDT.kernel_code);
         SS::set_reg(GDT.kernel_data);
 
-        load_tss(GDT.tss[cpuid as usize]);
+        load_tss(GDT.tss[usize::from(cpuid)]);
     }
 }
 

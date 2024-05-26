@@ -2,7 +2,7 @@ use x2apic::lapic::{xapic_base, LocalApic, LocalApicBuilder, TimerDivide};
 use x86_64::PhysAddr;
 
 use crate::{
-    coredata::get_core_data,
+    gsdata::get_kernel_gs_data,
     memory::phys_to_virt,
     process::{Context, MANAGER},
     wrap,
@@ -36,7 +36,7 @@ wrap!(irq, handle_timer_inner => handle_timer);
 
 extern "C" fn handle_timer_inner(context: &mut Context) {
     log::trace!("timer interrupt");
-    let cpu_data = get_core_data().unwrap();
+    let cpu_data = get_kernel_gs_data().unwrap();
 
     MANAGER.get().unwrap().lock().swap_task(cpu_data, context);
 

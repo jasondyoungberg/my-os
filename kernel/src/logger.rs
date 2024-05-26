@@ -1,6 +1,6 @@
 use log::{Level, Metadata, Record};
 
-use crate::coredata::get_core_data;
+use crate::gsdata::get_kernel_gs_data;
 
 static LOGGER: Logger = Logger;
 
@@ -26,11 +26,11 @@ impl log::Log for Logger {
                 Level::Trace => 90,
             };
 
-            if let Some(core_data) = get_core_data() {
+            if let Some(core_data) = get_kernel_gs_data() {
                 crate::kprintln!(
                     "\x1b[{}m[CPU{}] {}\x1b[0m",
                     color_code,
-                    core_data.id,
+                    core_data.cpuid,
                     record.args()
                 );
             } else {
