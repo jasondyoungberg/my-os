@@ -1,7 +1,7 @@
 use x2apic::lapic::{xapic_base, LocalApic, LocalApicBuilder, TimerDivide};
 use x86_64::PhysAddr;
 
-use crate::{core::get_core_data, paging::hhdm_phys_to_virt, process::ThreadContext, wrap};
+use crate::{core::get_core_data, memory::phys_to_virt, process::ThreadContext, wrap};
 
 pub const TIMER_VECTOR: u8 = 0x40;
 pub const ERROR_VECTOR: u8 = 0x41;
@@ -11,7 +11,7 @@ pub fn init() -> LocalApic {
     let mut builder = LocalApicBuilder::new();
 
     let apic_phys_addr = PhysAddr::new(unsafe { xapic_base() });
-    let apic_virt_addr = hhdm_phys_to_virt(apic_phys_addr).as_u64();
+    let apic_virt_addr = phys_to_virt(apic_phys_addr).as_u64();
 
     builder.set_xapic_base(apic_virt_addr);
 
