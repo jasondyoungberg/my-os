@@ -9,13 +9,19 @@ use core::arch::asm;
 use limine::{
     request::{FramebufferRequest, MemoryMapRequest},
     response::FramebufferResponse,
+    smp::Cpu,
     BaseRevision,
 };
 use spin::Lazy;
+use x86_64::instructions::{
+    hlt,
+    interrupts::{self, int3},
+};
 
 mod debugcon;
 mod idt;
 mod macros;
+mod pics;
 
 /// Sets the base revision to the latest revision supported by the crate.
 /// See specification for further info.
@@ -53,25 +59,37 @@ extern "C" fn _start() -> ! {
     );
     assert!(SMP_REQUEST.get_response().is_some(), "SMP request failed");
 
-    // Initialize stuff
+    for cpu in SMP_RESPONSE.cpus() {
+        if cpu.id != 0 {
+            cpu.goto_address.write(_start_cpu);
+        }
+    }
+
+    _start_cpu(SMP_RESPONSE.cpus()[0]);
+}
+
+extern "C" fn _start_cpu(cpu: &Cpu) -> ! {
+    kprintln!("Hello, World! I'm CPU {}.", cpu.id);
+
+    // Initialize once
+    if cpu.id == 0 {
+        pics::init();
+    }
+
+    // Initialize per CPU
     idt::IDT.load();
 
-    kprintln!("Hello, World!");
+    interrupts::enable();
 
-    hcf();
+    loop {
+        hlt();
+    }
 }
 
 #[panic_handler]
 fn rust_panic(info: &core::panic::PanicInfo) -> ! {
     kprintln!("{}", info);
-    hcf();
-}
-
-fn hcf() -> ! {
-    unsafe {
-        asm!("cli");
-        loop {
-            asm!("hlt");
-        }
+    loop {
+        hlt();
     }
 }
