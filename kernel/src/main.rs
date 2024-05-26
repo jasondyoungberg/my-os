@@ -28,6 +28,7 @@ use crate::coredata::CoreData;
 
 mod coredata;
 mod debugcon;
+mod gdt;
 mod heap;
 mod idt;
 mod lapic;
@@ -99,6 +100,7 @@ extern "C" fn _start_cpu(cpu: &Cpu) -> ! {
     }
 
     idt::IDT.load();
+    gdt::init();
     let lapic = lapic::init();
 
     // Setup core data
