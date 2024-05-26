@@ -17,8 +17,7 @@ impl log::Log for Logger {
 
     fn log(&self, record: &Record) {
         if self.enabled(record.metadata()) {
-            let level = record.level();
-            let color_code = match level {
+            let color_code = match record.level() {
                 Level::Error => 91,
                 Level::Warn => 93,
                 Level::Info => 96,
@@ -28,24 +27,18 @@ impl log::Log for Logger {
 
             let core_data_addr = GsBase::read();
 
-            if core_data_addr < x86_64::VirtAddr::new(0xFFFF_FFFF_8000_0000) {
-                crate::kprintln!(
-                    "\x1b[{}m[CPU? {}] {}\x1b[0m",
-                    color_code,
-                    level,
-                    record.args()
-                );
-            } else {
+            if core_data_addr >= x86_64::VirtAddr::new(0xFFFF_FFFF_8000_0000) {
                 let core_data_ptr = core_data_addr.as_u64() as *const crate::core::CoreData;
                 let core_data = unsafe { &*core_data_ptr };
 
                 crate::kprintln!(
-                    "\x1b[{}m[CPU{} {}] {}\x1b[0m",
+                    "\x1b[{}m[CPU{}] {}\x1b[0m",
                     color_code,
                     core_data.id,
-                    level,
                     record.args()
                 );
+            } else {
+                crate::kprintln!("\x1b[{}m[CPU?] {}\x1b[0m", color_code, record.args());
             }
         }
     }
