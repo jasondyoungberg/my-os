@@ -10,6 +10,7 @@ pub fn _print(args: fmt::Arguments) {
     use fmt::Write;
 
     without_interrupts(|| WRITER.lock().write_fmt(args).unwrap());
+    // Writer.write_fmt(args).unwrap();
 }
 
 struct Writer;
