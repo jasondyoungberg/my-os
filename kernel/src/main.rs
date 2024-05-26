@@ -28,6 +28,7 @@ mod core;
 mod debugcon;
 mod heap;
 mod idt;
+mod lapic;
 mod logger;
 mod macros;
 mod pics;
@@ -83,16 +84,21 @@ extern "C" fn _start() -> ! {
 extern "C" fn _start_cpu(cpu: &Cpu) -> ! {
     log::info!("CPU{} started", cpu.id);
 
-    let core_data = Box::pin(CoreData::new(cpu.id));
+    // Initialize CPU
+    pics::init();
+    idt::IDT.load();
+    let lapic = lapic::init();
+
+    // Setup core data
+    let core_data = Box::pin(CoreData {
+        id: cpu.id,
+        lapic: Box::new(lapic),
+    });
     let core_data_ptr = &*core_data as *const _ as *const ();
     let core_data_addr = VirtAddr::from_ptr(core_data_ptr);
 
     GsBase::write(core_data_addr);
     KernelGsBase::write(core_data_addr);
-
-    // Initialize per CPU
-    pics::init();
-    idt::IDT.load();
 
     interrupts::enable();
 

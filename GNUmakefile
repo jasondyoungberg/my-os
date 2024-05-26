@@ -19,7 +19,12 @@ ifeq ($(RUST_PROFILE),)
     override RUST_PROFILE := dev
 endif
 
-QEMU_ARGS := -M q35 -m 2G -smp 4 -debugcon stdio
+QEMU_ARGS := \
+	-machine q35 \
+	-smp 4 \
+	-m 2G \
+	--enable-kvm \
+	-debugcon stdio
 
 .PHONY: all
 all: $(IMAGE_NAME).iso

@@ -5,7 +5,7 @@ use x86_64::{
     structures::idt::{InterruptDescriptorTable, InterruptStackFrame},
 };
 
-use crate::pics::PICS_OFFSET;
+use crate::{lapic, pics::PICS_OFFSET};
 
 pub static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
     fn general_handler(stack_frame: InterruptStackFrame, index: u8, error_code: Option<u64>) {
@@ -33,6 +33,8 @@ pub static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
     idt[PICS_OFFSET + 13].set_handler_fn(crate::pics::handle_irq13);
     idt[PICS_OFFSET + 14].set_handler_fn(crate::pics::handle_irq14);
     idt[PICS_OFFSET + 15].set_handler_fn(crate::pics::handle_irq15);
+
+    idt[lapic::TIMER_VECTOR].set_handler_fn(crate::lapic::handle_timer);
 
     idt
 });
