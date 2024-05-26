@@ -141,8 +141,7 @@ extern "C" fn _start_cpu(cpu: &Cpu) -> ! {
 #[panic_handler]
 fn rust_panic(info: &PanicInfo) -> ! {
     log::error!("{}", info);
-    // shutdown_emu();
-    loop {}
+    shutdown_emu();
 }
 
 fn shutdown_emu() -> ! {
