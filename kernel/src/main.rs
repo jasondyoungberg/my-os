@@ -33,7 +33,7 @@ mod idt;
 mod lapic;
 mod logger;
 mod macros;
-mod paging;
+mod memory;
 mod pics;
 mod process;
 
