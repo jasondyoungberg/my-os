@@ -5,11 +5,19 @@ use x86_64::{
         control::{Cr3, Cr3Flags},
         rflags::RFlags,
     },
-    structures::{idt::InterruptStackFrame, paging::PhysFrame},
+    structures::{
+        idt::InterruptStackFrame,
+        paging::{FrameAllocator, Mapper, OffsetPageTable, Page, PageTableFlags, PhysFrame},
+    },
     VirtAddr,
 };
 
-use crate::{coredata::CoreData, gdt::GDT};
+use crate::{
+    coredata::CoreData,
+    gdt::GDT,
+    memory::{active_level_4_table, phys_to_virt, MemoryMapFrameAllocator},
+    HHDM_RESPONSE,
+};
 
 pub static MANAGER: Once<Mutex<Manager>> = Once::new();
 
@@ -53,11 +61,13 @@ impl Manager {
 
     pub fn swap_task(&mut self, core: &mut CoreData, active_context: &mut Context) {
         if let Some(new_thread_id) = self.queue.pop_front() {
-            let old_thread = self.get_thread_mut(core.active_thread).unwrap();
+            let old_thread_id = core.active_thread;
+            self.queue.push_back(old_thread_id);
+
+            let old_thread = self.get_thread_mut(old_thread_id).unwrap();
             old_thread.context.clone_from(active_context);
 
             let new_thread = self.get_thread_mut(new_thread_id).unwrap();
-
             core.active_thread = new_thread_id;
             active_context.clone_from(&new_thread.context);
         }
@@ -77,6 +87,72 @@ impl Manager {
 
     pub fn get_thread_mut(&mut self, id: ThreadId) -> Option<&mut Thread> {
         self.get_process_mut(id.0)?.get_thread_mut(id)
+    }
+
+    pub fn spawn(&mut self, code: &[u8]) -> ThreadId {
+        let mut frame_allocator = MemoryMapFrameAllocator;
+        let mut mapper = unsafe {
+            OffsetPageTable::new(
+                active_level_4_table(),
+                VirtAddr::new(HHDM_RESPONSE.offset()),
+            )
+        };
+
+        let code_frame = frame_allocator
+            .allocate_frame()
+            .expect("no frames available");
+
+        unsafe {
+            mapper.map_to(
+                Page::containing_address(VirtAddr::new(0x1000)),
+                code_frame,
+                PageTableFlags::PRESENT | PageTableFlags::WRITABLE,
+                &mut frame_allocator,
+            )
+        }
+        .unwrap()
+        .flush();
+
+        let code_dest: &mut [u8; 4096] =
+            unsafe { &mut *phys_to_virt(code_frame.start_address()).as_mut_ptr() };
+
+        code_dest[..code.len()].copy_from_slice(code);
+
+        let process_id = ProcessId(self.next_process_id);
+        self.next_process_id += 1;
+
+        let thread_id = ThreadId(process_id, 0);
+
+        let thread = Thread {
+            context: Context {
+                registers: Registers::ZERO,
+                stack_frame: InterruptStackFrame::new(
+                    VirtAddr::new(0x1000),
+                    GDT.kernel_code,
+                    RFlags::INTERRUPT_FLAG,
+                    VirtAddr::zero(), // todo: set stack pointer
+                    GDT.kernel_data,
+                ),
+            },
+            thread_id,
+        };
+
+        let mut threads = BTreeMap::new();
+        threads.insert(ThreadId(process_id, 0), thread);
+
+        let process = Process {
+            threads,
+            process_id,
+            next_thread_id: 1,
+            cr3: self.kernel_cr3,
+        };
+
+        self.processes.insert(process_id, process);
+        self.queue.push_back(thread_id);
+
+        let thread_id = self.get_process_mut(process_id).unwrap().join_kernel();
+
+        thread_id
     }
 }
 

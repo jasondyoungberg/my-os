@@ -132,6 +132,11 @@ extern "C" fn _start_cpu(cpu: &Cpu) -> ! {
 
     log::info!("Ready!");
 
+    if cpu.id == 0 {
+        let mut manager = MANAGER.get().unwrap().lock();
+        manager.spawn(include_bytes!("../app/test1"));
+    }
+
     loop {
         log::debug!("CPU{} {:?}", cpu.id, active_thread);
         hlt();
