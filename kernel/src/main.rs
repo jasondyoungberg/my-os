@@ -1,5 +1,6 @@
 #![no_std]
 #![no_main]
+#![deny(unsafe_op_in_unsafe_fn)]
 
 use core::arch::asm;
 
@@ -38,7 +39,7 @@ static SMP_RESPONSE: Lazy<&limine::response::SmpResponse> =
     Lazy::new(|| SMP_REQUEST.get_response().unwrap());
 
 #[no_mangle]
-unsafe extern "C" fn _start() -> ! {
+extern "C" fn _start() -> ! {
     // All limine requests must also be referenced in a called function, otherwise they may be
     // removed by the linker.
     assert!(BASE_REVISION.is_supported(), "Unsupported base revision");
@@ -71,7 +72,7 @@ unsafe extern "C" fn _start() -> ! {
             let pixel_offset = i * framebuffer.pitch() + i * 4;
 
             // Write 0xFFFFFFFF to the provided pixel offset to fill it white.
-            *(framebuffer.addr().add(pixel_offset as usize) as *mut u32) = 0xFFFFFFFF;
+            unsafe { *(framebuffer.addr().add(pixel_offset as usize) as *mut u32) = 0xFFFFFFFF };
         }
     }
 
