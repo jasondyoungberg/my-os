@@ -1,5 +1,6 @@
 #![no_std]
 #![no_main]
+#![feature(abi_x86_interrupt)]
 #![deny(unsafe_op_in_unsafe_fn)]
 #![allow(dead_code)]
 
@@ -13,6 +14,7 @@ use limine::{
 use spin::Lazy;
 
 mod debugcon;
+mod idt;
 mod macros;
 
 /// Sets the base revision to the latest revision supported by the crate.
@@ -38,8 +40,8 @@ static SMP_RESPONSE: Lazy<&limine::response::SmpResponse> =
 
 #[no_mangle]
 extern "C" fn _start() -> ! {
-    // All limine requests must also be referenced in a called function, otherwise they may be
-    // removed by the linker.
+    // All limine requests must also be referenced in a called function,
+    // otherwise they may be removed by the linker.
     assert!(BASE_REVISION.is_supported(), "Unsupported base revision");
     assert!(
         FRAMEBUFFER_REQUEST.get_response().is_some(),
@@ -50,6 +52,9 @@ extern "C" fn _start() -> ! {
         "Memory map request failed"
     );
     assert!(SMP_REQUEST.get_response().is_some(), "SMP request failed");
+
+    // Initialize stuff
+    idt::IDT.load();
 
     kprintln!("Hello, World!");
 
