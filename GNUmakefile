@@ -31,6 +31,12 @@ all: $(IMAGE_NAME).iso
 .PHONY: all-hdd
 all-hdd: $(IMAGE_NAME).hdd
 
+.PHONY: debug
+debug: $(IMAGE_NAME).iso
+	@echo "Launching QEMU in debug mode..."
+	qemu-system-x86_64 $(QEMU_ARGS) -cdrom $(IMAGE_NAME).iso -boot d \
+		-d int,cpu_reset,unimp,guest_errors
+
 .PHONY: run
 run: $(IMAGE_NAME).iso
 	@echo "Launching QEMU..."
