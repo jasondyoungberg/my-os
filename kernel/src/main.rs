@@ -93,7 +93,10 @@ extern "C" fn _start_cpu(cpu: &Cpu) -> ! {
     log::info!("CPU{} started", cpu.id);
 
     // Initialize CPU
-    pics::init();
+    if cpu.id == 0 {
+        pics::init();
+    }
+
     idt::IDT.load();
     let lapic = lapic::init();
 
