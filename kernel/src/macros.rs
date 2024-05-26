@@ -18,7 +18,7 @@ macro_rules! kprintln {
 #[macro_export]
 macro_rules! dbg {
     () => {
-        $crate::println!("[{}:{}:{}]", file!(), line!(), column!())
+        $crate::kprintln!("[{}:{}:{}]", file!(), line!(), column!())
     };
     ($val:expr $(,)?) => {
         match $val {
