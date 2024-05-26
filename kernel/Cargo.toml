@@ -5,11 +5,14 @@ edition = "2021"
 
 [profile.release]
 panic = "abort"
+strip = true
+opt-level = "s"
+codegen-units = 1
 
 [profile.dev]
 panic = "abort"
 opt-level = 0
-lto = "thin"
+codegen-units = 1
 
 
 [dependencies]

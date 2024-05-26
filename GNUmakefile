@@ -16,7 +16,7 @@ define DEFAULT_VAR =
 endef
 
 ifeq ($(RUST_PROFILE),)
-    override RUST_PROFILE := dev
+    override RUST_PROFILE := release
 endif
 
 QEMU_ARGS := \
