@@ -4,6 +4,8 @@
 #![deny(unsafe_op_in_unsafe_fn)]
 #![allow(dead_code)]
 
+extern crate alloc;
+
 use limine::{
     request::{FramebufferRequest, MemoryMapRequest},
     response::FramebufferResponse,
@@ -14,6 +16,7 @@ use spin::Lazy;
 use x86_64::instructions::{hlt, interrupts};
 
 mod debugcon;
+mod heap;
 mod idt;
 mod logger;
 mod macros;
