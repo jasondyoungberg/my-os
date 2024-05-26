@@ -1,7 +1,7 @@
 use x2apic::lapic::{xapic_base, LocalApic, LocalApicBuilder, TimerDivide};
-use x86_64::{registers::segmentation::GS, PhysAddr};
+use x86_64::PhysAddr;
 
-use crate::{core::get_core_data, paging::hhdm_phys_to_virt};
+use crate::{core::get_core_data, paging::hhdm_phys_to_virt, process::ThreadContext, wrap};
 
 pub const TIMER_VECTOR: u8 = 0x40;
 pub const ERROR_VECTOR: u8 = 0x41;
@@ -27,12 +27,13 @@ pub fn init() -> LocalApic {
     lapic
 }
 
-pub extern "x86-interrupt" fn handle_timer(
-    _stack_frame: x86_64::structures::idt::InterruptStackFrame,
-) {
-    unsafe { GS::swap() };
-    log::trace!("timer interrupt");
+wrap!(handle_timer_inner => handle_timer);
+
+extern "C" fn handle_timer_inner(context: &mut ThreadContext) {
+    log::trace!("timer interrupt\n{:#?}", context);
     let cpu_data = get_core_data().unwrap();
+
     unsafe { cpu_data.lapic.end_of_interrupt() };
-    unsafe { GS::swap() };
 }
+
+fn asdf() {}
