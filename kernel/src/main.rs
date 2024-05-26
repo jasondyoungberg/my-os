@@ -6,6 +6,9 @@
 
 extern crate alloc;
 
+use ::core::panic::PanicInfo;
+
+use alloc::boxed::Box;
 use limine::{
     request::{FramebufferRequest, MemoryMapRequest},
     response::FramebufferResponse,
@@ -13,8 +16,15 @@ use limine::{
     BaseRevision,
 };
 use spin::Lazy;
-use x86_64::instructions::{hlt, interrupts};
+use x86_64::{
+    instructions::{hlt, interrupts},
+    registers::model_specific::{GsBase, KernelGsBase},
+    VirtAddr,
+};
 
+use crate::core::CoreData;
+
+mod core;
 mod debugcon;
 mod heap;
 mod idt;
@@ -73,6 +83,13 @@ extern "C" fn _start() -> ! {
 extern "C" fn _start_cpu(cpu: &Cpu) -> ! {
     log::info!("CPU{} started", cpu.id);
 
+    let core_data = Box::pin(CoreData::new(cpu.id));
+    let core_data_ptr = &*core_data as *const _ as *const ();
+    let core_data_addr = VirtAddr::from_ptr(core_data_ptr);
+
+    GsBase::write(core_data_addr);
+    KernelGsBase::write(core_data_addr);
+
     // Initialize once
     if cpu.id == 0 {
         pics::init();
@@ -83,14 +100,16 @@ extern "C" fn _start_cpu(cpu: &Cpu) -> ! {
 
     interrupts::enable();
 
+    log::info!("Ready!");
+
     loop {
         hlt();
     }
 }
 
 #[panic_handler]
-fn rust_panic(info: &core::panic::PanicInfo) -> ! {
-    kprintln!("{}", info);
+fn rust_panic(info: &PanicInfo) -> ! {
+    log::error!("{}", info);
     loop {
         hlt();
     }
