@@ -8,6 +8,9 @@ panic = "abort"
 
 [profile.dev]
 panic = "abort"
+opt-level = 0
+lto = "thin"
+
 
 [dependencies]
 limine = "0.2.0"

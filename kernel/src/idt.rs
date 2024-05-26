@@ -6,6 +6,7 @@ use x86_64::{
 };
 
 use crate::{
+    exception::{double_fault_handler, page_fault_handler},
     lapic,
     pics::{pics_handler, PICS_OFFSET},
 };
@@ -22,6 +23,13 @@ pub static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
 
     set_general_handler!(&mut idt, pics_handler, PICS_OFFSET..=PICS_OFFSET + 16);
 
+    unsafe {
+        idt.double_fault
+            .set_handler_fn(double_fault_handler)
+            .set_stack_index(1);
+        idt.page_fault.set_handler_fn(page_fault_handler);
+    };
+
     idt[lapic::TIMER_VECTOR].set_handler_fn(crate::lapic::handle_timer);
 
     idt
@@ -30,7 +38,7 @@ pub static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
 #[macro_export]
 macro_rules! wrap {
     ($i:ident => $w: ident) => {
-        const _: unsafe extern "C" fn(&mut $crate::process::ThreadContext) = $i;
+        const _: unsafe extern "C" fn(&mut $crate::process::Context) = $i;
 
         #[naked]
         pub extern "x86-interrupt" fn $w(

@@ -12,22 +12,26 @@ use core::panic::PanicInfo;
 
 use alloc::boxed::Box;
 use limine::{
-    request::{FramebufferRequest, HhdmRequest, MemoryMapRequest},
+    request::{FramebufferRequest, HhdmRequest, MemoryMapRequest, StackSizeRequest},
     response::FramebufferResponse,
     smp::Cpu,
     BaseRevision,
 };
-use spin::Lazy;
+use spin::{Lazy, Mutex};
 use x86_64::{
     instructions::{hlt, interrupts, port::PortWriteOnly},
     registers::model_specific::{GsBase, KernelGsBase},
     VirtAddr,
 };
 
-use crate::coredata::CoreData;
+use crate::{
+    coredata::CoreData,
+    process::{Manager, MANAGER},
+};
 
 mod coredata;
 mod debugcon;
+mod exception;
 mod gdt;
 mod heap;
 mod idt;
@@ -63,6 +67,10 @@ static HHDM_REQUEST: HhdmRequest = HhdmRequest::new();
 static HHDM_RESPONSE: Lazy<&limine::response::HhdmResponse> =
     Lazy::new(|| HHDM_REQUEST.get_response().unwrap());
 
+static STACK_SIZE_REQUEST: StackSizeRequest = StackSizeRequest::new().with_size(1024 * 1024); // 1 MiB
+static STACK_SIZE_RESPONSE: Lazy<&limine::response::StackSizeResponse> =
+    Lazy::new(|| STACK_SIZE_REQUEST.get_response().unwrap());
+
 #[no_mangle]
 extern "C" fn _start() -> ! {
     // All limine requests must also be referenced in a called function,
@@ -78,8 +86,15 @@ extern "C" fn _start() -> ! {
     );
     assert!(SMP_REQUEST.get_response().is_some(), "SMP request failed");
     assert!(HHDM_REQUEST.get_response().is_some(), "HHDM request failed");
+    assert!(
+        STACK_SIZE_REQUEST.get_response().is_some(),
+        "Stack size request failed"
+    );
 
     logger::init();
+
+    MANAGER.call_once(|| Mutex::new(Manager::init()));
+    pics::init();
 
     for cpu in SMP_RESPONSE.cpus() {
         if cpu.id != 0 {
@@ -94,19 +109,18 @@ extern "C" fn _start() -> ! {
 extern "C" fn _start_cpu(cpu: &Cpu) -> ! {
     log::info!("CPU{} started", cpu.id);
 
-    // Initialize CPU
-    if cpu.id == 0 {
-        pics::init();
-    }
-
+    gdt::init(cpu.id);
     idt::IDT.load();
-    gdt::init();
     let lapic = lapic::init();
+
+    log::info!("cpu{} joining kernel", cpu.id);
+    let active_thread = MANAGER.get().unwrap().lock().join_kernel();
 
     // Setup core data
     let core_data = Box::pin(CoreData {
         id: cpu.id,
         lapic: Box::new(lapic),
+        active_thread,
     });
     let core_data_ptr = &*core_data as *const _ as *const ();
     let core_data_addr = VirtAddr::from_ptr(core_data_ptr);
@@ -119,6 +133,7 @@ extern "C" fn _start_cpu(cpu: &Cpu) -> ! {
     log::info!("Ready!");
 
     loop {
+        log::debug!("CPU{} {:?}", cpu.id, active_thread);
         hlt();
     }
 }
@@ -126,7 +141,8 @@ extern "C" fn _start_cpu(cpu: &Cpu) -> ! {
 #[panic_handler]
 fn rust_panic(info: &PanicInfo) -> ! {
     log::error!("{}", info);
-    shutdown_emu();
+    // shutdown_emu();
+    loop {}
 }
 
 fn shutdown_emu() -> ! {
