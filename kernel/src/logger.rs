@@ -1,8 +1,6 @@
 use log::{Level, Metadata, Record};
 use x86_64::registers::model_specific::GsBase;
 
-use crate::dbg;
-
 static LOGGER: Logger = Logger;
 
 pub fn init() {

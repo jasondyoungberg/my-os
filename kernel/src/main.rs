@@ -90,12 +90,8 @@ extern "C" fn _start_cpu(cpu: &Cpu) -> ! {
     GsBase::write(core_data_addr);
     KernelGsBase::write(core_data_addr);
 
-    // Initialize once
-    if cpu.id == 0 {
-        pics::init();
-    }
-
     // Initialize per CPU
+    pics::init();
     idt::IDT.load();
 
     interrupts::enable();
