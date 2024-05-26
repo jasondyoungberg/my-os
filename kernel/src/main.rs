@@ -8,7 +8,7 @@
 
 extern crate alloc;
 
-use ::core::panic::PanicInfo;
+use core::panic::PanicInfo;
 
 use alloc::boxed::Box;
 use limine::{
@@ -24,9 +24,9 @@ use x86_64::{
     VirtAddr,
 };
 
-use crate::core::CoreData;
+use crate::coredata::CoreData;
 
-mod core;
+mod coredata;
 mod debugcon;
 mod heap;
 mod idt;

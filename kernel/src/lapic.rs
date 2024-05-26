@@ -1,7 +1,7 @@
 use x2apic::lapic::{xapic_base, LocalApic, LocalApicBuilder, TimerDivide};
 use x86_64::PhysAddr;
 
-use crate::{core::get_core_data, memory::phys_to_virt, process::ThreadContext, wrap};
+use crate::{coredata::get_core_data, memory::phys_to_virt, process::ThreadContext, wrap};
 
 pub const TIMER_VECTOR: u8 = 0x40;
 pub const ERROR_VECTOR: u8 = 0x41;

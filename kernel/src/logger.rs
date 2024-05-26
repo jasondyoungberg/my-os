@@ -1,6 +1,6 @@
 use log::{Level, Metadata, Record};
 
-use crate::core::get_core_data;
+use crate::coredata::get_core_data;
 
 static LOGGER: Logger = Logger;
 
