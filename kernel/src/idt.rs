@@ -41,6 +41,18 @@ pub static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
 
 #[macro_export]
 macro_rules! wrap {
+    (push) => {"
+        push r15; push r14; push r13; push r12;
+        push r11; push r10; push r9;  push r8;
+                  push rbp; push rdi; push rsi;
+        push rdx; push rcx; push rbx; push rax;
+    "};
+    (pop) => {"
+        pop rax; pop rbx; pop rcx; pop rdx;
+        pop rsi; pop rdi; pop rbp;
+        pop r8;  pop r9;  pop r10; pop r11;
+        pop r12; pop r13; pop r14; pop r15;
+    "};
     ($i:ident => $w: ident) => {
         const _: unsafe extern "C" fn(&mut $crate::process::Context) = $i;
 
@@ -49,44 +61,12 @@ macro_rules! wrap {
             _stack_frame: x86_64::structures::idt::InterruptStackFrame
         ) {
             unsafe {
-                core::arch::asm!("
-                    push r15
-                    push r14
-                    push r13
-                    push r12
-                    push r11
-                    push r10
-                    push r9
-                    push r8
-                    push rbp
-                    push rdi
-                    push rsi
-                    push rdx
-                    push rcx
-                    push rbx
-                    push rax
-
-                    mov rdi, rsp
-                    call {inner}
-
-                    pop rax
-                    pop rbx
-                    pop rcx
-                    pop rdx
-                    pop rsi
-                    pop rdi
-                    pop rbp
-                    pop r8
-                    pop r9
-                    pop r10
-                    pop r11
-                    pop r12
-                    pop r13
-                    pop r14
-                    pop r15
-
-                    iretq
-                    ",
+                core::arch::asm!(
+                    $crate::wrap!(push),
+                    "mov rdi, rsp",
+                    "call {inner}",
+                    $crate::wrap!(pop),
+                    "iretq",
 
                     inner = sym $i,
                     options(noreturn)
