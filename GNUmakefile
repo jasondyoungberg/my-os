@@ -74,6 +74,7 @@ limine/limine:
 kernel:
 	@echo "Building the kernel..."
 	
+	cd kernel/app && nasm *.asm
 	cd kernel && cargo build --profile $(RUST_PROFILE) -Z unstable-options --out-dir .
 	# $(MAKE) -C kernel
 
