@@ -4,7 +4,7 @@ use linked_list_allocator::LockedHeap;
 use spin::Lazy;
 use x86_64::instructions::interrupts::without_interrupts;
 
-const HEAP_SIZE: usize = 1024 * 1024; // 1 MiB
+const HEAP_SIZE: usize = 64 * 1024 * 1024; // 64 MiB
 
 #[global_allocator]
 static ALLOCATOR: Allocator = Allocator::new();

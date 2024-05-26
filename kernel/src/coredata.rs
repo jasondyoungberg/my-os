@@ -2,10 +2,13 @@ use alloc::boxed::Box;
 use x2apic::lapic::LocalApic;
 use x86_64::registers::model_specific::GsBase;
 
+use crate::process::ThreadId;
+
 #[derive(Debug)]
 pub struct CoreData {
     pub id: u32,
     pub lapic: Box<LocalApic>,
+    pub active_thread: ThreadId,
 }
 
 pub fn get_core_data() -> Option<&'static mut CoreData> {

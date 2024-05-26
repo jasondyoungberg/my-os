@@ -23,7 +23,9 @@ QEMU_ARGS := \
 	-machine q35 \
 	-smp 4 \
 	-m 2G \
-	-debugcon stdio
+	-debugcon stdio \
+	--no-reboot \
+	--no-shutdown \
 
 .PHONY: all
 all: $(IMAGE_NAME).iso
