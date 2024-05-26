@@ -4,8 +4,6 @@
 #![deny(unsafe_op_in_unsafe_fn)]
 #![allow(dead_code)]
 
-use core::arch::asm;
-
 use limine::{
     request::{FramebufferRequest, MemoryMapRequest},
     response::FramebufferResponse,
@@ -13,13 +11,11 @@ use limine::{
     BaseRevision,
 };
 use spin::Lazy;
-use x86_64::instructions::{
-    hlt,
-    interrupts::{self, int3},
-};
+use x86_64::instructions::{hlt, interrupts};
 
 mod debugcon;
 mod idt;
+mod logger;
 mod macros;
 mod pics;
 
@@ -59,8 +55,11 @@ extern "C" fn _start() -> ! {
     );
     assert!(SMP_REQUEST.get_response().is_some(), "SMP request failed");
 
+    logger::init();
+
     for cpu in SMP_RESPONSE.cpus() {
         if cpu.id != 0 {
+            log::info!("Starting CPU{}", cpu.id);
             cpu.goto_address.write(_start_cpu);
         }
     }
@@ -69,7 +68,7 @@ extern "C" fn _start() -> ! {
 }
 
 extern "C" fn _start_cpu(cpu: &Cpu) -> ! {
-    kprintln!("Hello, World! I'm CPU {}.", cpu.id);
+    log::info!("CPU{} started", cpu.id);
 
     // Initialize once
     if cpu.id == 0 {
