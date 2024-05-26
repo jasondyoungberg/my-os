@@ -23,7 +23,6 @@ QEMU_ARGS := \
 	-machine q35 \
 	-smp 4 \
 	-m 2G \
-	--enable-kvm \
 	-debugcon stdio
 
 .PHONY: all

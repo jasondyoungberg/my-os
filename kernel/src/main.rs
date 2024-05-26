@@ -10,7 +10,7 @@ use ::core::panic::PanicInfo;
 
 use alloc::boxed::Box;
 use limine::{
-    request::{FramebufferRequest, MemoryMapRequest},
+    request::{FramebufferRequest, HhdmRequest, MemoryMapRequest},
     response::FramebufferResponse,
     smp::Cpu,
     BaseRevision,
@@ -31,6 +31,7 @@ mod idt;
 mod lapic;
 mod logger;
 mod macros;
+mod paging;
 mod pics;
 
 /// Sets the base revision to the latest revision supported by the crate.
@@ -54,6 +55,10 @@ static SMP_REQUEST: limine::request::SmpRequest = limine::request::SmpRequest::n
 static SMP_RESPONSE: Lazy<&limine::response::SmpResponse> =
     Lazy::new(|| SMP_REQUEST.get_response().unwrap());
 
+static HHDM_REQUEST: HhdmRequest = HhdmRequest::new();
+static HHDM_RESPONSE: Lazy<&limine::response::HhdmResponse> =
+    Lazy::new(|| HHDM_REQUEST.get_response().unwrap());
+
 #[no_mangle]
 extern "C" fn _start() -> ! {
     // All limine requests must also be referenced in a called function,
@@ -68,6 +73,9 @@ extern "C" fn _start() -> ! {
         "Memory map request failed"
     );
     assert!(SMP_REQUEST.get_response().is_some(), "SMP request failed");
+    assert!(HHDM_REQUEST.get_response().is_some(), "HHDM request failed");
+
+    kprintln!("{:x}", HHDM_RESPONSE.offset());
 
     logger::init();
 
