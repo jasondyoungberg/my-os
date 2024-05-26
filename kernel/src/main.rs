@@ -20,12 +20,11 @@ use limine::{
 use spin::{Lazy, Mutex};
 use x86_64::{
     instructions::{hlt, interrupts, port::PortWriteOnly},
-    registers::model_specific::{GsBase, KernelGsBase},
     VirtAddr,
 };
 
 use crate::{
-    gsdata::{CpuId, KernelGsData},
+    gsdata::{CpuId, KernelGsData, ThreadGsData},
     process::{Manager, MANAGER},
 };
 
@@ -120,17 +119,16 @@ extern "C" fn _start_cpu(cpu: &Cpu) -> ! {
     let active_thread = MANAGER.get().unwrap().lock().join_kernel();
 
     // Setup core data
-    let core_data = Box::pin(KernelGsData {
+    let kernel_gs_data = Box::pin(KernelGsData::new(
         cpuid,
-        syscall_stack: 0, // todo
-        lapic: Box::new(lapic),
+        VirtAddr::zero(), // todo
+        lapic,
         active_thread,
-    });
-    let core_data_ptr = &*core_data as *const _ as *const ();
-    let core_data_addr = VirtAddr::from_ptr(core_data_ptr);
+    ));
+    let thread_gs_data = Box::pin(ThreadGsData::new(cpuid));
 
-    GsBase::write(core_data_addr);
-    KernelGsBase::write(core_data_addr);
+    kernel_gs_data.as_ref().save_kernel_gsbase();
+    thread_gs_data.as_ref().save_gsbase();
 
     interrupts::enable();
 
