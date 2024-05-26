@@ -32,7 +32,7 @@ pub fn init() -> LocalApic {
     lapic
 }
 
-wrap!(handle_timer_inner => handle_timer);
+wrap!(irq, handle_timer_inner => handle_timer);
 
 extern "C" fn handle_timer_inner(context: &mut Context) {
     log::trace!("timer interrupt");

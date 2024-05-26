@@ -53,7 +53,7 @@ macro_rules! wrap {
         pop r8;  pop r9;  pop r10; pop r11;
         pop r12; pop r13; pop r14; pop r15;
     "};
-    ($i:ident => $w: ident) => {
+    (irq, $i:ident => $w: ident) => {
         const _: unsafe extern "C" fn(&mut $crate::process::Context) = $i;
 
         #[naked]
@@ -67,6 +67,29 @@ macro_rules! wrap {
                     "call {inner}",
                     $crate::wrap!(pop),
                     "iretq",
+
+                    inner = sym $i,
+                    options(noreturn)
+                )
+            }
+        }
+    };
+    (syscall, $i:ident => $w: ident) => {
+        const _: unsafe extern "C" fn(&mut $crate::process::Registers) = $i;
+
+        #[naked]
+        pub extern "x86-interrupt" fn $w(
+            _stack_frame: x86_64::structures::idt::InterruptStackFrame
+        ) {
+            unsafe {
+                core::arch::asm!(
+                    "mov rsp, r15",
+                    $crate::wrap!(push),
+                    "mov rdi, rsp",
+                    "call {inner}",
+                    $crate::wrap!(pop),
+                    "mov r15, rsp",
+                    "sysretq",
 
                     inner = sym $i,
                     options(noreturn)

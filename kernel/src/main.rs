@@ -41,6 +41,7 @@ mod macros;
 mod memory;
 mod pics;
 mod process;
+mod syscall;
 
 /// Sets the base revision to the latest revision supported by the crate.
 /// See specification for further info.
