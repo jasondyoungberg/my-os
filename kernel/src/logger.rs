@@ -1,4 +1,7 @@
 use log::{Level, Metadata, Record};
+use x86_64::registers::model_specific::GsBase;
+
+use crate::dbg;
 
 static LOGGER: Logger = Logger;
 
@@ -25,7 +28,27 @@ impl log::Log for Logger {
                 Level::Trace => 90,
             };
 
-            crate::kprintln!("\x1b[{color_code}m{level}: {}\x1b[0m", record.args());
+            let core_data_addr = GsBase::read();
+
+            if core_data_addr < x86_64::VirtAddr::new(0xFFFF_FFFF_8000_0000) {
+                crate::kprintln!(
+                    "\x1b[{}m[CPU? {}] {}\x1b[0m",
+                    color_code,
+                    level,
+                    record.args()
+                );
+            } else {
+                let core_data_ptr = core_data_addr.as_u64() as *const crate::core::CoreData;
+                let core_data = unsafe { &*core_data_ptr };
+
+                crate::kprintln!(
+                    "\x1b[{}m[CPU{} {}] {}\x1b[0m",
+                    color_code,
+                    core_data.id,
+                    level,
+                    record.args()
+                );
+            }
         }
     }
 
