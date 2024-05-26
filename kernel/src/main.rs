@@ -1,6 +1,8 @@
 #![no_std]
 #![no_main]
 #![feature(abi_x86_interrupt)]
+#![feature(naked_functions)]
+//
 #![deny(unsafe_op_in_unsafe_fn)]
 #![allow(dead_code)]
 
@@ -17,7 +19,7 @@ use limine::{
 };
 use spin::Lazy;
 use x86_64::{
-    instructions::{hlt, interrupts},
+    instructions::{hlt, interrupts, port::PortWriteOnly},
     registers::model_specific::{GsBase, KernelGsBase},
     VirtAddr,
 };
@@ -33,6 +35,7 @@ mod logger;
 mod macros;
 mod paging;
 mod pics;
+mod process;
 
 /// Sets the base revision to the latest revision supported by the crate.
 /// See specification for further info.
@@ -74,8 +77,6 @@ extern "C" fn _start() -> ! {
     );
     assert!(SMP_REQUEST.get_response().is_some(), "SMP request failed");
     assert!(HHDM_REQUEST.get_response().is_some(), "HHDM request failed");
-
-    kprintln!("{:x}", HHDM_RESPONSE.offset());
 
     logger::init();
 

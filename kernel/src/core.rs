@@ -2,6 +2,7 @@ use alloc::boxed::Box;
 use x2apic::lapic::LocalApic;
 use x86_64::registers::model_specific::GsBase;
 
+#[derive(Debug)]
 pub struct CoreData {
     pub id: u32,
     pub lapic: Box<LocalApic>,
