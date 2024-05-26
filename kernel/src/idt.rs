@@ -26,11 +26,15 @@ pub static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
     unsafe {
         idt.double_fault
             .set_handler_fn(double_fault_handler)
+            .set_stack_index(0);
+        idt.page_fault
+            .set_handler_fn(page_fault_handler)
             .set_stack_index(1);
-        idt.page_fault.set_handler_fn(page_fault_handler);
-    };
 
-    idt[lapic::TIMER_VECTOR].set_handler_fn(crate::lapic::handle_timer);
+        idt[lapic::TIMER_VECTOR]
+            .set_handler_fn(lapic::handle_timer)
+            .set_stack_index(2);
+    };
 
     idt
 });
