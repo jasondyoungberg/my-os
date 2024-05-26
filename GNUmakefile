@@ -3,6 +3,8 @@ override MAKEFLAGS += -rR
 
 override IMAGE_NAME := myos
 
+override OVMF_PATH := ovmf/OVMF.fd
+
 # Convenience macro to reliably declare user overridable variables.
 define DEFAULT_VAR =
     ifeq ($(origin $1),default)
@@ -33,7 +35,8 @@ run: $(IMAGE_NAME).iso
 .PHONY: run-uefi
 run-uefi: ovmf $(IMAGE_NAME).iso
 	@echo "Launching QEMU..."
-	qemu-system-x86_64 $(QEMU_ARGS) -bios ovmf/OVMF.fd -cdrom $(IMAGE_NAME).iso -boot d
+	qemu-system-x86_64 $(QEMU_ARGS) -cdrom $(IMAGE_NAME).iso -boot d \
+		-drive if=pflash,format=raw,readonly=on,file=$(OVMF_PATH)
 
 .PHONY: run-hdd
 run-hdd: $(IMAGE_NAME).hdd
@@ -43,7 +46,8 @@ run-hdd: $(IMAGE_NAME).hdd
 .PHONY: run-hdd-uefi
 run-hdd-uefi: ovmf $(IMAGE_NAME).hdd
 	@echo "Launching QEMU..."
-	qemu-system-x86_64 $(QEMU_ARGS) -bios ovmf/OVMF.fd -hda $(IMAGE_NAME).hdd
+	qemu-system-x86_64 $(QEMU_ARGS) -hda $(IMAGE_NAME).hdd \
+		-drive if=pflash,format=raw,readonly=on,file=$(OVMF_PATH)
 
 ovmf:
 	mkdir -p ovmf
