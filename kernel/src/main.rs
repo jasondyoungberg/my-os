@@ -123,6 +123,13 @@ extern "C" fn _start_cpu(cpu: &Cpu) -> ! {
 #[panic_handler]
 fn rust_panic(info: &PanicInfo) -> ! {
     log::error!("{}", info);
+    shutdown_emu();
+}
+
+fn shutdown_emu() -> ! {
+    unsafe { PortWriteOnly::<u16>::new(0x604).write(0x2000) };
+
+    interrupts::disable();
     loop {
         hlt();
     }
