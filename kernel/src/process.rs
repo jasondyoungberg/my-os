@@ -22,7 +22,7 @@ use x86_64::{
 use crate::{
     dbg,
     gdt::GDT,
-    gsdata::KernelGsData,
+    gsdata::KernelData,
     memory::{phys_to_virt, virt_to_phys, MemoryMapFrameAllocator, MEMORY_OFFSET},
 };
 
@@ -84,7 +84,7 @@ impl Manager {
         kernel_process.join_kernel()
     }
 
-    pub fn swap_task(&mut self, core: &mut KernelGsData, active_context: &mut Context) {
+    pub fn swap_task(&mut self, core: &mut KernelData, active_context: &mut Context) {
         if let Some(new_thread_id) = self.queue.pop_front() {
             let old_thread_id = core.active_thread;
             self.queue.push_back(old_thread_id);

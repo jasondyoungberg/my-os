@@ -1,4 +1,5 @@
 use core::{
+    cell::UnsafeCell,
     fmt::{Debug, Display},
     marker::PhantomPinned,
     pin::Pin,
@@ -25,9 +26,9 @@ impl CpuId {
     }
 
     pub fn find() -> Option<Self> {
-        if let Ok(gsdata) = KernelGsData::load_gsbase() {
+        if let Some(gsdata) = KernelData::load_gsbase() {
             Some(gsdata.cpuid)
-        } else if let Ok(gsdata) = ThreadGsData::load_gsbase() {
+        } else if let Some(gsdata) = KernelData::load_kernel_gsbase() {
             Some(gsdata.cpuid)
         } else {
             None
@@ -49,54 +50,41 @@ impl From<CpuId> for usize {
 
 #[derive(Debug)]
 #[repr(C)]
-pub struct KernelGsData {
-    magic: u32,
-    pub cpuid: CpuId,
+pub struct KernelData {
+    self_address: UnsafeCell<VirtAddr>,
+    pub sysret_stack: VirtAddr,
     pub syscall_stack: VirtAddr, // don't move this field without updating the offset in syscall wrapper
+    pub cpuid: CpuId,
     pub lapic: Box<LocalApic>,
     pub active_thread: ThreadId,
     _marker: PhantomPinned,
 }
 
-#[derive(Debug)]
-#[repr(C)]
-pub struct ThreadGsData {
-    magic: u32,
-    pub cpuid: CpuId,
-    pub rsp: u64, // don't move this field without updating the offset in syscall wrapper
-    _marker: PhantomPinned,
-}
-
-impl KernelGsData {
+impl KernelData {
     pub fn new(
         cpuid: CpuId,
         syscall_stack: VirtAddr,
         lapic: LocalApic,
         active_thread: ThreadId,
-    ) -> Self {
-        Self {
-            magic: KERNEL_GS_MAGIC,
-            cpuid,
+    ) -> Pin<Box<Self>> {
+        let ret = Box::pin(Self {
+            self_address: UnsafeCell::new(VirtAddr::zero()),
+            sysret_stack: VirtAddr::zero(),
             syscall_stack,
+            cpuid,
             lapic: Box::new(lapic),
             active_thread,
             _marker: PhantomPinned,
+        });
+        let address = VirtAddr::from_ptr(&*ret as *const _);
+        unsafe {
+            *ret.self_address.get() = address;
         }
+        ret
     }
 }
 
-impl ThreadGsData {
-    pub fn new(cpuid: CpuId) -> Self {
-        Self {
-            magic: THREAD_GS_MAGIC,
-            cpuid,
-            rsp: 0,
-            _marker: PhantomPinned,
-        }
-    }
-}
-
-impl KernelGsData {
+impl KernelData {
     pub fn save_gsbase(self: Pin<&Self>) {
         GsBase::write(VirtAddr::from_ptr(&*self as *const _));
     }
@@ -105,62 +93,28 @@ impl KernelGsData {
         KernelGsBase::write(VirtAddr::from_ptr(&*self as *const _));
     }
 
-    pub fn load_gsbase() -> Result<&'static mut Self, GsDataError> {
+    pub fn load_gsbase() -> Option<&'static mut Self> {
         Self::load_address(GsBase::read())
     }
 
-    pub fn load_kernel_gsbase() -> Result<&'static mut Self, GsDataError> {
+    pub fn load_kernel_gsbase() -> Option<&'static mut Self> {
         Self::load_address(KernelGsBase::read())
     }
 
-    fn load_address(address: VirtAddr) -> Result<&'static mut Self, GsDataError> {
+    fn load_address(address: VirtAddr) -> Option<&'static mut Self> {
         if address < VirtAddr::new(0xFFFF_FFFF_8000_0000) {
-            return Err(GsDataError::InvalidPointer(address));
+            return None;
         }
 
         let pointer = address.as_mut_ptr::<Self>();
 
         let data = unsafe { &mut *pointer };
 
-        match data.magic {
-            KERNEL_GS_MAGIC => Ok(data),
-            THREAD_GS_MAGIC => Err(GsDataError::WrongType),
-            _ => Err(GsDataError::InvalidMagic(data.magic)),
-        }
-    }
-}
-
-impl ThreadGsData {
-    pub fn save_gsbase(self: Pin<&Self>) {
-        GsBase::write(VirtAddr::from_ptr(&*self as *const _));
-    }
-
-    pub fn save_kernel_gsbase(self: Pin<&Self>) {
-        KernelGsBase::write(VirtAddr::from_ptr(&*self as *const _));
-    }
-
-    pub fn load_gsbase() -> Result<&'static mut Self, GsDataError> {
-        Self::load_address(GsBase::read())
-    }
-
-    pub fn load_kernel_gsbase() -> Result<&'static mut Self, GsDataError> {
-        Self::load_address(KernelGsBase::read())
-    }
-
-    fn load_address(address: VirtAddr) -> Result<&'static mut Self, GsDataError> {
-        if address < VirtAddr::new(0xFFFF_FFFF_8000_0000) {
-            return Err(GsDataError::InvalidPointer(address));
+        if unsafe { *data.self_address.get() } != address {
+            return None;
         }
 
-        let pointer = address.as_mut_ptr::<Self>();
-
-        let data = unsafe { &mut *pointer };
-
-        match data.magic {
-            THREAD_GS_MAGIC => Ok(data),
-            KERNEL_GS_MAGIC => Err(GsDataError::WrongType),
-            _ => Err(GsDataError::InvalidMagic(data.magic)),
-        }
+        Some(data)
     }
 }
 

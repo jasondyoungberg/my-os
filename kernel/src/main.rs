@@ -10,7 +10,6 @@ extern crate alloc;
 
 use core::panic::PanicInfo;
 
-use alloc::boxed::Box;
 use limine::{
     request::{FramebufferRequest, HhdmRequest, MemoryMapRequest, StackSizeRequest},
     response::FramebufferResponse,
@@ -21,7 +20,7 @@ use spin::{Lazy, Mutex};
 use x86_64::instructions::{hlt, interrupts, port::PortWriteOnly};
 
 use crate::{
-    gsdata::{CpuId, KernelGsData, ThreadGsData},
+    gsdata::{CpuId, KernelData},
     ministack::create_ministack,
     process::{Manager, MANAGER},
 };
@@ -119,25 +118,18 @@ extern "C" fn _start_cpu(cpu: &Cpu) -> ! {
     let active_thread = MANAGER.get().unwrap().lock().join_kernel();
 
     // Setup core data
-    let kernel_gs_data = Box::pin(KernelGsData::new(
+    let kernel_gs_data = KernelData::new(
         cpuid,
         create_ministack(64 * 1024), // 64 KiB
         lapic,
         active_thread,
-    ));
-    let thread_gs_data = Box::pin(ThreadGsData::new(cpuid));
+    );
 
-    kprintln!("settings kernel gsbase ");
     kernel_gs_data.as_ref().save_kernel_gsbase();
-    kprintln!("settings thread gsbase");
-    thread_gs_data.as_ref().save_gsbase();
-    kprintln!("done");
-
-    let rax: u64;
-    unsafe { core::arch::asm!("mov gs, rax", out("rax") rax, options(nostack)) }
-    log::info!("rax:{rax:#x}");
 
     interrupts::enable();
+
+    log::info!("{cpuid} Ready!");
 
     if cpu.id == 0 {
         let mut manager = MANAGER.get().unwrap().lock();

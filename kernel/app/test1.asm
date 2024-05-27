@@ -3,14 +3,16 @@
 
 
 mov rax, 1
-mov rdi, hello
-mov rsi, hello.len
+mov rdi, 1
+mov rsi, hello
+mov rdx, hello.len
 syscall
 
-mov rdi, msg
-mov rsi, msg.len
+mov rdi, 1
+mov rsi, msg
+mov rdx, msg.len
 cycle:
-mov rcx, 1_000_000_000
+mov rcx, 10_000_000
 loop $
 
 mov rax, 1
