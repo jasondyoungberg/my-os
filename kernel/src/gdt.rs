@@ -13,7 +13,7 @@ use crate::{gsdata::CpuId, ministack::create_ministack, SMP_RESPONSE};
 
 const STACK_SIZE: u64 = 64 * 1024; // 64 KiB
 
-const MAX_CORES: usize = 4;
+const MAX_CORES: usize = 16; // Maximum number of cores supported by the kernel
 const GDT_SIZE: usize = 6 + 2 * MAX_CORES;
 
 pub static TSS: Lazy<Vec<TaskStateSegment>> = Lazy::new(|| {
