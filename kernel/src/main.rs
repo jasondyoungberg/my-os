@@ -8,7 +8,7 @@
 
 extern crate alloc;
 
-use core::panic::PanicInfo;
+use core::{fmt::Write, panic::PanicInfo};
 
 use limine::{
     request::{FramebufferRequest, HhdmRequest, MemoryMapRequest, StackSizeRequest},
@@ -20,6 +20,8 @@ use spin::{Lazy, Mutex};
 use x86_64::instructions::{hlt, interrupts, port::PortWriteOnly};
 
 use crate::{
+    color::Color,
+    console::CONSOLE,
     gsdata::{CpuId, KernelData},
     ministack::create_ministack,
     process::{Manager, MANAGER},
@@ -150,6 +152,14 @@ extern "C" fn _start_cpu(cpu: &Cpu) -> ! {
 #[panic_handler]
 fn rust_panic(info: &PanicInfo) -> ! {
     log::error!("{}", info);
+
+    let mut console = CONSOLE.try_lock().unwrap_or_else(|| {
+        unsafe { CONSOLE.force_unlock() };
+        CONSOLE.lock()
+    });
+    console.set_colors(Color::WHITE, Color::rgb(0, 0, 128));
+    print!("{}", info);
+
     shutdown_emu();
 }
 

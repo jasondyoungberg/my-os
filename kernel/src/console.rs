@@ -36,6 +36,11 @@ impl<'a> Console<'a> {
         }
     }
 
+    pub fn set_colors(&mut self, foreground: Color, background: Color) {
+        self.foreground = foreground;
+        self.background = background;
+    }
+
     fn flush(&mut self) {
         self.framebuffer.flush();
     }
@@ -87,7 +92,7 @@ impl<'a> Console<'a> {
             for x in 0..self.framebuffer.width {
                 self.framebuffer.set_pixel(
                     (x, self.framebuffer.height - FONT_HEIGHT as u64 + y as u64),
-                    Color::BLACK,
+                    self.background,
                 );
             }
         }
