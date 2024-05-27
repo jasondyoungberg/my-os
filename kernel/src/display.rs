@@ -1,18 +1,6 @@
 use core::{fmt::Debug, slice};
 
 use alloc::{vec, vec::Vec};
-use spin::{Lazy, Mutex};
-
-use crate::FRAMEBUFFER_RESPONSE;
-
-pub static FRAMEBUFFER: Lazy<Mutex<FrameBuffer>> = Lazy::new(|| {
-    let framebuffer = FRAMEBUFFER_RESPONSE
-        .framebuffers()
-        .next()
-        .expect("no framebuffers found");
-
-    Mutex::new(framebuffer.into())
-});
 
 pub struct FrameBuffer<'a> {
     data: &'a mut [u8],
@@ -25,14 +13,14 @@ pub struct FrameBuffer<'a> {
 }
 
 #[derive(Debug)]
-pub enum PixelFormat {
+enum PixelFormat {
     Rgb24,
     Rgb32,
     Bgr24,
     Bgr32,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct Color {
     pub red: u8,
     pub green: u8,
@@ -42,6 +30,9 @@ pub struct Color {
 impl FrameBuffer<'_> {
     pub fn set_pixel(&mut self, pos: (u64, u64), color: Color) {
         let (col, row) = pos;
+
+        assert!(col < self.width, "x out of bounds");
+        assert!(row < self.height, "y out of bounds");
 
         match self.format {
             PixelFormat::Bgr24 => {

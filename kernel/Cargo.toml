@@ -23,3 +23,9 @@ pic8259 = "0.11.0"
 log = "0.4.21"
 linked_list_allocator = "0.10.5"
 x2apic = "0.4.3"
+noto-sans-mono-bitmap = { version = "0.3.0", default-features = false, features = [
+    "size_32",
+    "regular",
+    "unicode-basic-latin",
+    "unicode-specials",
+] }

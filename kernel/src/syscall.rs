@@ -7,7 +7,7 @@ use x86_64::{
     VirtAddr,
 };
 
-use crate::{gdt::GDT, kprintln, process::Registers, wrap};
+use crate::{gdt::GDT, println, process::Registers, wrap};
 
 pub fn init() {
     LStar::write(VirtAddr::new(handle_syscall as usize as u64));
@@ -64,7 +64,7 @@ fn write(fd: u64, ptr: u64, len: u64) -> Result<u64, u64> {
 
     let bytes = unsafe { core::slice::from_raw_parts(ptr as *const u8, len as usize) };
     let string = core::str::from_utf8(bytes).map_err(|_| 1u64)?;
-    kprintln!("{}", string);
+    println!("{}", string);
 
     Ok(string.len() as u64)
 }

@@ -25,6 +25,7 @@ use crate::{
     process::{Manager, MANAGER},
 };
 
+mod console;
 mod debugcon;
 mod display;
 mod exception;
@@ -138,7 +139,9 @@ extern "C" fn _start_cpu(cpu: &Cpu) -> ! {
     }
 
     loop {
-        log::debug!("{} {:?}", cpuid, active_thread);
+        log::info!("{} {:?}", cpuid, active_thread);
+        println!("{} {:?}", cpuid, active_thread);
+
         hlt();
     }
 }

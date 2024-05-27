@@ -39,6 +39,7 @@ dependencies = [
  "limine",
  "linked_list_allocator",
  "log",
+ "noto-sans-mono-bitmap",
  "pic8259",
  "spin",
  "x2apic",
@@ -78,6 +79,12 @@ name = "log"
 version = "0.4.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "90ed8c1e510134f979dbc4f070f87d4313098b704861a105fe34231c70a3901c"
+
+[[package]]
+name = "noto-sans-mono-bitmap"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9aa163ae3f5d28f11e4906fac432e39937daee74920caec72a4962810646e0fb"
 
 [[package]]
 name = "paste"
