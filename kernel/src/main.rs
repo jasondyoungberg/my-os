@@ -23,25 +23,23 @@ use crate::{
     color::Color,
     console::CONSOLE,
     gsdata::{CpuId, KernelData},
+    hardware::lapic,
     ministack::create_ministack,
     process::{Manager, MANAGER},
 };
 
 mod color;
 mod console;
-mod debugcon;
-mod display;
 mod exception;
 mod gdt;
 mod gsdata;
+mod hardware;
 mod heap;
 mod idt;
-mod lapic;
 mod logger;
 mod macros;
 mod memory;
 mod ministack;
-mod pics;
 mod process;
 mod syscall;
 
@@ -97,7 +95,7 @@ extern "C" fn _start() -> ! {
     logger::init();
 
     MANAGER.call_once(|| Mutex::new(Manager::init()));
-    pics::init();
+    crate::hardware::pics::init();
 
     for cpu in SMP_RESPONSE.cpus() {
         if cpu.id != 0 {

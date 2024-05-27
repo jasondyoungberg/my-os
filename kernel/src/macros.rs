@@ -1,7 +1,7 @@
 #[macro_export]
 macro_rules! kprint {
     ($($arg:tt)*) => {
-        $crate::debugcon::_print(format_args!($($arg)*))
+        $crate::hardware::debugcon::_print(format_args!($($arg)*))
     };
 }
 

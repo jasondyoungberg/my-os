@@ -7,8 +7,10 @@ use x86_64::{
 
 use crate::{
     exception::{double_fault_handler, page_fault_handler},
-    lapic,
-    pics::{pics_handler, PICS_OFFSET},
+    hardware::{
+        lapic,
+        pics::{pics_handler, PICS_OFFSET},
+    },
 };
 
 pub static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {

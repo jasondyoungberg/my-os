@@ -26,6 +26,6 @@ pub fn pics_handler(_stack_frame: InterruptStackFrame, index: u8, _error_code: O
     unsafe { GS::swap() };
     log::warn!("PIC interrupt: {}", index - PICS_OFFSET);
     let irq = index - PICS_OFFSET;
-    crate::pics::notify_end_of_interrupt(irq);
+    crate::hardware::pics::notify_end_of_interrupt(irq);
     unsafe { GS::swap() };
 }
