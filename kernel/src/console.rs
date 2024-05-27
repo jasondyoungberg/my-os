@@ -22,6 +22,8 @@ pub static CONSOLE: Lazy<Mutex<Console<'static>>> = Lazy::new(|| {
 pub struct Console<'a> {
     framebuffer: FrameBuffer<'a>,
     cursor: u64,
+    foreground: Color,
+    background: Color,
 }
 
 impl<'a> Console<'a> {
@@ -29,6 +31,8 @@ impl<'a> Console<'a> {
         Self {
             framebuffer,
             cursor: 0,
+            foreground: Color::WHITE,
+            background: Color::BLACK,
         }
     }
 
@@ -53,7 +57,7 @@ impl<'a> Console<'a> {
 
         for (y, row) in raster.iter().enumerate() {
             for (x, pix) in row.iter().enumerate() {
-                let color = Color::rgb(*pix, *pix, *pix);
+                let color = Color::blend(self.background, self.foreground, *pix as f32 / 255.0);
 
                 let pix_x = (self.cursor as usize * FONT_WIDTH + x) as u64;
                 let pix_y = self.framebuffer.height - FONT_HEIGHT as u64 + y as u64;
