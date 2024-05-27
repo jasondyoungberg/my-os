@@ -37,8 +37,6 @@ pub fn create_ministack(size: u64) -> VirtAddr {
         end: Page::containing_address(end_addr),
     };
 
-    log::debug!("Ministack at {:?}", range);
-
     for page in range {
         let frame = frame_allocator
             .allocate_frame()
