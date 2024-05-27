@@ -26,6 +26,7 @@ use crate::{
 };
 
 mod debugcon;
+mod display;
 mod exception;
 mod gdt;
 mod gsdata;
