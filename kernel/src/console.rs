@@ -8,10 +8,7 @@ const FONT_SIZE: RasterHeight = RasterHeight::Size32;
 const FONT_WIDTH: usize = get_raster_width(FONT_WEIGHT, FONT_SIZE);
 const FONT_HEIGHT: usize = FONT_SIZE.val();
 
-use crate::{
-    display::{Color, FrameBuffer},
-    FRAMEBUFFER_RESPONSE,
-};
+use crate::{color::Color, display::FrameBuffer, FRAMEBUFFER_RESPONSE};
 
 pub static CONSOLE: Lazy<Mutex<Console<'static>>> = Lazy::new(|| {
     let framebuffer = FRAMEBUFFER_RESPONSE

@@ -25,6 +25,7 @@ use crate::{
     process::{Manager, MANAGER},
 };
 
+mod color;
 mod console;
 mod debugcon;
 mod display;
