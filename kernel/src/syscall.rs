@@ -38,7 +38,10 @@ extern "C" fn handle_syscall_inner(registers: &mut Registers) {
 
     let res = match num {
         1 => write(arg1, arg2, arg3),
-        _ => todo!("syscall {num}"),
+        _ => {
+            log::warn!("unknown syscall {num}");
+            Err(0)
+        }
     };
 
     log::info!("syscall {num} ({arg1}, {arg2}, {arg3}, {arg4}, {arg5}, {arg6}) => {res:?}");
@@ -59,11 +62,11 @@ extern "C" fn handle_syscall_inner(registers: &mut Registers) {
 
 fn write(fd: u64, ptr: u64, len: u64) -> Result<u64, u64> {
     if fd != 1 {
-        return Err(0);
+        return Err(1);
     }
 
     let bytes = unsafe { core::slice::from_raw_parts(ptr as *const u8, len as usize) };
-    let string = core::str::from_utf8(bytes).map_err(|_| 1u64)?;
+    let string = core::str::from_utf8(bytes).map_err(|_| 2u64)?;
     println!("{}", string);
 
     Ok(string.len() as u64)
