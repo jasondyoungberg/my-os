@@ -132,14 +132,17 @@ extern "C" fn _start_cpu(cpu: &Cpu) -> ! {
 
     kernel_gs_data.as_ref().save_kernel_gsbase();
 
+    if cpu.id == 0 {
+        let mut manager = MANAGER.get().unwrap().lock();
+        manager.spawn(include_bytes!("../app/hello"));
+        manager.spawn(include_bytes!("../app/loop"));
+        // manager.spawn(include_bytes!("../app/yeild"));
+        // manager.spawn(include_bytes!("../app/sleep"));
+    }
+
     interrupts::enable();
 
     log::info!("{cpuid} Ready!");
-
-    if cpu.id == 0 {
-        let mut manager = MANAGER.get().unwrap().lock();
-        manager.spawn(include_bytes!("../app/test1"));
-    }
 
     loop {
         log::info!("{} {:?}", cpuid, active_thread);

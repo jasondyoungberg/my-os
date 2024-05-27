@@ -71,12 +71,12 @@ limine/limine:
 	$(MAKE) -C limine
 
 .PHONY: kernel
-kernel:
+kernel: kernel/app/*
 	@echo "Building the kernel..."
 	
-	cd kernel/app && nasm *.asm
+	cd kernel/app && find . -name '*.asm' -exec nasm {} \;
+
 	cd kernel && cargo build --profile $(RUST_PROFILE) -Z unstable-options --out-dir .
-	# $(MAKE) -C kernel
 
 $(IMAGE_NAME).iso: limine/limine kernel
 	@echo "Generating the ISO image..."
