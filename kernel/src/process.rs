@@ -34,6 +34,54 @@ pub struct Manager {
     queue: VecDeque<ThreadId>,
 }
 
+#[derive(Debug)]
+pub struct Process {
+    threads: BTreeMap<ThreadId, Thread>,
+    process_id: ProcessId,
+    next_thread_id: u64,
+    cr3: (PhysFrame, Cr3Flags),
+    l4_table: Pin<Box<PageTable>>,
+}
+
+#[derive(Debug)]
+pub struct Thread {
+    context: Context,
+    thread_id: ThreadId,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct ProcessId(u64);
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct ThreadId(ProcessId, u64);
+
+#[derive(Debug)]
+#[repr(C)]
+pub struct Context {
+    pub registers: Registers,
+    pub stack_frame: InterruptStackFrame,
+}
+
+#[derive(Clone, Copy, Debug)]
+#[repr(C)]
+pub struct Registers {
+    pub rax: u64,
+    pub rbx: u64,
+    pub rcx: u64,
+    pub rdx: u64,
+    pub rsi: u64,
+    pub rdi: u64,
+    pub rbp: u64,
+    pub r8: u64,
+    pub r9: u64,
+    pub r10: u64,
+    pub r11: u64,
+    pub r12: u64,
+    pub r13: u64,
+    pub r14: u64,
+    pub r15: u64,
+}
+
 impl Manager {
     /// This function initializes the process manager.
     /// It should be called only once.
@@ -212,15 +260,6 @@ impl Manager {
     }
 }
 
-#[derive(Debug)]
-pub struct Process {
-    threads: BTreeMap<ThreadId, Thread>,
-    process_id: ProcessId,
-    next_thread_id: u64,
-    cr3: (PhysFrame, Cr3Flags),
-    l4_table: Pin<Box<PageTable>>,
-}
-
 impl Process {
     fn join_kernel(&mut self) -> ThreadId {
         let thread_id = ThreadId(self.process_id, self.next_thread_id);
@@ -254,27 +293,6 @@ impl Process {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ProcessId(u64);
-
-#[derive(Debug)]
-pub struct Thread {
-    context: Context,
-    thread_id: ThreadId,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ThreadId(ProcessId, u64);
-
-#[derive(Debug)]
-#[repr(C)]
-pub struct Context {
-    pub registers: Registers,
-    pub stack_frame: InterruptStackFrame,
-}
-
-impl Context {}
-
 impl Clone for Context {
     fn clone(&self) -> Self {
         Self {
@@ -288,26 +306,6 @@ impl Clone for Context {
             ),
         }
     }
-}
-
-#[derive(Clone, Copy, Debug)]
-#[repr(C)]
-pub struct Registers {
-    pub rax: u64,
-    pub rbx: u64,
-    pub rcx: u64,
-    pub rdx: u64,
-    pub rsi: u64,
-    pub rdi: u64,
-    pub rbp: u64,
-    pub r8: u64,
-    pub r9: u64,
-    pub r10: u64,
-    pub r11: u64,
-    pub r12: u64,
-    pub r13: u64,
-    pub r14: u64,
-    pub r15: u64,
 }
 
 impl Registers {
