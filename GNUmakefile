@@ -19,9 +19,13 @@ ifeq ($(RUST_PROFILE),)
     override RUST_PROFILE := release
 endif
 
+ifeq ($(CPUS),)
+    override CPUS := 4
+endif
+
 QEMU_ARGS := \
 	-machine q35 \
-	-smp 4 \
+	-smp $(CPUS) \
 	-m 2G \
 	-debugcon stdio \
 	--no-reboot \
