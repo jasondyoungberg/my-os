@@ -23,8 +23,7 @@ use crate::{
     dbg,
     gdt::GDT,
     gsdata::KernelGsData,
-    memory::{phys_to_virt, virt_to_phys, MemoryMapFrameAllocator},
-    HHDM_RESPONSE,
+    memory::{phys_to_virt, virt_to_phys, MemoryMapFrameAllocator, MEMORY_OFFSET},
 };
 
 pub static MANAGER: Once<Mutex<Manager>> = Once::new();
@@ -60,8 +59,6 @@ impl Manager {
 
         log::info!("Cr3 {:?} => {:?}", Cr3::read(), cr3);
 
-        unsafe { Cr3::write(cr3.0, cr3.1) };
-
         processes.insert(
             ProcessId(0),
             Process {
@@ -81,7 +78,9 @@ impl Manager {
     }
 
     pub fn join_kernel(&mut self) -> ThreadId {
-        let kernel_process = self.processes.get_mut(&ProcessId(0)).unwrap();
+        let kernel_process = self.kernel_process_mut();
+        let cr3 = kernel_process.cr3;
+        unsafe { Cr3::write(cr3.0, cr3.1) };
         kernel_process.join_kernel()
     }
 
@@ -118,11 +117,25 @@ impl Manager {
         self.get_process_mut(id.0)?.get_thread_mut(id)
     }
 
-    pub fn spawn(&mut self, code: &[u8]) -> ThreadId {
-        let kernel = self.get_process_mut(ProcessId(0)).unwrap();
+    pub fn kernel_process(&self) -> &Process {
+        self.get_process(ProcessId(0)).unwrap()
+    }
 
+    pub fn kernel_process_mut(&mut self) -> &mut Process {
+        self.get_process_mut(ProcessId(0)).unwrap()
+    }
+
+    pub fn kernel_l4_table(&self) -> &PageTable {
+        &self.kernel_process().l4_table
+    }
+
+    pub fn kernel_l4_table_mut(&mut self) -> &mut PageTable {
+        &mut self.kernel_process_mut().l4_table
+    }
+
+    pub fn spawn(&mut self, code: &[u8]) -> ThreadId {
         // Create new page table
-        let mut l4_table: Pin<Box<PageTable>> = Box::pin((*kernel.l4_table).clone());
+        let mut l4_table: Pin<Box<PageTable>> = Box::pin(self.kernel_l4_table().clone());
         let cr3 = {
             let l4_table_virt = VirtAddr::from_ptr(&*l4_table as *const _);
             let l4_table_phys = virt_to_phys(l4_table_virt).unwrap();
@@ -134,8 +147,7 @@ impl Manager {
 
         let mut frame_allocator = MemoryMapFrameAllocator;
         let l4_table_ref = &mut *l4_table.as_mut();
-        let mut mapper =
-            unsafe { OffsetPageTable::new(l4_table_ref, VirtAddr::new(HHDM_RESPONSE.offset())) };
+        let mut mapper = unsafe { OffsetPageTable::new(l4_table_ref, *MEMORY_OFFSET) };
 
         // Write code to memory
 

@@ -1,6 +1,7 @@
 use core::sync::atomic::{AtomicUsize, Ordering::Relaxed};
 
 use limine::memory_map::EntryType;
+use spin::Lazy;
 use x86_64::{
     registers::control::Cr3,
     structures::paging::{page_table::FrameError, FrameAllocator, PageTable, PhysFrame, Size4KiB},
@@ -9,8 +10,10 @@ use x86_64::{
 
 use crate::{HHDM_RESPONSE, MEMORY_MAP_RESPONSE};
 
+pub static MEMORY_OFFSET: Lazy<VirtAddr> = Lazy::new(|| VirtAddr::new(HHDM_RESPONSE.offset()));
+
 pub fn phys_to_virt(phys: PhysAddr) -> VirtAddr {
-    VirtAddr::new(phys.as_u64() + HHDM_RESPONSE.offset())
+    VirtAddr::new(phys.as_u64() + MEMORY_OFFSET.as_u64())
 }
 
 // code from https://os.phil-opp.com/paging-implementation/#translating-addresses
@@ -29,7 +32,7 @@ pub fn virt_to_phys(addr: VirtAddr) -> Option<PhysAddr> {
     // traverse the multi-level page table
     for &index in &table_indexes {
         // convert the frame into a page table reference
-        let virt = VirtAddr::new(HHDM_RESPONSE.offset()) + frame.start_address().as_u64();
+        let virt = *MEMORY_OFFSET + frame.start_address().as_u64();
         let table_ptr: *const PageTable = virt.as_ptr();
         let table = unsafe { &*table_ptr };
 

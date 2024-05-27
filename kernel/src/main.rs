@@ -18,13 +18,11 @@ use limine::{
     BaseRevision,
 };
 use spin::{Lazy, Mutex};
-use x86_64::{
-    instructions::{hlt, interrupts, port::PortWriteOnly},
-    VirtAddr,
-};
+use x86_64::instructions::{hlt, interrupts, port::PortWriteOnly};
 
 use crate::{
     gsdata::{CpuId, KernelGsData, ThreadGsData},
+    ministack::create_ministack,
     process::{Manager, MANAGER},
 };
 
@@ -122,7 +120,7 @@ extern "C" fn _start_cpu(cpu: &Cpu) -> ! {
     // Setup core data
     let kernel_gs_data = Box::pin(KernelGsData::new(
         cpuid,
-        VirtAddr::zero(), // todo
+        create_ministack(64 * 1024), // 64 KiB
         lapic,
         active_thread,
     ));
@@ -132,8 +130,6 @@ extern "C" fn _start_cpu(cpu: &Cpu) -> ! {
     thread_gs_data.as_ref().save_gsbase();
 
     interrupts::enable();
-
-    log::info!("Ready!");
 
     if cpu.id == 0 {
         let mut manager = MANAGER.get().unwrap().lock();

@@ -9,31 +9,25 @@ use x86_64::{
     },
 };
 
-use crate::{gsdata::CpuId, ministack::MiniStack, SMP_RESPONSE};
+use crate::{gsdata::CpuId, ministack::create_ministack, SMP_RESPONSE};
+
+const STACK_SIZE: u64 = 64 * 1024; // 64 KiB
 
 const MAX_CORES: usize = 4;
 const GDT_SIZE: usize = 6 + 2 * MAX_CORES;
 
-static STACKS: Lazy<Vec<MiniStack>> = Lazy::new(|| {
-    (0..(SMP_RESPONSE.cpus().len() * 10))
-        .map(|_| MiniStack::new())
-        .collect()
-});
-
 pub static TSS: Lazy<Vec<TaskStateSegment>> = Lazy::new(|| {
     let cpu_cnt = SMP_RESPONSE.cpus().len();
     (0..cpu_cnt)
-        .map(|tss_idx| {
+        .map(|_| {
             let mut tss = TaskStateSegment::new();
 
-            for ist_idx in 0..7 {
-                let stack_idx = tss_idx * 10 + ist_idx;
-                tss.interrupt_stack_table[ist_idx] = STACKS[stack_idx].addr();
+            for i in 0..7 {
+                tss.interrupt_stack_table[i] = create_ministack(STACK_SIZE);
             }
 
-            for pst_idx in 0..3 {
-                let stack_idx = tss_idx * 10 + 7 + pst_idx;
-                tss.privilege_stack_table[pst_idx] = STACKS[stack_idx].addr();
+            for i in 0..3 {
+                tss.privilege_stack_table[i] = create_ministack(STACK_SIZE);
             }
 
             tss
@@ -66,6 +60,7 @@ pub static GDT: Lazy<GdtInfo> = Lazy::new(|| {
     }
 });
 
+#[derive(Debug)]
 pub struct GdtInfo {
     pub gdt: GlobalDescriptorTable<GDT_SIZE>,
 
