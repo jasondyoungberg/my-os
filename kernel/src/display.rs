@@ -71,11 +71,35 @@ impl FrameBuffer<'_> {
         }
     }
 
+    pub fn scroll(&mut self, offset: (i64, i64)) {
+        let (dx, dy) = offset;
+
+        let shift = dy * self.pitch as i64 + dx * self.format.bytes() as i64;
+        let shift = isize::try_from(shift).unwrap();
+
+        if shift > 0 {
+            self.backbuffer
+                .rotate_right(usize::try_from(shift).unwrap());
+        } else {
+            self.backbuffer
+                .rotate_left(usize::try_from(-shift).unwrap());
+        }
+    }
+
     pub fn flush(&mut self) {
         let source: &[u8] = &self.backbuffer;
         let dest: &mut [u8] = self.data;
 
         dest.copy_from_slice(source);
+    }
+}
+
+impl PixelFormat {
+    const fn bytes(&self) -> u8 {
+        match self {
+            Self::Rgb24 | Self::Bgr24 => 3,
+            Self::Rgb32 | Self::Bgr32 => 4,
+        }
     }
 }
 
