@@ -14,9 +14,6 @@ use x86_64::{
 
 use crate::process::ThreadId;
 
-const KERNEL_GS_MAGIC: u32 = 0x53474b21; // !KGS
-const THREAD_GS_MAGIC: u32 = 0x53475421; // !TGS
-
 #[derive(Clone, Copy, Debug)]
 pub struct CpuId(u32);
 

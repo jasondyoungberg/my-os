@@ -49,12 +49,6 @@ pub fn virt_to_phys(addr: VirtAddr) -> Option<PhysAddr> {
     Some(frame.start_address() + u64::from(addr.page_offset()))
 }
 
-pub unsafe fn active_level_4_table() -> &'static mut PageTable {
-    let (frame, _) = Cr3::read();
-    let ptr = phys_to_virt(frame.start_address()).as_mut_ptr();
-    unsafe { &mut *ptr }
-}
-
 pub struct MemoryMapFrameAllocator;
 
 unsafe impl FrameAllocator<Size4KiB> for MemoryMapFrameAllocator {

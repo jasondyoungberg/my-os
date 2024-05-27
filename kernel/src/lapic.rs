@@ -42,5 +42,3 @@ extern "C" fn handle_timer_inner(context: &mut Context) {
 
     unsafe { cpu_data.lapic.end_of_interrupt() };
 }
-
-fn asdf() {}
