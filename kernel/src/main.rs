@@ -8,7 +8,7 @@
 
 extern crate alloc;
 
-use core::{fmt::Write, panic::PanicInfo};
+use core::panic::PanicInfo;
 
 use limine::{
     request::{FramebufferRequest, HhdmRequest, MemoryMapRequest, StackSizeRequest},
