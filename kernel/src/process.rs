@@ -1,4 +1,9 @@
-use alloc::collections::{BTreeMap, VecDeque};
+use core::pin::Pin;
+
+use alloc::{
+    boxed::Box,
+    collections::{BTreeMap, VecDeque},
+};
 use spin::{Mutex, Once};
 use x86_64::{
     registers::{
@@ -7,15 +12,18 @@ use x86_64::{
     },
     structures::{
         idt::InterruptStackFrame,
-        paging::{FrameAllocator, Mapper, OffsetPageTable, Page, PageTableFlags, PhysFrame},
+        paging::{
+            FrameAllocator, Mapper, OffsetPageTable, Page, PageTable, PageTableFlags, PhysFrame,
+        },
     },
     VirtAddr,
 };
 
 use crate::{
+    dbg,
     gdt::GDT,
     gsdata::KernelGsData,
-    memory::{active_level_4_table, phys_to_virt, MemoryMapFrameAllocator},
+    memory::{phys_to_virt, virt_to_phys, MemoryMapFrameAllocator},
     HHDM_RESPONSE,
 };
 
@@ -24,7 +32,6 @@ pub static MANAGER: Once<Mutex<Manager>> = Once::new();
 pub struct Manager {
     processes: BTreeMap<ProcessId, Process>,
     next_process_id: u64,
-    kernel_cr3: (PhysFrame, Cr3Flags),
     queue: VecDeque<ThreadId>,
 }
 
@@ -34,7 +41,26 @@ impl Manager {
     pub fn init() -> Self {
         let mut processes = BTreeMap::new();
 
-        let cr3 = Cr3::read();
+        let l4_table = {
+            let (frame, _) = Cr3::read();
+            let ptr: *mut PageTable = phys_to_virt(frame.start_address()).as_mut_ptr();
+            let old_table = unsafe { &mut *ptr };
+            Box::pin(old_table.clone())
+        };
+
+        let cr3 = {
+            let l4_table_virt = VirtAddr::from_ptr(&*l4_table as *const _);
+            let l4_table_phys = virt_to_phys(l4_table_virt).unwrap();
+            dbg!(l4_table_virt, l4_table_phys);
+            (
+                PhysFrame::containing_address(l4_table_phys),
+                Cr3Flags::empty(),
+            )
+        };
+
+        log::info!("Cr3 {:?} => {:?}", Cr3::read(), cr3);
+
+        unsafe { Cr3::write(cr3.0, cr3.1) };
 
         processes.insert(
             ProcessId(0),
@@ -43,13 +69,13 @@ impl Manager {
                 process_id: ProcessId(0),
                 next_thread_id: 0,
                 cr3,
+                l4_table,
             },
         );
 
         Self {
             processes,
             next_process_id: 1,
-            kernel_cr3: cr3,
             queue: VecDeque::new(),
         }
     }
@@ -70,6 +96,9 @@ impl Manager {
             let new_thread = self.get_thread_mut(new_thread_id).unwrap();
             core.active_thread = new_thread_id;
             active_context.clone_from(&new_thread.context);
+
+            let process = self.get_process_mut(new_thread_id.0).unwrap();
+            unsafe { Cr3::write(process.cr3.0, process.cr3.1) };
         }
     }
 
@@ -90,13 +119,25 @@ impl Manager {
     }
 
     pub fn spawn(&mut self, code: &[u8]) -> ThreadId {
-        let mut frame_allocator = MemoryMapFrameAllocator;
-        let mut mapper = unsafe {
-            OffsetPageTable::new(
-                active_level_4_table(),
-                VirtAddr::new(HHDM_RESPONSE.offset()),
+        let kernel = self.get_process_mut(ProcessId(0)).unwrap();
+
+        // Create new page table
+        let mut l4_table: Pin<Box<PageTable>> = Box::pin((*kernel.l4_table).clone());
+        let cr3 = {
+            let l4_table_virt = VirtAddr::from_ptr(&*l4_table as *const _);
+            let l4_table_phys = virt_to_phys(l4_table_virt).unwrap();
+            (
+                PhysFrame::containing_address(l4_table_phys),
+                Cr3Flags::empty(),
             )
         };
+
+        let mut frame_allocator = MemoryMapFrameAllocator;
+        let l4_table_ref = &mut *l4_table.as_mut();
+        let mut mapper =
+            unsafe { OffsetPageTable::new(l4_table_ref, VirtAddr::new(HHDM_RESPONSE.offset())) };
+
+        // Write code to memory
 
         let code_frame = frame_allocator
             .allocate_frame()
@@ -144,7 +185,8 @@ impl Manager {
             threads,
             process_id,
             next_thread_id: 1,
-            cr3: self.kernel_cr3,
+            cr3,
+            l4_table,
         };
 
         self.processes.insert(process_id, process);
@@ -162,6 +204,7 @@ pub struct Process {
     process_id: ProcessId,
     next_thread_id: u64,
     cr3: (PhysFrame, Cr3Flags),
+    l4_table: Pin<Box<PageTable>>,
 }
 
 impl Process {

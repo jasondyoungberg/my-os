@@ -7,18 +7,16 @@ use x86_64::{
         gdt::{Descriptor, GlobalDescriptorTable, SegmentSelector},
         tss::TaskStateSegment,
     },
-    VirtAddr,
 };
 
-use crate::{gsdata::CpuId, SMP_RESPONSE};
+use crate::{gsdata::CpuId, ministack::MiniStack, SMP_RESPONSE};
 
 const MAX_CORES: usize = 4;
 const GDT_SIZE: usize = 6 + 2 * MAX_CORES;
-const STACK_SIZE: usize = 65536;
 
-static STACKS: Lazy<Vec<Stack>> = Lazy::new(|| {
+static STACKS: Lazy<Vec<MiniStack>> = Lazy::new(|| {
     (0..(SMP_RESPONSE.cpus().len() * 10))
-        .map(|_| Stack([0; STACK_SIZE]))
+        .map(|_| MiniStack::new())
         .collect()
 });
 
@@ -86,14 +84,5 @@ pub fn init(cpuid: CpuId) {
         SS::set_reg(GDT.kernel_data);
 
         load_tss(GDT.tss[usize::from(cpuid)]);
-    }
-}
-
-#[repr(C, align(16))]
-struct Stack([u8; STACK_SIZE]);
-
-impl Stack {
-    pub fn addr(&self) -> VirtAddr {
-        VirtAddr::from_ptr(self.0.as_ptr()) + STACK_SIZE as u64
     }
 }

@@ -52,7 +52,7 @@ impl From<CpuId> for usize {
 pub struct KernelGsData {
     magic: u32,
     pub cpuid: CpuId,
-    pub syscall_stack: VirtAddr,
+    pub syscall_stack: VirtAddr, // don't move this field without updating the offset in syscall wrapper
     pub lapic: Box<LocalApic>,
     pub active_thread: ThreadId,
     _marker: PhantomPinned,
@@ -63,7 +63,7 @@ pub struct KernelGsData {
 pub struct ThreadGsData {
     magic: u32,
     pub cpuid: CpuId,
-    pub rsp: u64,
+    pub rsp: u64, // don't move this field without updating the offset in syscall wrapper
     _marker: PhantomPinned,
 }
 

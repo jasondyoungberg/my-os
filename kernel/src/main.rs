@@ -38,6 +38,7 @@ mod lapic;
 mod logger;
 mod macros;
 mod memory;
+mod ministack;
 mod pics;
 mod process;
 mod syscall;
