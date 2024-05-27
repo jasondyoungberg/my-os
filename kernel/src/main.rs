@@ -113,6 +113,7 @@ extern "C" fn _start_cpu(cpu: &Cpu) -> ! {
     gdt::init(cpuid);
     idt::IDT.load();
     let lapic = lapic::init();
+    syscall::init();
 
     log::info!("{} joining kernel", cpuid);
     let active_thread = MANAGER.get().unwrap().lock().join_kernel();
@@ -126,8 +127,15 @@ extern "C" fn _start_cpu(cpu: &Cpu) -> ! {
     ));
     let thread_gs_data = Box::pin(ThreadGsData::new(cpuid));
 
+    kprintln!("settings kernel gsbase ");
     kernel_gs_data.as_ref().save_kernel_gsbase();
+    kprintln!("settings thread gsbase");
     thread_gs_data.as_ref().save_gsbase();
+    kprintln!("done");
+
+    let rax: u64;
+    unsafe { core::arch::asm!("mov gs, rax", out("rax") rax, options(nostack)) }
+    log::info!("rax:{rax:#x}");
 
     interrupts::enable();
 

@@ -159,7 +159,9 @@ impl Manager {
             mapper.map_to(
                 Page::containing_address(VirtAddr::new(0x1000)),
                 code_frame,
-                PageTableFlags::PRESENT | PageTableFlags::WRITABLE,
+                PageTableFlags::PRESENT
+                    | PageTableFlags::WRITABLE
+                    | PageTableFlags::USER_ACCESSIBLE,
                 &mut frame_allocator,
             )
         }
@@ -181,10 +183,10 @@ impl Manager {
                 registers: Registers::ZERO,
                 stack_frame: InterruptStackFrame::new(
                     VirtAddr::new(0x1000),
-                    GDT.kernel_code,
+                    GDT.user_code,
                     RFlags::INTERRUPT_FLAG,
                     VirtAddr::zero(), // todo: set stack pointer
-                    GDT.kernel_data,
+                    GDT.user_data,
                 ),
             },
             thread_id,
