@@ -8,12 +8,24 @@
     mov rdx, message.len
     syscall
 
+cycle:
+
 ; exit 0
     mov rax, 3
     mov rdi, 0
     syscall
 
-jmp $
+; print message 2
+    mov rax, 1
+    mov rdi, 1
+    mov rsi, message2
+    mov rdx, message2.len
+    syscall
+
+jmp cycle
 
 message: db `Hello, World!\n`
 .len EQU $ - message
+
+message2: db `I didn't exit!\n`
+.len EQU $ - message2

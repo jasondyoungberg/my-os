@@ -136,7 +136,7 @@ extern "C" fn _start_cpu(cpu: &Cpu) -> ! {
         let mut manager = MANAGER.get().unwrap().lock();
         manager.spawn(include_bytes!("../app/hello"));
         manager.spawn(include_bytes!("../app/loop"));
-        // manager.spawn(include_bytes!("../app/yeild"));
+        manager.spawn(include_bytes!("../app/yeild"));
         // manager.spawn(include_bytes!("../app/sleep"));
     }
 
