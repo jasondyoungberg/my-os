@@ -247,7 +247,7 @@ impl Manager {
                     VirtAddr::new(0x1000),
                     GDT.user_code,
                     RFlags::INTERRUPT_FLAG,
-                    VirtAddr::zero(), // todo: set stack pointer
+                    VirtAddr::new(0x2000), // todo: get better stack location
                     GDT.user_data,
                 ),
             },

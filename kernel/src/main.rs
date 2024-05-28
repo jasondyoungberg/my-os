@@ -83,7 +83,8 @@ extern "C" fn init_cpu(cpu: &Cpu) -> ! {
         manager.spawn(include_bytes!("../app/hello"));
         manager.spawn(include_bytes!("../app/loop"));
         manager.spawn(include_bytes!("../app/yeild"));
-        // manager.spawn(include_bytes!("../app/sleep"));
+        manager.spawn(include_bytes!("../app/sleep"));
+        manager.spawn(include_bytes!("../app/stack"));
         manager.spawn(include_bytes!("../app/segfault"));
     }
 
