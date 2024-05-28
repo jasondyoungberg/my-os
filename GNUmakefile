@@ -23,13 +23,21 @@ ifeq ($(CPUS),)
     override CPUS := 4
 endif
 
+ifeq ($(MEM),)
+    override MEM := 2G
+endif
+
 QEMU_ARGS := \
 	-machine q35 \
 	-smp $(CPUS) \
-	-m 2G \
+	-m $(MEM) \
 	-debugcon stdio \
 	--no-reboot \
 	--no-shutdown \
+
+ifeq ($(KVM),1)
+	QEMU_ARGS += -enable-kvm
+endif
 
 .PHONY: all
 all: $(IMAGE_NAME).iso
