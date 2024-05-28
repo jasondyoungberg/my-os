@@ -21,17 +21,23 @@ wrap!(irq(PageFaultErrorCode), page_fault_handler_inner => page_fault_handler);
 
 extern "C" fn page_fault_handler_inner(context: &mut Context, error_code: PageFaultErrorCode) {
     let stack_frame = &context.stack_frame;
+    let address = Cr2::read();
     if stack_frame.code_segment.rpl() as u8 == 0 {
-        let address = Cr2::read();
         panic!(
             "\
-Page Fault
+Kernel Page Fault
 Accessed Address: {address:?}
 Error Code: {error_code:?}
 {stack_frame:#?}",
         );
     } else {
-        log::error!("userland page fault");
+        log::error!(
+            "\
+User Page Fault
+Accessed Address: {address:?}
+Error Code: {error_code:?}
+{stack_frame:#?}",
+        );
         MANAGER.get().unwrap().lock().kill_thread(context);
     }
 }
