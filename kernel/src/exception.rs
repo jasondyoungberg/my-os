@@ -15,7 +15,7 @@ extern "C" fn division_error_handler_inner(context: &mut Context) {
     if stack_frame.code_segment.rpl() as u8 == 0 {
         panic!("Kernel Division Error\n{stack_frame:#?}");
     } else {
-        log::error!("User Division Error\n{stack_frame:#?}");
+        log::warn!("User Division Error\n{stack_frame:#?}");
         MANAGER.get().unwrap().lock().kill_thread(context);
     }
 }
@@ -44,7 +44,7 @@ extern "C" fn bound_range_exceeded_handler_inner(context: &mut Context) {
     if stack_frame.code_segment.rpl() as u8 == 0 {
         panic!("Kernel Bound Range Exceeded\n{stack_frame:#?}");
     } else {
-        log::error!("User Bound Range Exceeded\n{stack_frame:#?}");
+        log::warn!("User Bound Range Exceeded\n{stack_frame:#?}");
         MANAGER.get().unwrap().lock().kill_thread(context);
     }
 }
@@ -55,7 +55,7 @@ extern "C" fn invalid_opcode_handler_inner(context: &mut Context) {
     if stack_frame.code_segment.rpl() as u8 == 0 {
         panic!("Kernel Invalid Opcode\n{stack_frame:#?}");
     } else {
-        log::error!("User Invalid Opcode\n{stack_frame:#?}");
+        log::warn!("User Invalid Opcode\n{stack_frame:#?}");
         MANAGER.get().unwrap().lock().kill_thread(context);
     }
 }
@@ -66,7 +66,7 @@ extern "C" fn device_not_available_handler_inner(context: &mut Context) {
     if stack_frame.code_segment.rpl() as u8 == 0 {
         panic!("Kernel Device Not Available\n{stack_frame:#?}");
     } else {
-        log::error!("User Device Not Available\n{stack_frame:#?}");
+        log::warn!("User Device Not Available\n{stack_frame:#?}");
         MANAGER.get().unwrap().lock().kill_thread(context);
     }
 }
@@ -100,7 +100,7 @@ extern "C" fn stack_segment_fault_handler_inner(context: &mut Context, error_cod
     if stack_frame.code_segment.rpl() as u8 == 0 {
         panic!("Kernel Stack Segment Fault ({error_code:#x})\n{stack_frame:#?}");
     } else {
-        log::error!("User Stack Segment Fault ({error_code:#x})\n{stack_frame:#?}");
+        log::warn!("User Stack Segment Fault ({error_code:#x})\n{stack_frame:#?}");
         MANAGER.get().unwrap().lock().kill_thread(context);
     }
 }
@@ -111,7 +111,7 @@ extern "C" fn general_protection_fault_handler_inner(context: &mut Context, erro
     if stack_frame.code_segment.rpl() as u8 == 0 {
         panic!("Kernel General Protection Fault ({error_code:#x})\n{stack_frame:#?}");
     } else {
-        log::error!("User General Protection Fault ({error_code:#x})\n{stack_frame:#?}");
+        log::warn!("User General Protection Fault ({error_code:#x})\n{stack_frame:#?}");
         MANAGER.get().unwrap().lock().kill_thread(context);
     }
 }
@@ -129,7 +129,7 @@ extern "C" fn page_fault_handler_inner(context: &mut Context, error_code: PageFa
 {stack_frame:#?}",
         );
     } else {
-        log::error!(
+        log::warn!(
             "\
 User Page Fault
 Accessed Address: {address:?}
@@ -161,7 +161,7 @@ extern "C" fn simd_floating_point_handler_inner(context: &mut Context) {
     if stack_frame.code_segment.rpl() as u8 == 0 {
         panic!("Kernel SIMD Floating Point\n{stack_frame:#?}");
     } else {
-        log::error!("User SIMD Floating Point\n{stack_frame:#?}");
+        log::warn!("User SIMD Floating Point\n{stack_frame:#?}");
         MANAGER.get().unwrap().lock().kill_thread(context);
     }
 }
@@ -194,7 +194,7 @@ extern "C" fn security_exception_handler_inner(context: &mut Context, error_code
     if stack_frame.code_segment.rpl() as u8 == 0 {
         panic!("Kernel Security Exception ({error_code:#x})\n{stack_frame:#?}");
     } else {
-        log::error!("User Security Exception ({error_code:#x})\n{stack_frame:#?}");
+        log::warn!("User Security Exception ({error_code:#x})\n{stack_frame:#?}");
         MANAGER.get().unwrap().lock().kill_thread(context);
     }
 }
