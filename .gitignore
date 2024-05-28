@@ -3,3 +3,7 @@
 *.iso
 *.hdd
 /.vscode
+**/target
+/kernel/dist
+/stdlib/Cargo.lock
+
