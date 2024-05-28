@@ -30,6 +30,7 @@ use crate::{
 pub static MANAGER: Once<Mutex<Manager>> = Once::new();
 
 pub struct Manager {
+    kernel_process: Arc<Mutex<Process>>,
     processes: BTreeMap<ProcessId, Arc<Mutex<Process>>>,
     next_process_id: u64,
     queue: VecDeque<Arc<Mutex<Thread>>>,
@@ -108,27 +109,28 @@ impl Manager {
 
         log::info!("Cr3 {:?} => {:?}", Cr3::read(), cr3);
 
-        processes.insert(
-            ProcessId(0),
-            Arc::new(Mutex::new(Process {
-                threads: BTreeMap::new(),
-                process_id: ProcessId(0),
-                next_thread_id: 0,
-                cr3,
-                l4_table: Arc::new(Mutex::new(l4_table)),
-            })),
-        );
+        let kernel_process = Arc::new(Mutex::new(Process {
+            threads: BTreeMap::new(),
+            process_id: ProcessId(0),
+            next_thread_id: 0,
+            cr3,
+            l4_table: Arc::new(Mutex::new(l4_table)),
+        }));
+
+        processes.insert(ProcessId(0), kernel_process.clone());
 
         Self {
+            kernel_process,
             processes,
             next_process_id: 1,
             queue: VecDeque::new(),
         }
     }
 
+    /// Call this function once on eash cpu
+    /// It sets up cr3 and adds a thread to the kernel process.
     pub fn join_kernel(&mut self) -> Arc<Mutex<Thread>> {
-        let kernel_process = self.get_process(ProcessId::KERNEL).unwrap();
-        let mut kernel_process = kernel_process.lock();
+        let mut kernel_process = self.kernel_process.lock();
         let cr3 = kernel_process.cr3;
         unsafe { Cr3::write(cr3.0, cr3.1) };
         kernel_process.join_kernel()
@@ -159,7 +161,7 @@ impl Manager {
     }
 
     pub fn get_kernel_l4_table(&self) -> Arc<Mutex<Pin<Box<PageTable>>>> {
-        let process = self.get_process(ProcessId::KERNEL).unwrap();
+        let process = self.kernel_process.clone();
         let process = process.lock();
         process.l4_table.clone()
     }
