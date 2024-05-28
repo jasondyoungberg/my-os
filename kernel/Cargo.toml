@@ -14,7 +14,6 @@ panic = "abort"
 opt-level = 0
 codegen-units = 1
 
-
 [dependencies]
 limine = "0.2.0"
 x86_64 = "0.15.1"

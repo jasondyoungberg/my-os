@@ -80,13 +80,14 @@ kernel: kernel/app/*
 	
 	cd kernel/app && find . -name '*.asm' -exec nasm {} \;
 
-	cd kernel && cargo build --profile $(RUST_PROFILE) -Z unstable-options --out-dir .
+	mkdir -p kernel/dist
+	cd kernel && cargo build --profile $(RUST_PROFILE) -Z unstable-options --out-dir dist
 
 $(IMAGE_NAME).iso: limine/limine kernel
 	@echo "Generating the ISO image..."
 	rm -rf iso_root
 	mkdir -p iso_root/boot
-	cp kernel/kernel iso_root/boot/
+	cp kernel/dist/kernel iso_root/boot/
 	mkdir -p iso_root/boot/limine
 	cp limine.cfg limine/limine-bios.sys limine/limine-bios-cd.bin limine/limine-uefi-cd.bin iso_root/boot/limine/
 	mkdir -p iso_root/EFI/BOOT
@@ -109,7 +110,7 @@ $(IMAGE_NAME).hdd: limine/limine kernel
 	./limine/limine bios-install $(IMAGE_NAME).hdd --quiet
 	mformat -i $(IMAGE_NAME).hdd@@1M
 	mmd -i $(IMAGE_NAME).hdd@@1M ::/EFI ::/EFI/BOOT ::/boot ::/boot/limine
-	mcopy -i $(IMAGE_NAME).hdd@@1M kernel/kernel ::/boot
+	mcopy -i $(IMAGE_NAME).hdd@@1M kernel/dist/kernel ::/boot
 	mcopy -i $(IMAGE_NAME).hdd@@1M limine.cfg limine/limine-bios.sys ::/boot/limine
 	mcopy -i $(IMAGE_NAME).hdd@@1M limine/BOOTX64.EFI ::/EFI/BOOT
 	mcopy -i $(IMAGE_NAME).hdd@@1M limine/BOOTIA32.EFI ::/EFI/BOOT
