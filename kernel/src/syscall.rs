@@ -124,5 +124,5 @@ extern "C" fn fake_irq_inner(context: &mut Context) {
     log::trace!("fake interrupt");
     let cpu_data = KernelData::load_gsbase().unwrap();
 
-    MANAGER.get().unwrap().lock().swap_task(cpu_data, context);
+    MANAGER.get().unwrap().lock().swap_thread(cpu_data, context);
 }

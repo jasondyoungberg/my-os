@@ -136,7 +136,7 @@ impl Manager {
         kernel_process.join_kernel()
     }
 
-    pub fn swap_task(&mut self, core: &mut KernelData, active_context: &mut Context) {
+    pub fn swap_thread(&mut self, core: &mut KernelData, active_context: &mut Context) {
         if let Some(new_thread) = self.queue.pop_front() {
             let old_thread = core.active_thread.clone();
             self.queue.push_back(old_thread.clone());
