@@ -4,7 +4,7 @@ use noto_sans_mono_bitmap::{get_raster_width, FontWeight, RasterHeight, Rasteriz
 use spin::{Lazy, Mutex};
 
 const FONT_WEIGHT: FontWeight = FontWeight::Regular;
-const FONT_SIZE: RasterHeight = RasterHeight::Size32;
+const FONT_SIZE: RasterHeight = RasterHeight::Size24;
 const FONT_WIDTH: usize = get_raster_width(FONT_WEIGHT, FONT_SIZE);
 const FONT_HEIGHT: usize = FONT_SIZE.val();
 
