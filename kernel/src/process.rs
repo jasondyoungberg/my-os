@@ -164,6 +164,7 @@ impl Manager {
         old_process.threads.remove(&old_thread.thread_id).unwrap();
 
         let new_thread = self.queue.pop_front().unwrap();
+        core.active_thread = new_thread.clone();
         let new_thread = new_thread.lock();
         active_context.clone_from(&new_thread.context);
 

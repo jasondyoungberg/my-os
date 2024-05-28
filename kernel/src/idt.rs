@@ -78,6 +78,46 @@ macro_rules! wrap {
             }
         }
     };
+    (irq($c:ty), $i:ident => $w: ident) => {
+        const _: unsafe extern "C" fn(&mut $crate::process::Context, $c) = $i;
+
+        #[naked]
+        pub extern "x86-interrupt" fn $w(
+            _stack_frame: x86_64::structures::idt::InterruptStackFrame,
+            _error_code: $c
+        ) {
+            unsafe {
+                core::arch::asm!(
+                    "swapgs",
+                    "push r14",
+                    "mov r14, [rsp+16]",
+                    "mov [rsp+16], r15",
+                    "push r13",
+                    "push r12",
+                    "push r11",
+                    "push r10",
+                    "push r9",
+                    "push r8",
+                    "push rbp",
+                    "push rdi",
+                    "push rsi",
+                    "push rdx",
+                    "push rcx",
+                    "push rbx",
+                    "push rax",
+                    "mov rdi, rsp",
+                    "mov rsi, r14",
+                    "call {inner}",
+                    $crate::wrap!(pop),
+                    "swapgs",
+                    "iretq",
+
+                    inner = sym $i,
+                    options(noreturn)
+                )
+            }
+        }
+    };
     (syscall, $i:ident => $w: ident) => {
         const _: unsafe extern "C" fn(&mut $crate::process::Registers) = $i;
 
