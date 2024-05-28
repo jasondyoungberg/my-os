@@ -246,10 +246,7 @@ impl Manager {
             .insert(process_id, Arc::new(Mutex::new(process)));
         self.queue.push_back(thread_id);
 
-        let process = self.get_process(process_id).unwrap();
-        let mut process = process.lock();
-
-        process.join_kernel()
+        thread_id
     }
 }
 
