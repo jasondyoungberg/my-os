@@ -1,14 +1,20 @@
-use core::sync::atomic::{AtomicUsize, Ordering::Relaxed};
+use core::sync::atomic::{
+    AtomicU64, AtomicUsize,
+    Ordering::{self, Relaxed},
+};
 
 use limine::memory_map::EntryType;
 use spin::Lazy;
 use x86_64::{
     registers::control::Cr3,
-    structures::paging::{page_table::FrameError, FrameAllocator, PageTable, PhysFrame, Size4KiB},
+    structures::paging::{
+        page::PageRange, page_table::FrameError, FrameAllocator, Mapper, OffsetPageTable, Page,
+        PageTable, PageTableFlags, PhysFrame, Size4KiB,
+    },
     PhysAddr, VirtAddr,
 };
 
-use crate::{HHDM_RESPONSE, MEMORY_MAP_RESPONSE};
+use crate::{process::MANAGER, HHDM_RESPONSE, MEMORY_MAP_RESPONSE};
 
 pub static MEMORY_OFFSET: Lazy<VirtAddr> = Lazy::new(|| VirtAddr::new(HHDM_RESPONSE.offset()));
 
@@ -63,4 +69,63 @@ unsafe impl FrameAllocator<Size4KiB> for MemoryMapFrameAllocator {
             .map(|addr| PhysFrame::containing_address(PhysAddr::new(addr)))
             .nth(NEXT.fetch_add(1, Relaxed))
     }
+}
+pub struct PageAllocator {
+    start: u64,
+    end: u64,
+    position: AtomicU64,
+}
+
+impl PageAllocator {
+    pub const fn new(start: u64, end: u64) -> Self {
+        assert!(start % 4096 == 0);
+        Self {
+            start,
+            end,
+            position: AtomicU64::new(start),
+        }
+    }
+
+    pub fn alloc(&self) -> Page {
+        let addr = self.position.fetch_add(4096, Ordering::Relaxed);
+        assert!(addr < self.end, "Out of memory");
+        Page::containing_address(VirtAddr::new(addr))
+    }
+
+    pub fn alloc_range(&self, size: u64) -> PageRange {
+        let size = (size + 4095) / 4096 * 4096;
+
+        let start_addr = self.position.fetch_add(size, Ordering::Relaxed);
+        let end_addr = start_addr + size;
+
+        assert!(end_addr < self.end, "Out of memory");
+
+        PageRange {
+            start: Page::containing_address(VirtAddr::new(start_addr)),
+            end: Page::containing_address(VirtAddr::new(end_addr)),
+        }
+    }
+}
+
+pub fn map_kernel_page(page: Page<Size4KiB>, flags: PageTableFlags) -> PhysFrame {
+    let manager = MANAGER.get().unwrap().lock();
+    let l4_table = manager.get_kernel_l4_table();
+    let mut l4_table = l4_table.lock();
+    map_page(page, flags, &mut l4_table)
+}
+
+pub fn map_page(
+    page: Page<Size4KiB>,
+    flags: PageTableFlags,
+    l4_table: &mut PageTable,
+) -> PhysFrame {
+    let mut mapper = unsafe { OffsetPageTable::new(l4_table, *MEMORY_OFFSET) };
+    let mut frame_allocator = MemoryMapFrameAllocator;
+    let frame = frame_allocator.allocate_frame().expect("Out of memory");
+
+    unsafe { mapper.map_to(page, frame, flags, &mut frame_allocator) }
+        .unwrap()
+        .flush();
+
+    frame
 }
