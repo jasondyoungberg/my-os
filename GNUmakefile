@@ -83,7 +83,7 @@ limine/limine:
 	$(MAKE) -C limine
 
 .PHONY: kernel
-kernel: kernel/app/*
+kernel:
 	@echo "Building the kernel..."
 	
 	cd kernel/app && find . -name '*.asm' -exec nasm {} \;
