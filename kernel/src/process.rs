@@ -152,6 +152,26 @@ impl Manager {
         }
     }
 
+    pub fn kill_thread(&mut self, core: &mut KernelData, active_context: &mut Context) {
+        let old_thread = core.active_thread.clone();
+        let old_thread = old_thread.lock();
+
+        log::info!("Killing thread {:?}", old_thread.thread_id);
+
+        let old_process = self.get_process(old_thread.thread_id.0).unwrap();
+        let mut old_process = old_process.lock();
+
+        old_process.threads.remove(&old_thread.thread_id).unwrap();
+
+        let new_thread = self.queue.pop_front().unwrap();
+        let new_thread = new_thread.lock();
+        active_context.clone_from(&new_thread.context);
+
+        let new_process = self.get_process(new_thread.thread_id.0).unwrap();
+        let new_process = new_process.lock();
+        unsafe { Cr3::write(new_process.cr3.0, new_process.cr3.1) };
+    }
+
     pub fn get_process(&self, process_id: ProcessId) -> Option<Arc<Mutex<Process>>> {
         self.processes.get(&process_id).cloned()
     }
