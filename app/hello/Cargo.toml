@@ -1,0 +1,21 @@
+[package]
+name = "hello"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[profile.release]
+panic = "abort"
+strip = true
+opt-level = "z"
+lto = true
+codegen-units = 1
+
+[profile.dev]
+panic = "abort"
+opt-level = 0
+codegen-units = 1
+
+[dependencies]
+stdlib = { path = "../../stdlib" }

@@ -4,6 +4,6 @@
 *.hdd
 /.vscode
 **/target
-/kernel/dist
+/**/dist
 /stdlib/Cargo.lock
 

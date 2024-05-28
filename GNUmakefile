@@ -88,6 +88,9 @@ kernel:
 	
 	cd kernel/app && find . -name '*.asm' -exec nasm {} \;
 
+	cd app/hello && cargo build --release -Z unstable-options --out-dir dist
+	cd app/hello/dist && objcopy -O binary hello hello.bin
+
 	mkdir -p kernel/dist
 	cd kernel && cargo build --profile $(RUST_PROFILE) -Z unstable-options --out-dir dist
 

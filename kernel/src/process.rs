@@ -24,7 +24,7 @@ use crate::{
     dbg,
     gdt::GDT,
     gsdata::KernelData,
-    memory::{phys_to_virt, virt_to_phys, MemoryMapFrameAllocator, MEMORY_OFFSET},
+    memory::{map_page, phys_to_virt, virt_to_phys, MemoryMapFrameAllocator, MEMORY_OFFSET},
 };
 
 pub static MANAGER: Once<Mutex<Manager>> = Once::new();
@@ -207,30 +207,18 @@ impl Manager {
             )
         };
 
-        let mut frame_allocator = MemoryMapFrameAllocator;
-        let l4_table_ref = &mut *l4_table.as_mut();
-        let mut mapper = unsafe { OffsetPageTable::new(l4_table_ref, *MEMORY_OFFSET) };
+        let page = Page::containing_address(VirtAddr::new(0x1000));
+        let flags =
+            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::USER_ACCESSIBLE;
 
-        // Write code to memory
-
-        let code_frame = frame_allocator
-            .allocate_frame()
-            .expect("no frames available");
-
-        unsafe {
-            mapper.map_to(
-                Page::containing_address(VirtAddr::new(0x1000)),
-                code_frame,
-                PageTableFlags::PRESENT
-                    | PageTableFlags::WRITABLE
-                    | PageTableFlags::USER_ACCESSIBLE,
-                &mut frame_allocator,
-            )
+        let code_frame = map_page(page, flags, &mut l4_table);
+        for i in 1..8 {
+            map_page(page + i as u64, flags, &mut l4_table);
         }
-        .unwrap()
-        .flush();
 
-        let code_dest: &mut [u8; 4096] =
+        // todo: make this robust to non adjecent frames
+
+        let code_dest: &mut [u8; 4096 * 8] =
             unsafe { &mut *phys_to_virt(code_frame.start_address()).as_mut_ptr() };
 
         code_dest[..code.len()].copy_from_slice(code);
@@ -247,7 +235,7 @@ impl Manager {
                     VirtAddr::new(0x1000),
                     GDT.user_code,
                     RFlags::INTERRUPT_FLAG,
-                    VirtAddr::new(0x2000), // todo: get better stack location
+                    VirtAddr::new(0x8000), // todo: get better stack location
                     GDT.user_data,
                 ),
             },

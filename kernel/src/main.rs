@@ -85,6 +85,7 @@ extern "C" fn init_cpu(cpu: &Cpu) -> ! {
         manager.spawn(include_bytes!("../app/yeild"));
         manager.spawn(include_bytes!("../app/stack"));
         manager.spawn(include_bytes!("../app/segfault"));
+        manager.spawn(include_bytes!("../../app/hello/dist/hello.bin"));
     }
 
     interrupts::enable();
