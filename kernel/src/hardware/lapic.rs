@@ -35,9 +35,9 @@ wrap!(irq, handle_timer_inner => handle_timer);
 
 extern "C" fn handle_timer_inner(context: &mut Context) {
     log::trace!("timer interrupt");
+
+    MANAGER.get().unwrap().lock().swap_thread(context);
+
     let cpu_data = KernelData::load_gsbase().unwrap();
-
-    MANAGER.get().unwrap().lock().swap_thread(cpu_data, context);
-
     unsafe { cpu_data.lapic.end_of_interrupt() };
 }

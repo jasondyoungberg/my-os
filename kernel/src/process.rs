@@ -136,8 +136,10 @@ impl Manager {
         kernel_process.join_kernel()
     }
 
-    pub fn swap_thread(&mut self, core: &mut KernelData, active_context: &mut Context) {
+    pub fn swap_thread(&mut self, active_context: &mut Context) {
         if let Some(new_thread) = self.queue.pop_front() {
+            let core = KernelData::load_gsbase().unwrap();
+
             let old_thread = core.active_thread.clone();
             self.queue.push_back(old_thread.clone());
             old_thread.lock().context.clone_from(active_context);
@@ -152,7 +154,9 @@ impl Manager {
         }
     }
 
-    pub fn kill_thread(&mut self, core: &mut KernelData, active_context: &mut Context) {
+    pub fn kill_thread(&mut self, active_context: &mut Context) {
+        let core = KernelData::load_gsbase().unwrap();
+
         let old_thread = core.active_thread.clone();
         let old_thread = old_thread.lock();
 

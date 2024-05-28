@@ -4,7 +4,6 @@ use x86_64::{
 };
 
 use crate::{
-    gsdata::KernelData,
     process::{Context, MANAGER},
     wrap,
 };
@@ -33,7 +32,6 @@ Error Code: {error_code:?}
         );
     } else {
         log::error!("userland page fault");
-        let cpu_data = KernelData::load_gsbase().unwrap();
-        MANAGER.get().unwrap().lock().kill_thread(cpu_data, context);
+        MANAGER.get().unwrap().lock().kill_thread(context);
     }
 }
