@@ -3,6 +3,7 @@ use core::pin::Pin;
 use alloc::{
     boxed::Box,
     collections::{BTreeMap, VecDeque},
+    sync::Arc,
 };
 use spin::{Mutex, Once};
 use x86_64::{
@@ -29,18 +30,18 @@ use crate::{
 pub static MANAGER: Once<Mutex<Manager>> = Once::new();
 
 pub struct Manager {
-    processes: BTreeMap<ProcessId, Process>,
+    processes: BTreeMap<ProcessId, Arc<Mutex<Process>>>,
     next_process_id: u64,
     queue: VecDeque<ThreadId>,
 }
 
 #[derive(Debug)]
 pub struct Process {
-    threads: BTreeMap<ThreadId, Thread>,
+    threads: BTreeMap<ThreadId, Arc<Mutex<Thread>>>,
     process_id: ProcessId,
     next_thread_id: u64,
     cr3: (PhysFrame, Cr3Flags),
-    l4_table: Pin<Box<PageTable>>,
+    l4_table: Arc<Mutex<Pin<Box<PageTable>>>>,
 }
 
 #[derive(Debug)]
@@ -109,13 +110,13 @@ impl Manager {
 
         processes.insert(
             ProcessId(0),
-            Process {
+            Arc::new(Mutex::new(Process {
                 threads: BTreeMap::new(),
                 process_id: ProcessId(0),
                 next_thread_id: 0,
                 cr3,
-                l4_table,
-            },
+                l4_table: Arc::new(Mutex::new(l4_table)),
+            })),
         );
 
         Self {
@@ -126,7 +127,8 @@ impl Manager {
     }
 
     pub fn join_kernel(&mut self) -> ThreadId {
-        let kernel_process = self.kernel_process_mut();
+        let kernel_process = self.get_process(ProcessId::KERNEL).unwrap();
+        let mut kernel_process = kernel_process.lock();
         let cr3 = kernel_process.cr3;
         unsafe { Cr3::write(cr3.0, cr3.1) };
         kernel_process.join_kernel()
@@ -137,53 +139,42 @@ impl Manager {
             let old_thread_id = core.active_thread;
             self.queue.push_back(old_thread_id);
 
-            let old_thread = self.get_thread_mut(old_thread_id).unwrap();
+            let old_thread = self.get_thread(old_thread_id).unwrap();
+            let mut old_thread = old_thread.lock();
             old_thread.context.clone_from(active_context);
 
-            let new_thread = self.get_thread_mut(new_thread_id).unwrap();
+            let new_thread = self.get_thread(new_thread_id).unwrap();
+            let new_thread = new_thread.lock();
             core.active_thread = new_thread_id;
             active_context.clone_from(&new_thread.context);
 
-            let process = self.get_process_mut(new_thread_id.0).unwrap();
+            let process = self.get_process(new_thread_id.0).unwrap();
+            let process = process.lock();
             unsafe { Cr3::write(process.cr3.0, process.cr3.1) };
         }
     }
 
-    pub fn get_process(&self, process_id: ProcessId) -> Option<&Process> {
-        self.processes.get(&process_id)
+    pub fn get_process(&self, process_id: ProcessId) -> Option<Arc<Mutex<Process>>> {
+        self.processes.get(&process_id).cloned()
     }
 
-    pub fn get_process_mut(&mut self, process_id: ProcessId) -> Option<&mut Process> {
-        self.processes.get_mut(&process_id)
+    pub fn get_thread(&self, id: ThreadId) -> Option<Arc<Mutex<Thread>>> {
+        self.get_process(id.0)?.lock().get_thread(id)
     }
 
-    pub fn get_thread(&self, id: ThreadId) -> Option<&Thread> {
-        self.get_process(id.0)?.get_thread(id)
-    }
-
-    pub fn get_thread_mut(&mut self, id: ThreadId) -> Option<&mut Thread> {
-        self.get_process_mut(id.0)?.get_thread_mut(id)
-    }
-
-    pub fn kernel_process(&self) -> &Process {
-        self.get_process(ProcessId(0)).unwrap()
-    }
-
-    pub fn kernel_process_mut(&mut self) -> &mut Process {
-        self.get_process_mut(ProcessId(0)).unwrap()
-    }
-
-    pub fn kernel_l4_table(&self) -> &PageTable {
-        &self.kernel_process().l4_table
-    }
-
-    pub fn kernel_l4_table_mut(&mut self) -> &mut PageTable {
-        &mut self.kernel_process_mut().l4_table
+    pub fn get_kernel_l4_table(&self) -> Arc<Mutex<Pin<Box<PageTable>>>> {
+        let process = self.get_process(ProcessId::KERNEL).unwrap();
+        let process = process.lock();
+        process.l4_table.clone()
     }
 
     pub fn spawn(&mut self, code: &[u8]) -> ThreadId {
         // Create new page table
-        let mut l4_table: Pin<Box<PageTable>> = Box::pin(self.kernel_l4_table().clone());
+        let kernel_l4_table = self.get_kernel_l4_table();
+        let kernel_l4_table = kernel_l4_table.lock();
+
+        let mut l4_table: Pin<Box<PageTable>> =
+            Box::pin(kernel_l4_table.as_ref().get_ref().clone());
         let cr3 = {
             let l4_table_virt = VirtAddr::from_ptr(&*l4_table as *const _);
             let l4_table_phys = virt_to_phys(l4_table_virt).unwrap();
@@ -241,22 +232,24 @@ impl Manager {
         };
 
         let mut threads = BTreeMap::new();
-        threads.insert(ThreadId(process_id, 0), thread);
+        threads.insert(ThreadId(process_id, 0), Arc::new(Mutex::new(thread)));
 
         let process = Process {
             threads,
             process_id,
             next_thread_id: 1,
             cr3,
-            l4_table,
+            l4_table: Arc::new(Mutex::new(l4_table)),
         };
 
-        self.processes.insert(process_id, process);
+        self.processes
+            .insert(process_id, Arc::new(Mutex::new(process)));
         self.queue.push_back(thread_id);
 
-        let thread_id = self.get_process_mut(process_id).unwrap().join_kernel();
+        let process = self.get_process(process_id).unwrap();
+        let mut process = process.lock();
 
-        thread_id
+        process.join_kernel()
     }
 }
 
@@ -279,18 +272,19 @@ impl Process {
             thread_id,
         };
 
-        self.threads.insert(thread.thread_id, thread);
+        self.threads
+            .insert(thread.thread_id, Arc::new(Mutex::new(thread)));
 
         thread_id
     }
 
-    pub fn get_thread(&self, thread_id: ThreadId) -> Option<&Thread> {
-        self.threads.get(&thread_id)
+    pub fn get_thread(&self, thread_id: ThreadId) -> Option<Arc<Mutex<Thread>>> {
+        self.threads.get(&thread_id).cloned()
     }
+}
 
-    pub fn get_thread_mut(&mut self, thread_id: ThreadId) -> Option<&mut Thread> {
-        self.threads.get_mut(&thread_id)
-    }
+impl ProcessId {
+    const KERNEL: Self = Self(0);
 }
 
 impl Clone for Context {

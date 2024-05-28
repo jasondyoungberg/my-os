@@ -18,9 +18,10 @@ const RANGE_END: u64 = 0xFFFF_9000_FFFF_FFFF - 4096;
 static MINISTACK_ADDR: AtomicU64 = AtomicU64::new(RANGE_START);
 
 pub fn create_ministack(size: u64) -> VirtAddr {
-    let mut manager = MANAGER.get().unwrap().lock();
-    let l4_table = manager.kernel_l4_table_mut();
-    let mut mapper = unsafe { OffsetPageTable::new(l4_table, *MEMORY_OFFSET) };
+    let manager = MANAGER.get().unwrap().lock();
+    let l4_table = manager.get_kernel_l4_table();
+    let mut l4_table = l4_table.lock();
+    let mut mapper = unsafe { OffsetPageTable::new(&mut l4_table, *MEMORY_OFFSET) };
     let mut frame_allocator = MemoryMapFrameAllocator;
 
     let start_addr =
