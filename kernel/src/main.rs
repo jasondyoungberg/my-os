@@ -11,7 +11,7 @@ extern crate kernel;
 
 use core::panic::PanicInfo;
 
-use limine::{memory_map::EntryType, smp::Cpu};
+use limine::smp::Cpu;
 use spin::Mutex;
 use x86_64::instructions::{hlt, interrupts};
 
@@ -21,7 +21,7 @@ use kernel::{
     gdt, gsdata, hardware, idt, logger,
     ministack::create_ministack,
     process::{Manager, MANAGER},
-    syscall, BASE_REVISION, SMP_RESPONSE,
+    syscall, SMP_RESPONSE,
 };
 
 kernel::entry!(main);
