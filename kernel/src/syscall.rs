@@ -49,8 +49,8 @@ extern "C" fn handle_syscall_inner(registers: &mut Registers) {
 
     let res = match num {
         1 => write(arg1, arg2, arg3),
-        3 => exit(arg1, registers),
-        4 => sleep(arg1, registers),
+        24 => sys_yield(registers),
+        60 => exit(arg1, registers),
         _ => {
             log::warn!("unknown syscall {num}");
             Err(0)
@@ -83,20 +83,20 @@ fn write(fd: u64, ptr: u64, len: u64) -> Result<u64, u64> {
     Ok(string.len() as u64)
 }
 
+fn sys_yield(registers: &mut Registers) -> Result<u64, u64> {
+    let res = Ok(0);
+
+    let mut fake_context = build_fake_context(res, registers);
+
+    fake_irq(&mut fake_context, FakeIrqAction::SwapThread);
+}
+
 fn exit(_code: u64, registers: &mut Registers) -> Result<u64, u64> {
     let res = Ok(0);
 
     let mut fake_context = build_fake_context(res, registers);
 
     fake_irq(&mut fake_context, FakeIrqAction::KillThread);
-}
-
-fn sleep(_ms: u64, registers: &mut Registers) -> Result<u64, u64> {
-    let res = Ok(0);
-
-    let mut fake_context = build_fake_context(res, registers);
-
-    fake_irq(&mut fake_context, FakeIrqAction::SwapThread);
 }
 
 #[derive(Debug)]

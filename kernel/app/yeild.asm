@@ -10,9 +10,8 @@ cycle:
     mov rdx, message.len
     syscall
 
-; sleep 0
-    mov rax, 4
-    mov rdi, 0
+; yeild
+    mov rax, 24
     syscall
 
 jmp cycle

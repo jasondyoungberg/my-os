@@ -11,13 +11,13 @@
 cycle:
 
 ; exit 0
-    mov rax, 3
+    mov rax, 60
     mov rdi, 0
     syscall
 
 ; print message 2
     mov rax, 1
-    mov rdi, 1
+    mov rdi, 2
     mov rsi, message2
     mov rdx, message2.len
     syscall

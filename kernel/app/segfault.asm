@@ -2,5 +2,6 @@
 [org 0x1000]
 
 cycle:
-mov rax, [0xdeadbeef]
+mov rbx, 0xdeadbeef
+mov rax, [rax]
 jmp cycle
