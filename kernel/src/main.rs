@@ -18,10 +18,10 @@ use x86_64::instructions::{hlt, interrupts};
 use kernel::{
     color::Color,
     console::CONSOLE,
-    gdt, gsdata, hardware, idt, logger,
+    find_file, gdt, gsdata, hardware, idt, logger,
     mapper::create_ministack,
     process::{Manager, MANAGER},
-    syscall, MODULE_RESPONSE, SMP_RESPONSE,
+    read_file, syscall, MODULE_RESPONSE, SMP_RESPONSE,
 };
 
 kernel::entry!(main);
@@ -69,17 +69,8 @@ extern "C" fn init_cpu(cpu: &Cpu) -> ! {
     kernel_gs_data.as_ref().save_kernel_gsbase();
 
     if cpu.id == 0 {
-        let file = MODULE_RESPONSE
-            .modules()
-            .iter()
-            .find(|f| f.path() == b"/hello.txt");
-
-        if let Some(file) = file {
-            let data = unsafe { slice::from_raw_parts(file.addr(), file.size() as usize) };
-            log::info!("File: {:?}", str::from_utf8(data));
-        } else {
-            log::error!("File not found");
-        }
+        let hello = read_file(find_file("/hello.txt"));
+        print!("{}", str::from_utf8(hello).unwrap());
 
         let mut manager = MANAGER.get().unwrap().lock();
         manager.spawn(include_bytes!("../app/hello"));

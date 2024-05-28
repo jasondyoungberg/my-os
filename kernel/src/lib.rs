@@ -64,6 +64,18 @@ pub static MODULE_REQUEST: limine::request::ModuleRequest = limine::request::Mod
 pub static MODULE_RESPONSE: Lazy<&limine::response::ModuleResponse> =
     Lazy::new(|| MODULE_REQUEST.get_response().unwrap());
 
+pub fn find_file(path: &str) -> &'static limine::file::File {
+    MODULE_RESPONSE
+        .modules()
+        .iter()
+        .find(|f| f.path() == path.as_bytes())
+        .expect("module not found")
+}
+
+pub fn read_file(file: &'static limine::file::File) -> &'static [u8] {
+    unsafe { core::slice::from_raw_parts(file.addr(), file.size() as usize) }
+}
+
 #[macro_export]
 macro_rules! entry {
     ($path:path) => {
