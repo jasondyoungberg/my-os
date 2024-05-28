@@ -114,6 +114,17 @@ pub fn map_kernel_page(page: Page<Size4KiB>, flags: PageTableFlags) -> PhysFrame
     map_page(page, flags, &mut l4_table)
 }
 
+pub fn map_kernel_frame_to_page(
+    frame: PhysFrame,
+    page: Page<Size4KiB>,
+    flags: PageTableFlags,
+) -> PhysFrame {
+    let manager = MANAGER.get().unwrap().lock();
+    let l4_table = manager.get_kernel_l4_table();
+    let mut l4_table = l4_table.lock();
+    map_frame_to_page(frame, page, flags, &mut l4_table)
+}
+
 pub fn map_page(
     page: Page<Size4KiB>,
     flags: PageTableFlags,
@@ -122,6 +133,22 @@ pub fn map_page(
     let mut mapper = unsafe { OffsetPageTable::new(l4_table, *MEMORY_OFFSET) };
     let mut frame_allocator = MemoryMapFrameAllocator;
     let frame = frame_allocator.allocate_frame().expect("Out of memory");
+
+    unsafe { mapper.map_to(page, frame, flags, &mut frame_allocator) }
+        .unwrap()
+        .flush();
+
+    frame
+}
+
+pub fn map_frame_to_page(
+    frame: PhysFrame,
+    page: Page<Size4KiB>,
+    flags: PageTableFlags,
+    l4_table: &mut PageTable,
+) -> PhysFrame {
+    let mut mapper = unsafe { OffsetPageTable::new(l4_table, *MEMORY_OFFSET) };
+    let mut frame_allocator = MemoryMapFrameAllocator;
 
     unsafe { mapper.map_to(page, frame, flags, &mut frame_allocator) }
         .unwrap()

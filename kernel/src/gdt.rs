@@ -9,7 +9,7 @@ use x86_64::{
     },
 };
 
-use crate::{gsdata::CpuId, ministack::create_ministack, SMP_RESPONSE};
+use crate::{gsdata::CpuId, mapper::create_ministack, SMP_RESPONSE};
 
 const STACK_SIZE: u64 = 64 * 1024; // 64 KiB
 

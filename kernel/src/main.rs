@@ -19,7 +19,7 @@ use kernel::{
     color::Color,
     console::CONSOLE,
     gdt, gsdata, hardware, idt, logger,
-    ministack::create_ministack,
+    mapper::create_ministack,
     process::{Manager, MANAGER},
     syscall, SMP_RESPONSE,
 };

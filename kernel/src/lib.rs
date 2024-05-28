@@ -18,8 +18,8 @@ pub mod heap;
 pub mod idt;
 pub mod logger;
 pub mod macros;
+pub mod mapper;
 pub mod memory;
-pub mod ministack;
 pub mod process;
 pub mod syscall;
 
