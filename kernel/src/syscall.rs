@@ -49,7 +49,8 @@ extern "C" fn handle_syscall_inner(registers: &mut Registers) {
 
     let res = match num {
         1 => write(arg1, arg2, arg3),
-        4 => task_switch(sleep(arg1), registers),
+        3 => exit(arg1, registers),
+        4 => sleep(arg1, registers),
         _ => {
             log::warn!("unknown syscall {num}");
             Err(0)
@@ -59,6 +60,15 @@ extern "C" fn handle_syscall_inner(registers: &mut Registers) {
     log::debug!("sysret {res:?}");
 
     registers.rax = result_to_u64(res);
+}
+
+fn result_to_u64(res: Result<u64, u64>) -> u64 {
+    match res {
+        Ok(val) if val >> 63 == 0 => val,
+        Ok(_) => 0,
+        Err(val) if val >> 63 == 0 => val | 0x8000_0000_0000_0000,
+        Err(_) => 0,
+    }
 }
 
 fn write(fd: u64, ptr: u64, len: u64) -> Result<u64, u64> {
@@ -73,25 +83,35 @@ fn write(fd: u64, ptr: u64, len: u64) -> Result<u64, u64> {
     Ok(string.len() as u64)
 }
 
-fn sleep(_ms: u64) -> Result<u64, u64> {
-    Ok(0)
+fn exit(_code: u64, registers: &mut Registers) -> Result<u64, u64> {
+    let res = Ok(0);
+
+    let mut fake_context = build_fake_context(res, registers);
+
+    fake_irq(&mut fake_context, FakeIrqAction::KillThread);
 }
 
-fn result_to_u64(res: Result<u64, u64>) -> u64 {
-    match res {
-        Ok(val) if val >> 63 == 0 => val,
-        Ok(_) => 0,
-        Err(val) if val >> 63 == 0 => val | 0x8000_0000_0000_0000,
-        Err(_) => 0,
-    }
+fn sleep(_ms: u64, registers: &mut Registers) -> Result<u64, u64> {
+    let res = Ok(0);
+
+    let mut fake_context = build_fake_context(res, registers);
+
+    fake_irq(&mut fake_context, FakeIrqAction::SwapThread);
 }
 
-fn task_switch(res: Result<u64, u64>, registers: &mut Registers) -> Result<u64, u64> {
+#[derive(Debug)]
+#[repr(u64)]
+enum FakeIrqAction {
+    SwapThread = 0,
+    KillThread = 1,
+}
+
+fn build_fake_context(res: Result<u64, u64>, registers: &mut Registers) -> Context {
     let kernel_data = KernelData::load_gsbase().unwrap();
 
     registers.rax = result_to_u64(res);
 
-    let mut fake_context = Context {
+    Context {
         registers: *registers,
         stack_frame: InterruptStackFrame::new(
             VirtAddr::new(registers.rcx),
@@ -100,13 +120,11 @@ fn task_switch(res: Result<u64, u64>, registers: &mut Registers) -> Result<u64, 
             kernel_data.sysret_stack,
             GDT.user_data,
         ),
-    };
-
-    fake_irq(&mut fake_context);
+    }
 }
 
 #[naked]
-extern "C" fn fake_irq(context: &mut Context) -> ! {
+extern "C" fn fake_irq(context: &mut Context, action: FakeIrqAction) -> ! {
     unsafe {
         asm!(
             "mov rsp, rdi",
@@ -120,7 +138,12 @@ extern "C" fn fake_irq(context: &mut Context) -> ! {
     }
 }
 
-extern "C" fn fake_irq_inner(context: &mut Context) {
-    log::trace!("fake interrupt");
-    MANAGER.get().unwrap().lock().swap_thread(context);
+extern "C" fn fake_irq_inner(context: &mut Context, action: FakeIrqAction) {
+    log::trace!("fake interrupt: {action:?}");
+
+    let mut manager = MANAGER.get().unwrap().lock();
+    match action {
+        FakeIrqAction::SwapThread => manager.swap_thread(context),
+        FakeIrqAction::KillThread => manager.kill_thread(context),
+    };
 }
