@@ -9,7 +9,7 @@
 #[macro_use]
 extern crate kernel;
 
-use core::{panic::PanicInfo, slice, str};
+use core::{panic::PanicInfo, str};
 
 use limine::smp::Cpu;
 use spin::Mutex;
@@ -21,7 +21,7 @@ use kernel::{
     find_file, gdt, gsdata, hardware, idt, logger,
     mapper::create_ministack,
     process::{Manager, MANAGER},
-    read_file, syscall, MODULE_RESPONSE, SMP_RESPONSE,
+    read_file, syscall, SMP_RESPONSE,
 };
 
 kernel::entry!(main);
