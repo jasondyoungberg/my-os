@@ -9,10 +9,11 @@
 #[macro_use]
 extern crate kernel;
 
-use core::{panic::PanicInfo, str};
+use core::{fmt::Write, panic::PanicInfo, str};
 
 use limine::smp::Cpu;
 use spin::Mutex;
+use x2apic::lapic::IpiAllShorthand;
 use x86_64::instructions::{
     hlt,
     interrupts::{self, without_interrupts},
@@ -23,7 +24,8 @@ use kernel::{
     console::CONSOLE,
     find_file, gdt,
     gsdata::{self, KernelData},
-    hardware, idt, logger,
+    hardware::{self, debugcon},
+    idt, logger,
     mapper::create_ministack,
     process::{Manager, MANAGER},
     read_file, syscall, SMP_RESPONSE,
@@ -106,14 +108,31 @@ extern "C" fn init_cpu(cpu: &Cpu) -> ! {
 
 #[panic_handler]
 fn rust_panic(info: &PanicInfo) -> ! {
-    log::error!("{}", info);
+    interrupts::disable();
 
-    let mut console = CONSOLE.try_lock().unwrap_or_else(|| {
-        unsafe { CONSOLE.force_unlock() };
-        CONSOLE.lock()
-    });
+    // kill all other CPUs
+    if let Some(kernel_data) = KernelData::load_gsbase().or(KernelData::load_kernel_gsbase()) {
+        unsafe {
+            kernel_data
+                .lapic
+                .send_nmi_all(IpiAllShorthand::AllExcludingSelf)
+        };
+        let cpuid = kernel_data.cpuid;
+        let _ =
+            debugcon::DebugWriter.write_fmt(format_args!("\n\x1b[91m[{cpuid}] {info}\x1b[0m\n"));
+    } else {
+        let _ = debugcon::DebugWriter.write_fmt(format_args!("\n\x1b[91m[CPU?] {info}\x1b[0m\n"));
+    }
+
+    unsafe { CONSOLE.force_unlock() };
+    let mut console = CONSOLE.lock();
     console.set_colors(Color::WHITE, Color::rgb(0, 0, 128));
-    print!("{}", info);
+    drop(console);
+    print!("\n{}", info);
 
     kernel::shutdown_emu();
+
+    loop {
+        hlt();
+    }
 }

@@ -1,17 +1,20 @@
 use spin::Lazy;
 use x86_64::{
+    instructions::hlt,
     registers::segmentation::GS,
     set_general_handler,
     structures::idt::{InterruptDescriptorTable, InterruptStackFrame},
 };
 
 use crate::{
-    exception::{double_fault_handler, page_fault_handler},
+    exception,
     hardware::{
         lapic,
         pics::{pics_handler, PICS_OFFSET},
     },
 };
+
+const PANIC_INTERRUPT: u8 = 0xFE;
 
 pub static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
     fn general_handler(stack_frame: InterruptStackFrame, index: u8, error_code: Option<u64>) {
@@ -26,20 +29,67 @@ pub static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
     set_general_handler!(&mut idt, pics_handler, PICS_OFFSET..=PICS_OFFSET + 16);
 
     unsafe {
+        idt.divide_error
+            .set_handler_fn(exception::division_error_handler);
+        idt.debug.set_handler_fn(exception::debug_handler);
+        idt.non_maskable_interrupt
+            .set_handler_fn(exception::non_maskable_interrupt_handler);
+        idt.breakpoint.set_handler_fn(exception::breakpoint_handler);
+        idt.overflow.set_handler_fn(exception::overflow_handler);
+        idt.bound_range_exceeded
+            .set_handler_fn(exception::bound_range_exceeded_handler);
+        idt.invalid_opcode
+            .set_handler_fn(exception::invalid_opcode_handler);
+        idt.device_not_available
+            .set_handler_fn(exception::device_not_available_handler);
         idt.double_fault
-            .set_handler_fn(double_fault_handler)
+            .set_handler_fn(exception::double_fault_handler)
             .set_stack_index(0);
-        idt.page_fault
-            .set_handler_fn(page_fault_handler)
+        idt.invalid_tss
+            .set_handler_fn(exception::invalid_tss_handler);
+        idt.segment_not_present
+            .set_handler_fn(exception::segment_not_present_handler);
+        idt.stack_segment_fault
+            .set_handler_fn(exception::stack_segment_fault_handler)
             .set_stack_index(1);
-
-        idt[lapic::TIMER_VECTOR]
-            .set_handler_fn(lapic::handle_timer)
+        idt.general_protection_fault
+            .set_handler_fn(exception::general_protection_fault_handler)
             .set_stack_index(2);
+        idt.page_fault
+            .set_handler_fn(exception::page_fault_handler)
+            .set_stack_index(3);
+        idt.x87_floating_point
+            .set_handler_fn(exception::x87_floating_point_handler);
+        idt.alignment_check
+            .set_handler_fn(exception::alignment_check_handler);
+        idt.machine_check
+            .set_handler_fn(exception::machine_check_handler);
+        idt.simd_floating_point
+            .set_handler_fn(exception::simd_floating_point_handler);
+        idt.virtualization
+            .set_handler_fn(exception::virtualization_handler);
+        idt.cp_protection_exception
+            .set_handler_fn(exception::cp_protection_exception_handler);
+        idt.hv_injection_exception
+            .set_handler_fn(exception::hv_injection_exception_handler);
+        idt.vmm_communication_exception
+            .set_handler_fn(exception::vmm_communication_exception_handler);
+        idt.security_exception
+            .set_handler_fn(exception::security_exception_handler);
+
+        idt[lapic::TIMER_VECTOR].set_handler_fn(lapic::handle_timer);
+
+        idt[PANIC_INTERRUPT].set_handler_fn(panic_interrupt_handler);
     };
 
     idt
 });
+
+pub extern "x86-interrupt" fn panic_interrupt_handler(_stack_frame: InterruptStackFrame) {
+    loop {
+        hlt();
+    }
+}
 
 #[macro_export]
 macro_rules! wrap {
@@ -79,6 +129,9 @@ macro_rules! wrap {
         }
     };
     (irq($c:ty), $i:ident => $w: ident) => {
+        $crate::wrap!(irq($c)->(), $i => $w);
+    };
+    (irq($c:ty)->$r:ty, $i:ident => $w: ident) => {
         const _: unsafe extern "C" fn(&mut $crate::process::Context, $c) = $i;
 
         #[naked]

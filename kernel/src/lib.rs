@@ -94,13 +94,8 @@ macro_rules! entry {
     };
 }
 
-pub fn shutdown_emu() -> ! {
+pub fn shutdown_emu() {
     use x86_64::instructions;
 
     unsafe { instructions::port::PortWriteOnly::<u16>::new(0x604).write(0x2000) };
-
-    instructions::interrupts::disable();
-    loop {
-        instructions::hlt();
-    }
 }
