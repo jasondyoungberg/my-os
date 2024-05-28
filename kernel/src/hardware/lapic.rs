@@ -23,7 +23,7 @@ pub fn init() -> LocalApic {
     builder.error_vector(ERROR_VECTOR as usize);
     builder.spurious_vector(SPURIOUS_VECTOR as usize);
 
-    builder.timer_initial(3_000_000_000);
+    builder.timer_initial(2_000_000_000);
     builder.timer_divide(TimerDivide::Div256);
 
     let mut lapic = builder.build().unwrap();

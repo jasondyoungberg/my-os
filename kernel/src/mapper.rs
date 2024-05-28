@@ -26,8 +26,6 @@ pub fn map_mmio(addr: u64, size: u64) -> VirtAddr {
     let range = MMIO_ALLOCATOR.alloc_range(size);
     let virt_addr = range.start.start_address();
 
-    crate::dbg!(&range);
-
     for (i, page) in range.enumerate() {
         let frame = PhysFrame::containing_address(PhysAddr::new(i as u64 * 4096 + addr));
         map_kernel_frame_to_page(
