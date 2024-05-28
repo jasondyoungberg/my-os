@@ -10,7 +10,7 @@ cycle:
     mov rdx, message.len
     syscall
 
-mov rcx, 10_000_000
+mov rcx, 50_000_000
 loop $
 
 jmp cycle

@@ -97,6 +97,7 @@ extern "C" fn init_cpu(cpu: &Cpu) -> ! {
                 .clone();
             let active_thread = active_thread.lock();
             log::info!("{} {:?}", cpuid, active_thread.id());
+            println!("I'm the kernel loop");
         });
 
         hlt();
