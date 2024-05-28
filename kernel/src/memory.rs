@@ -122,6 +122,7 @@ pub fn map_kernel_frame_to_page(
     let manager = MANAGER.get().unwrap().lock();
     let l4_table = manager.get_kernel_l4_table();
     let mut l4_table = l4_table.lock();
+    log::info!("Mapping frame {:?} to page {:?}", frame, page);
     map_frame_to_page(frame, page, flags, &mut l4_table)
 }
 

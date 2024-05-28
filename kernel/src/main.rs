@@ -29,7 +29,6 @@ kernel::entry!(main);
 fn main() -> ! {
     logger::init();
     MANAGER.call_once(|| Mutex::new(Manager::init()));
-    hardware::pics::init();
 
     for cpu in kernel::SMP_RESPONSE.cpus() {
         if cpu.id != 0 {
@@ -48,11 +47,16 @@ extern "C" fn init_cpu(cpu: &Cpu) -> ! {
 
     gdt::init(cpuid);
     idt::IDT.load();
-    let lapic = hardware::lapic::init();
-    syscall::init();
+
+    if cpu.id == 0 {
+        hardware::pics::init();
+    }
 
     log::info!("{} joining kernel", cpuid);
     let active_thread = MANAGER.get().unwrap().lock().join_kernel();
+
+    let lapic = hardware::lapic::init();
+    syscall::init();
 
     // Setup core data
     let kernel_gs_data = gsdata::KernelData::new(

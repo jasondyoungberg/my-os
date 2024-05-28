@@ -1,9 +1,8 @@
 use x2apic::lapic::{xapic_base, LocalApic, LocalApicBuilder, TimerDivide};
-use x86_64::PhysAddr;
 
 use crate::{
     gsdata::KernelData,
-    memory::phys_to_virt,
+    mapper::map_mmio,
     process::{Context, MANAGER},
     wrap,
 };
@@ -15,10 +14,10 @@ pub const SPURIOUS_VECTOR: u8 = 0xFF;
 pub fn init() -> LocalApic {
     let mut builder = LocalApicBuilder::new();
 
-    let apic_phys_addr = PhysAddr::new(unsafe { xapic_base() });
-    let apic_virt_addr = phys_to_virt(apic_phys_addr).as_u64();
+    let apic_phys_addr = unsafe { xapic_base() };
+    let apic_virt_addr = map_mmio(apic_phys_addr, 4096);
 
-    builder.set_xapic_base(apic_virt_addr);
+    builder.set_xapic_base(apic_virt_addr.as_u64());
 
     builder.timer_vector(TIMER_VECTOR as usize);
     builder.error_vector(ERROR_VECTOR as usize);
