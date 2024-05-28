@@ -5,14 +5,15 @@ use core::{
     pin::Pin,
 };
 
-use alloc::boxed::Box;
+use alloc::{boxed::Box, sync::Arc};
+use spin::Mutex;
 use x2apic::lapic::LocalApic;
 use x86_64::{
     registers::model_specific::{GsBase, KernelGsBase},
     VirtAddr,
 };
 
-use crate::process::ThreadId;
+use crate::process::Thread;
 
 #[derive(Clone, Copy, Debug)]
 pub struct CpuId(u32);
@@ -53,7 +54,7 @@ pub struct KernelData {
     pub syscall_stack: VirtAddr, // don't move this field without updating the offset in syscall wrapper
     pub cpuid: CpuId,
     pub lapic: Box<LocalApic>,
-    pub active_thread: ThreadId,
+    pub active_thread: Arc<Mutex<Thread>>,
     _marker: PhantomPinned,
 }
 
@@ -62,7 +63,7 @@ impl KernelData {
         cpuid: CpuId,
         syscall_stack: VirtAddr,
         lapic: LocalApic,
-        active_thread: ThreadId,
+        active_thread: Arc<Mutex<Thread>>,
     ) -> Pin<Box<Self>> {
         let ret = Box::pin(Self {
             self_address: UnsafeCell::new(VirtAddr::zero()),

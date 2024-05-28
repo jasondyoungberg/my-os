@@ -13,12 +13,17 @@ use core::{panic::PanicInfo, str};
 
 use limine::smp::Cpu;
 use spin::Mutex;
-use x86_64::instructions::{hlt, interrupts};
+use x86_64::instructions::{
+    hlt,
+    interrupts::{self, without_interrupts},
+};
 
 use kernel::{
     color::Color,
     console::CONSOLE,
-    find_file, gdt, gsdata, hardware, idt, logger,
+    find_file, gdt,
+    gsdata::{self, KernelData},
+    hardware, idt, logger,
     mapper::create_ministack,
     process::{Manager, MANAGER},
     read_file, syscall, SMP_RESPONSE,
@@ -84,8 +89,14 @@ extern "C" fn init_cpu(cpu: &Cpu) -> ! {
     log::info!("{cpuid} Ready!");
 
     loop {
-        log::info!("{} {:?}", cpuid, active_thread);
-        println!("{} {:?}", cpuid, active_thread);
+        without_interrupts(|| {
+            let active_thread = KernelData::load_kernel_gsbase()
+                .unwrap()
+                .active_thread
+                .clone();
+            let active_thread = active_thread.lock();
+            log::info!("{} {:?}", cpuid, active_thread.id());
+        });
 
         hlt();
     }

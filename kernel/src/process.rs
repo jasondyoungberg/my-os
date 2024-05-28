@@ -32,7 +32,7 @@ pub static MANAGER: Once<Mutex<Manager>> = Once::new();
 pub struct Manager {
     processes: BTreeMap<ProcessId, Arc<Mutex<Process>>>,
     next_process_id: u64,
-    queue: VecDeque<ThreadId>,
+    queue: VecDeque<Arc<Mutex<Thread>>>,
 }
 
 #[derive(Debug)]
@@ -126,7 +126,7 @@ impl Manager {
         }
     }
 
-    pub fn join_kernel(&mut self) -> ThreadId {
+    pub fn join_kernel(&mut self) -> Arc<Mutex<Thread>> {
         let kernel_process = self.get_process(ProcessId::KERNEL).unwrap();
         let mut kernel_process = kernel_process.lock();
         let cr3 = kernel_process.cr3;
@@ -135,20 +135,16 @@ impl Manager {
     }
 
     pub fn swap_task(&mut self, core: &mut KernelData, active_context: &mut Context) {
-        if let Some(new_thread_id) = self.queue.pop_front() {
-            let old_thread_id = core.active_thread;
-            self.queue.push_back(old_thread_id);
+        if let Some(new_thread) = self.queue.pop_front() {
+            let old_thread = core.active_thread.clone();
+            self.queue.push_back(old_thread.clone());
+            old_thread.lock().context.clone_from(active_context);
 
-            let old_thread = self.get_thread(old_thread_id).unwrap();
-            let mut old_thread = old_thread.lock();
-            old_thread.context.clone_from(active_context);
-
-            let new_thread = self.get_thread(new_thread_id).unwrap();
+            core.active_thread = new_thread.clone();
             let new_thread = new_thread.lock();
-            core.active_thread = new_thread_id;
             active_context.clone_from(&new_thread.context);
 
-            let process = self.get_process(new_thread_id.0).unwrap();
+            let process = self.get_process(new_thread.thread_id.0).unwrap();
             let process = process.lock();
             unsafe { Cr3::write(process.cr3.0, process.cr3.1) };
         }
@@ -217,7 +213,7 @@ impl Manager {
 
         let thread_id = ThreadId(process_id, 0);
 
-        let thread = Thread {
+        let thread = Arc::new(Mutex::new(Thread {
             context: Context {
                 registers: Registers::ZERO,
                 stack_frame: InterruptStackFrame::new(
@@ -229,10 +225,10 @@ impl Manager {
                 ),
             },
             thread_id,
-        };
+        }));
 
         let mut threads = BTreeMap::new();
-        threads.insert(ThreadId(process_id, 0), Arc::new(Mutex::new(thread)));
+        threads.insert(ThreadId(process_id, 0), thread.clone());
 
         let process = Process {
             threads,
@@ -244,18 +240,18 @@ impl Manager {
 
         self.processes
             .insert(process_id, Arc::new(Mutex::new(process)));
-        self.queue.push_back(thread_id);
+        self.queue.push_back(thread);
 
         thread_id
     }
 }
 
 impl Process {
-    fn join_kernel(&mut self) -> ThreadId {
+    fn join_kernel(&mut self) -> Arc<Mutex<Thread>> {
         let thread_id = ThreadId(self.process_id, self.next_thread_id);
         self.next_thread_id += 1;
 
-        let thread = Thread {
+        let thread = Arc::new(Mutex::new(Thread {
             context: Context {
                 registers: Registers::ZERO,
                 stack_frame: InterruptStackFrame::new(
@@ -267,16 +263,21 @@ impl Process {
                 ),
             },
             thread_id,
-        };
+        }));
 
-        self.threads
-            .insert(thread.thread_id, Arc::new(Mutex::new(thread)));
+        self.threads.insert(thread_id, thread.clone());
 
-        thread_id
+        thread
     }
 
     pub fn get_thread(&self, thread_id: ThreadId) -> Option<Arc<Mutex<Thread>>> {
         self.threads.get(&thread_id).cloned()
+    }
+}
+
+impl Thread {
+    pub fn id(&self) -> ThreadId {
+        self.thread_id
     }
 }
 
