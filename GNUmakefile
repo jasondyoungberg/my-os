@@ -101,6 +101,7 @@ $(IMAGE_NAME).iso: limine/limine kernel
 	mkdir -p iso_root/EFI/BOOT
 	cp limine/BOOTX64.EFI iso_root/EFI/BOOT/
 	cp limine/BOOTIA32.EFI iso_root/EFI/BOOT/
+	cp files/* iso_root/
 	xorriso -as mkisofs -quiet \
 		-b boot/limine/limine-bios-cd.bin \
 		-no-emul-boot -boot-load-size 4 -boot-info-table \

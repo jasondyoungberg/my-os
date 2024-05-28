@@ -9,7 +9,7 @@
 #[macro_use]
 extern crate kernel;
 
-use core::panic::PanicInfo;
+use core::{panic::PanicInfo, slice, str};
 
 use limine::smp::Cpu;
 use spin::Mutex;
@@ -21,7 +21,7 @@ use kernel::{
     gdt, gsdata, hardware, idt, logger,
     mapper::create_ministack,
     process::{Manager, MANAGER},
-    syscall, SMP_RESPONSE,
+    syscall, MODULE_RESPONSE, SMP_RESPONSE,
 };
 
 kernel::entry!(main);
@@ -69,6 +69,18 @@ extern "C" fn init_cpu(cpu: &Cpu) -> ! {
     kernel_gs_data.as_ref().save_kernel_gsbase();
 
     if cpu.id == 0 {
+        let file = MODULE_RESPONSE
+            .modules()
+            .iter()
+            .find(|f| f.path() == b"/hello.txt");
+
+        if let Some(file) = file {
+            let data = unsafe { slice::from_raw_parts(file.addr(), file.size() as usize) };
+            log::info!("File: {:?}", str::from_utf8(data));
+        } else {
+            log::error!("File not found");
+        }
+
         let mut manager = MANAGER.get().unwrap().lock();
         manager.spawn(include_bytes!("../app/hello"));
         manager.spawn(include_bytes!("../app/loop"));
