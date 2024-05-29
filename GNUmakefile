@@ -23,6 +23,14 @@ ifeq ($(APP_PROFILE),)
     override APP_PROFILE := release
 endif
 
+ifeq ($(UEFI),)
+    override UEFI := 1
+endif
+
+ifeq ($(KVM),)
+    override KVM := 1
+endif
+
 ifeq ($(CPUS),)
     override CPUS := 4
 endif
@@ -43,39 +51,28 @@ ifeq ($(KVM),1)
 	QEMU_ARGS += -enable-kvm
 endif
 
-.PHONY: all
-all: $(IMAGE_NAME).iso
+ifeq ($(UEFI),1)
+	QEMU_ARGS +=  -drive if=pflash,format=raw,readonly=on,file=$(OVMF_PATH)
+endif
 
-.PHONY: all-hdd
-all-hdd: $(IMAGE_NAME).hdd
+.PHONY: all
+all: $(IMAGE_NAME).iso $(IMAGE_NAME).hdd
 
 .PHONY: debug
-debug: $(IMAGE_NAME).iso
+debug: $(IMAGE_NAME).iso ovmf
 	@echo "Launching QEMU in debug mode..."
 	qemu-system-x86_64 $(QEMU_ARGS) -cdrom $(IMAGE_NAME).iso -boot d \
 		-d cpu_reset,unimp,guest_errors
 
 .PHONY: run
-run: $(IMAGE_NAME).iso
+run: $(IMAGE_NAME).iso ovmf
 	@echo "Launching QEMU..."
 	qemu-system-x86_64 $(QEMU_ARGS) -cdrom $(IMAGE_NAME).iso -boot d
-
-.PHONY: run-uefi
-run-uefi: ovmf $(IMAGE_NAME).iso
-	@echo "Launching QEMU..."
-	qemu-system-x86_64 $(QEMU_ARGS) -cdrom $(IMAGE_NAME).iso -boot d \
-		-drive if=pflash,format=raw,readonly=on,file=$(OVMF_PATH)
 
 .PHONY: run-hdd
 run-hdd: $(IMAGE_NAME).hdd
 	@echo "Launching QEMU..."
 	qemu-system-x86_64 $(QEMU_ARGS) -hda $(IMAGE_NAME).hdd
-
-.PHONY: run-hdd-uefi
-run-hdd-uefi: ovmf $(IMAGE_NAME).hdd
-	@echo "Launching QEMU..."
-	qemu-system-x86_64 $(QEMU_ARGS) -hda $(IMAGE_NAME).hdd \
-		-drive if=pflash,format=raw,readonly=on,file=$(OVMF_PATH)
 
 ovmf:
 	mkdir -p ovmf
@@ -146,7 +143,7 @@ $(IMAGE_NAME).hdd: limine/limine kernel
 	./limine/limine bios-install $(IMAGE_NAME).hdd --quiet
 	mformat -i $(IMAGE_NAME).hdd@@1M
 	mmd -i $(IMAGE_NAME).hdd@@1M ::/EFI ::/EFI/BOOT ::/boot ::/boot/limine ::/app
-	mcopy -i $(IMAGE_NAME).hdd@@1M kernel/dist/kernel ::/boot
+	mcopy -i $(IMAGE_NAME).hdd@@1M kernel/target/x86_64-myos/$(KERNEL_PROFILE)/kernel ::/boot
 	mcopy -i $(IMAGE_NAME).hdd@@1M limine.cfg limine/limine-bios.sys ::/boot/limine
 	mcopy -i $(IMAGE_NAME).hdd@@1M limine/BOOTX64.EFI ::/EFI/BOOT
 	mcopy -i $(IMAGE_NAME).hdd@@1M limine/BOOTIA32.EFI ::/EFI/BOOT
