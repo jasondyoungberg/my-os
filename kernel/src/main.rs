@@ -137,7 +137,7 @@ fn rust_panic(info: &PanicInfo) -> ! {
 
     unsafe { CONSOLE.force_unlock() };
     let mut console = CONSOLE.lock();
-    console.set_colors(Color::WHITE, Color::rgb(0, 0, 128));
+    console.set_colors(Color::WHITE, Color::rgb(0, 0, 96));
     drop(console);
     print!("\n{}", info);
 

@@ -83,7 +83,7 @@ fn write(fd: u64, ptr: u64, len: u64) -> Result<u64, u64> {
         }
         2 => {
             let mut console = console::CONSOLE.lock();
-            console.set_colors(Color::RED, Color::BLACK);
+            console.set_colors(Color::rgb(255, 128, 128), Color::BLACK);
             console.write_str(string);
             console.set_colors(Color::WHITE, Color::BLACK);
             console.flush();
