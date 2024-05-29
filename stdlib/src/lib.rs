@@ -22,7 +22,7 @@ macro_rules! entry {
 
 #[panic_handler]
 fn panic(info: &core::panic::PanicInfo) -> ! {
-    eprintln!("{}", info);
+    // eprintln!("{}", info); // todo: get this to not page fault
     // we don't call exit here because we want to recurse if it fails
     let _ = unsafe { syscall1(60, -1i64 as u64) };
     loop {}

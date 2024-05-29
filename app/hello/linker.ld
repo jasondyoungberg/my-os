@@ -7,7 +7,7 @@ SECTIONS {
     . = 0x1000;
 
     .text : {
-        KEEP(*(.text.start))
+        KEEP(*(.text._start))
         *(.text .text.*)
     }
 
@@ -21,5 +21,14 @@ SECTIONS {
 
     .bss : {
         *(.bss .bss.*)
+        *(COMMON)
+    }
+
+    /DISCARD/ : {
+        *(.hash)
+        *(.gnu.hash)
+        *(.eh_frame)
+        *(.note .note.*)
+        *(.comment .comment.*)
     }
 }

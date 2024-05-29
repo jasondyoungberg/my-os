@@ -8,7 +8,7 @@ edition = "2021"
 [profile.release]
 panic = "abort"
 strip = true
-opt-level = "z"
+opt-level = "s"
 lto = true
 codegen-units = 1
 
