@@ -10,11 +10,11 @@ cycle:
     mov rdx, message.len
     syscall
 
-; yeild
+; yield
     mov rax, 24
     syscall
 
 jmp cycle
 
-message: db `I'm a yeild loop!\n`
+message: db `I'm a yield loop!\n`
 .len EQU $ - message

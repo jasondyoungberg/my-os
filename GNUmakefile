@@ -86,38 +86,49 @@ limine/limine:
 	git clone https://github.com/limine-bootloader/limine.git --branch=v7.x-binary --depth=1
 	$(MAKE) -C limine
 
-.PHONY: apps
-apps:
-	@echo "Building the assembly apps..."
-	cd kernel/app && find . -name '*.asm' -exec nasm {} \;
-
-	@echo "Building the rust apps..."
-	cd app/hello && cargo.exe build --profile $(APP_PROFILE) \
-		-Z unstable-options --out-dir dist
-
-	cd app/hello/dist && \
-		objcopy --input-target elf64-x86-64 --output-target binary hello hello.bin && \
-		objdump -d hello > hello.asm && \
-		objdump -s hello > hello.dump
-
 .PHONY: kernel
 kernel: apps
 	@echo "Building the kernel..."
 
 	mkdir -p kernel/dist
-	cd kernel && cargo.exe build --profile $(KERNEL_PROFILE) -Z unstable-options --out-dir dist
+	cd kernel && cargo.exe build --profile $(KERNEL_PROFILE)
+
+.PHONY: apps
+apps:
+	rm -rf app/.dist
+	mkdir -p app/.dist
+
+	@echo "Building the assembly apps..."
+	nasm app/hello.asm -o app/.dist/hello.bin
+	nasm app/loop.asm -o app/.dist/loop.bin
+	nasm app/preservation.asm -o app/.dist/preservation.bin
+	nasm app/segfault.asm -o app/.dist/segfault.bin
+	nasm app/stack.asm -o app/.dist/stack.bin
+	nasm app/yield.asm -o app/.dist/yield.bin
+
+	@echo "Building rust apps..."
+	cd app/demo && cargo.exe build --profile $(APP_PROFILE)
+	objcopy --input-target elf64-x86-64 --output-target binary\
+		app/demo/target/x86_64-unknown-none/$(APP_PROFILE)/demo \
+		app/.dist/demo.bin
 
 $(IMAGE_NAME).iso: limine/limine kernel
 	@echo "Generating the ISO image..."
 	rm -rf iso_root
 	mkdir -p iso_root/boot
-	cp kernel/dist/kernel iso_root/boot/
+
+	cp kernel/target/x86_64-myos/$(KERNEL_PROFILE)/kernel iso_root/boot/
+
 	mkdir -p iso_root/boot/limine
 	cp limine.cfg limine/limine-bios.sys limine/limine-bios-cd.bin limine/limine-uefi-cd.bin iso_root/boot/limine/
 	mkdir -p iso_root/EFI/BOOT
 	cp limine/BOOTX64.EFI iso_root/EFI/BOOT/
 	cp limine/BOOTIA32.EFI iso_root/EFI/BOOT/
+
 	cp -r files/* iso_root/
+	mkdir -p iso_root/app
+	cp -r app/.dist/* iso_root/app/
+
 	xorriso -as mkisofs -quiet \
 		-b boot/limine/limine-bios-cd.bin \
 		-no-emul-boot -boot-load-size 4 -boot-info-table \
@@ -134,12 +145,13 @@ $(IMAGE_NAME).hdd: limine/limine kernel
 	sgdisk $(IMAGE_NAME).hdd -n 1:2048 -t 1:ef00 2> /dev/null
 	./limine/limine bios-install $(IMAGE_NAME).hdd --quiet
 	mformat -i $(IMAGE_NAME).hdd@@1M
-	mmd -i $(IMAGE_NAME).hdd@@1M ::/EFI ::/EFI/BOOT ::/boot ::/boot/limine
+	mmd -i $(IMAGE_NAME).hdd@@1M ::/EFI ::/EFI/BOOT ::/boot ::/boot/limine ::/app
 	mcopy -i $(IMAGE_NAME).hdd@@1M kernel/dist/kernel ::/boot
 	mcopy -i $(IMAGE_NAME).hdd@@1M limine.cfg limine/limine-bios.sys ::/boot/limine
 	mcopy -i $(IMAGE_NAME).hdd@@1M limine/BOOTX64.EFI ::/EFI/BOOT
 	mcopy -i $(IMAGE_NAME).hdd@@1M limine/BOOTIA32.EFI ::/EFI/BOOT
 	mcopy -i $(IMAGE_NAME).hdd@@1M -s files/* ::/
+	mcopy -i $(IMAGE_NAME).hdd@@1M -s app/.dist/* ::/app
 
 .PHONY: clean
 clean:

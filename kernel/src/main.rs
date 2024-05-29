@@ -28,7 +28,7 @@ use kernel::{
     idt, logger,
     mapper::create_ministack,
     process::{Manager, MANAGER},
-    read_file, syscall, SMP_RESPONSE,
+    read_file, syscall, MODULE_RESPONSE, SMP_RESPONSE,
 };
 
 kernel::entry!(main);
@@ -85,13 +85,17 @@ extern "C" fn init_cpu(cpu: &Cpu) -> ! {
         let hello = read_file(find_file("/hello.txt"));
         print!("{}", str::from_utf8(hello).unwrap());
         let mut manager = MANAGER.get().unwrap().lock();
-        manager.spawn(include_bytes!("../app/hello"));
-        manager.spawn(include_bytes!("../app/preservation"));
-        manager.spawn(include_bytes!("../app/loop"));
-        manager.spawn(include_bytes!("../app/yeild"));
-        manager.spawn(include_bytes!("../app/stack"));
-        manager.spawn(include_bytes!("../app/segfault"));
-        manager.spawn(include_bytes!("../../app/hello/dist/hello.bin"));
+
+        MODULE_RESPONSE
+            .modules()
+            .iter()
+            .filter(|f| f.path().starts_with(b"/app/"))
+            .for_each(|f| {
+                let path = str::from_utf8(f.path()).unwrap();
+                let data = read_file(f);
+                log::info!("Loading {}", path);
+                manager.spawn(data);
+            });
     }
 
     interrupts::enable();
