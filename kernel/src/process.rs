@@ -1,4 +1,4 @@
-use core::pin::Pin;
+use core::{fmt, pin::Pin};
 
 use alloc::{
     boxed::Box,
@@ -20,6 +20,7 @@ use x86_64::{
 
 use crate::{
     dbg,
+    debug::HexFormat,
     gdt::GDT,
     gsdata::KernelData,
     memory::{map_page, phys_to_virt, virt_to_phys},
@@ -62,7 +63,7 @@ pub struct Context {
     pub stack_frame: InterruptStackFrame,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 #[repr(C)]
 pub struct Registers {
     pub rax: u64,
@@ -345,4 +346,44 @@ impl Registers {
         mm6: 0,
         mm7: 0,
     };
+}
+
+impl fmt::Debug for Registers {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "\
+Registers {{
+    rax: {} rbx: {} rcx: {} rdx: {}
+    rsi: {} rdi: {} rbp: {}
+    r8:  {} r9:  {} r10: {} r11: {}
+    r12: {} r13: {} r14: {} r15: {}
+    mm0: {} mm1: {} mm2: {} mm3: {}
+    mm4: {} mm5: {} mm6: {} mm7: {}
+}}",
+            HexFormat(self.rax),
+            HexFormat(self.rbx),
+            HexFormat(self.rcx),
+            HexFormat(self.rdx),
+            HexFormat(self.rsi),
+            HexFormat(self.rdi),
+            HexFormat(self.rbp),
+            HexFormat(self.r8),
+            HexFormat(self.r9),
+            HexFormat(self.r10),
+            HexFormat(self.r11),
+            HexFormat(self.r12),
+            HexFormat(self.r13),
+            HexFormat(self.r14),
+            HexFormat(self.r15),
+            HexFormat(self.mm0),
+            HexFormat(self.mm1),
+            HexFormat(self.mm2),
+            HexFormat(self.mm3),
+            HexFormat(self.mm4),
+            HexFormat(self.mm5),
+            HexFormat(self.mm6),
+            HexFormat(self.mm7)
+        )
+    }
 }

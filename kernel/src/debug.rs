@@ -6,47 +6,55 @@ use crate::{process::Context, wrap};
 
 wrap!(irq, debug_handler_inner => debug_handler);
 pub extern "C" fn debug_handler_inner(context: &mut Context) {
-    let rip = HexFormat(context.stack_frame.instruction_pointer.as_u64());
-    let rsp = HexFormat(context.stack_frame.stack_pointer.as_u64());
-    let cs = context.stack_frame.code_segment.index();
-    let ss = context.stack_frame.stack_segment.index();
-
-    let rflags = context.stack_frame.cpu_flags;
-    let rax = HexFormat(context.registers.rax);
-    let rbx = HexFormat(context.registers.rbx);
-    let rcx = HexFormat(context.registers.rcx);
-    let rdx = HexFormat(context.registers.rdx);
-    let rsi = HexFormat(context.registers.rsi);
-    let rdi = HexFormat(context.registers.rdi);
-    let rbp = HexFormat(context.registers.rbp);
-    let r8 = HexFormat(context.registers.r8);
-    let r9 = HexFormat(context.registers.r9);
-    let r10 = HexFormat(context.registers.r10);
-    let r11 = HexFormat(context.registers.r11);
-    let r12 = HexFormat(context.registers.r12);
-    let r13 = HexFormat(context.registers.r13);
-    let r14 = HexFormat(context.registers.r14);
-    let r15 = HexFormat(context.registers.r15);
-
-    let stack = Stack {
-        rsp: context.stack_frame.stack_pointer,
-        rbp: VirtAddr::new(context.registers.rbp),
-        base: VirtAddr::new(0x8000),
-    };
-
     log::debug!(
         "Debug
-RIP: {rip} RSP: {rsp} CS: {cs}  SS: {ss}
-{rflags:?}
-RAX: {rax} RBX: {rbx} RCX: {rcx} RDX: {rdx}
-RSI: {rsi} RDI: {rdi} RBP: {rbp} RSP: {rsp}
-R8:  {r8} R9:  {r9} R10: {r10} R11: {r11}
-R12: {r12} R13: {r13} R14: {r14} R15: {r15}
-{stack}"
+rip: {} rsp: {} cs: {}  ss: {}
+{:?}
+rax: {} rbx: {} rcx: {} rdx: {}
+rsi: {} rdi: {} rbp: {} rsp: {}
+r8:  {} r9:  {} r10: {} r11: {}
+r12: {} r13: {} r14: {} r15: {}
+mm0: {} mm1: {} mm2: {} mm3: {}
+mm4: {} mm5: {} mm6: {} mm7: {}
+{}",
+        HexFormat(context.stack_frame.instruction_pointer.as_u64()),
+        HexFormat(context.stack_frame.stack_pointer.as_u64()),
+        context.stack_frame.code_segment.index(),
+        context.stack_frame.stack_segment.index(),
+        context.stack_frame.cpu_flags,
+        HexFormat(context.registers.rax),
+        HexFormat(context.registers.rbx),
+        HexFormat(context.registers.rcx),
+        HexFormat(context.registers.rdx),
+        HexFormat(context.registers.rsi),
+        HexFormat(context.registers.rdi),
+        HexFormat(context.registers.rbp),
+        HexFormat(context.stack_frame.stack_pointer.as_u64()),
+        HexFormat(context.registers.r8),
+        HexFormat(context.registers.r9),
+        HexFormat(context.registers.r10),
+        HexFormat(context.registers.r11),
+        HexFormat(context.registers.r12),
+        HexFormat(context.registers.r13),
+        HexFormat(context.registers.r14),
+        HexFormat(context.registers.r15),
+        HexFormat(context.registers.mm0),
+        HexFormat(context.registers.mm1),
+        HexFormat(context.registers.mm2),
+        HexFormat(context.registers.mm3),
+        HexFormat(context.registers.mm4),
+        HexFormat(context.registers.mm5),
+        HexFormat(context.registers.mm6),
+        HexFormat(context.registers.mm7),
+        Stack {
+            rsp: context.stack_frame.stack_pointer,
+            rbp: VirtAddr::new(context.registers.rbp),
+            base: VirtAddr::new(0x8000),
+        }
     );
 }
 
-struct HexFormat(u64);
+pub struct HexFormat(pub u64);
 
 impl fmt::Display for HexFormat {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
