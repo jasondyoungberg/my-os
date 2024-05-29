@@ -232,7 +232,7 @@ impl Manager {
                 stack_frame: InterruptStackFrame::new(
                     VirtAddr::new(0x1000),
                     GDT.user_code,
-                    RFlags::INTERRUPT_FLAG,
+                    RFlags::INTERRUPT_FLAG | RFlags::TRAP_FLAG,
                     VirtAddr::new(0x8000), // todo: get better stack location
                     GDT.user_data,
                 ),

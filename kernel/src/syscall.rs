@@ -27,7 +27,7 @@ pub fn init() {
         GDT.kernel_data,
     )
     .unwrap();
-    SFMask::write(RFlags::INTERRUPT_FLAG);
+    SFMask::write(RFlags::INTERRUPT_FLAG | RFlags::TRAP_FLAG);
 
     let efer = Efer::read() | EferFlags::SYSTEM_CALL_EXTENSIONS;
 
@@ -45,7 +45,7 @@ extern "C" fn handle_syscall_inner(registers: &mut Registers) {
     let arg5 = registers.r8;
     let arg6 = registers.r9;
 
-    log::debug!("syscall {num} ({arg1}, {arg2}, {arg3}, {arg4}, {arg5}, {arg6})");
+    log::info!("syscall {num} ({arg1}, {arg2}, {arg3}, {arg4}, {arg5}, {arg6})");
 
     let res = match num {
         1 => write(arg1, arg2, arg3),
@@ -57,7 +57,7 @@ extern "C" fn handle_syscall_inner(registers: &mut Registers) {
         }
     };
 
-    log::debug!("sysret {res:?}");
+    log::info!("sysret {res:?}");
 
     registers.rax = result_to_u64(res);
 }

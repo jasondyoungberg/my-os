@@ -7,14 +7,12 @@ use x86_64::{
 };
 
 use crate::{
-    exception,
+    debug, exception,
     hardware::{
         lapic,
         pics::{pics_handler, PICS_OFFSET},
     },
 };
-
-const PANIC_INTERRUPT: u8 = 0xFE;
 
 pub static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
     fn general_handler(stack_frame: InterruptStackFrame, index: u8, error_code: Option<u64>) {
@@ -31,7 +29,7 @@ pub static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
     unsafe {
         idt.divide_error
             .set_handler_fn(exception::division_error_handler);
-        idt.debug.set_handler_fn(exception::debug_handler);
+        idt.debug.set_handler_fn(debug::debug_handler);
         idt.non_maskable_interrupt
             .set_handler_fn(exception::non_maskable_interrupt_handler);
         idt.breakpoint.set_handler_fn(exception::breakpoint_handler);
@@ -78,18 +76,9 @@ pub static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
             .set_handler_fn(exception::security_exception_handler);
 
         idt[lapic::TIMER_VECTOR].set_handler_fn(lapic::handle_timer);
-
-        idt[PANIC_INTERRUPT].set_handler_fn(panic_interrupt_handler);
-    };
-
+    }
     idt
 });
-
-pub extern "x86-interrupt" fn panic_interrupt_handler(_stack_frame: InterruptStackFrame) {
-    loop {
-        hlt();
-    }
-}
 
 #[macro_export]
 macro_rules! wrap {

@@ -7,5 +7,5 @@ extern crate stdlib;
 entry!(main);
 fn main() {
     stdlib::write(1, b"Hello, world! I'm (barely) a rust program!\n").unwrap();
-    // println!("Hello, world!");
+    println!("Hello, world!");
 }

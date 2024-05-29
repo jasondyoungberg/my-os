@@ -10,6 +10,7 @@ extern crate alloc;
 
 pub mod color;
 pub mod console;
+pub mod debug;
 pub mod exception;
 pub mod gdt;
 pub mod gsdata;

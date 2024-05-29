@@ -1,6 +1,6 @@
 use x86_64::{
     instructions::hlt,
-    registers::{control::Cr2, segmentation::GS},
+    registers::{self, control::Cr2, rflags, segmentation::GS},
     structures::idt::{InterruptStackFrame, PageFaultErrorCode},
 };
 
@@ -18,10 +18,6 @@ extern "C" fn division_error_handler_inner(context: &mut Context) {
         log::warn!("User Division Error\n{stack_frame:#?}");
         MANAGER.get().unwrap().lock().kill_thread(context);
     }
-}
-
-pub extern "x86-interrupt" fn debug_handler(stack_frame: InterruptStackFrame) {
-    log::info!("Debug\n{:#?}", stack_frame);
 }
 
 pub extern "x86-interrupt" fn non_maskable_interrupt_handler(_stack_frame: InterruptStackFrame) {
@@ -118,8 +114,9 @@ extern "C" fn general_protection_fault_handler_inner(context: &mut Context, erro
 
 wrap!(irq(PageFaultErrorCode), page_fault_handler_inner => page_fault_handler);
 extern "C" fn page_fault_handler_inner(context: &mut Context, error_code: PageFaultErrorCode) {
-    let stack_frame = &context.stack_frame;
     let address = Cr2::read();
+    let registers = &context.registers;
+    let stack_frame = &context.stack_frame;
     if stack_frame.code_segment.rpl() as u8 == 0 {
         panic!(
             "\
@@ -134,6 +131,7 @@ extern "C" fn page_fault_handler_inner(context: &mut Context, error_code: PageFa
 User Page Fault
 Accessed Address: {address:?}
 Error Code: {error_code:?}
+Registers: {registers:#?}
 {stack_frame:#?}",
         );
         MANAGER.get().unwrap().lock().kill_thread(context);

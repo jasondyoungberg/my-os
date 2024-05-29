@@ -80,11 +80,11 @@ extern "C" fn init_cpu(cpu: &Cpu) -> ! {
         print!("{}", str::from_utf8(hello).unwrap());
 
         let mut manager = MANAGER.get().unwrap().lock();
-        manager.spawn(include_bytes!("../app/hello"));
-        manager.spawn(include_bytes!("../app/loop"));
-        manager.spawn(include_bytes!("../app/yeild"));
-        manager.spawn(include_bytes!("../app/stack"));
-        manager.spawn(include_bytes!("../app/segfault"));
+        // manager.spawn(include_bytes!("../app/hello"));
+        // manager.spawn(include_bytes!("../app/loop"));
+        // manager.spawn(include_bytes!("../app/yeild"));
+        // manager.spawn(include_bytes!("../app/stack"));
+        // manager.spawn(include_bytes!("../app/segfault"));
         manager.spawn(include_bytes!("../../app/hello/dist/hello.bin"));
     }
 

@@ -21,8 +21,8 @@ pub unsafe fn syscall0(n: u64) -> Result<u64, u64> {
         asm!(
             "syscall",
             inlateout("rax") n => result,
-            lateout("rcx") _,
-            lateout("r11") _,
+            out("rcx") _,
+            out("r11") _,
             options(nostack, preserves_flags)
         )
     }
@@ -43,8 +43,8 @@ pub unsafe fn syscall1(n: u64, arg1: u64) -> Result<u64, u64> {
             "syscall",
             inlateout("rax") n => result,
             in("rdi") arg1,
-            lateout("rcx") _,
-            lateout("r11") _,
+            out("rcx") _,
+            out("r11") _,
             options(nostack, preserves_flags)
         );
     }
@@ -66,8 +66,8 @@ pub unsafe fn syscall2(n: u64, arg1: u64, arg2: u64) -> Result<u64, u64> {
             inlateout("rax") n => result,
             in("rdi") arg1,
             in("rsi") arg2,
-            lateout("rcx") _,
-            lateout("r11") _,
+            out("rcx") _,
+            out("r11") _,
             options(nostack, preserves_flags)
         );
     }
@@ -90,8 +90,8 @@ pub unsafe fn syscall3(n: u64, arg1: u64, arg2: u64, arg3: u64) -> Result<u64, u
             in("rdi") arg1,
             in("rsi") arg2,
             in("rdx") arg3,
-            lateout("rcx") _,
-            lateout("r11") _,
+            out("rcx") _,
+            out("r11") _,
             options(nostack, preserves_flags)
         );
     }
@@ -115,8 +115,8 @@ pub unsafe fn syscall4(n: u64, arg1: u64, arg2: u64, arg3: u64, arg4: u64) -> Re
             in("rsi") arg2,
             in("rdx") arg3,
             in("r10") arg4,
-            lateout("rcx") _,
-            lateout("r11") _,
+            out("rcx") _,
+            out("r11") _,
             options(nostack, preserves_flags)
         );
     }
@@ -148,8 +148,8 @@ pub unsafe fn syscall5(
             in("rdx") arg3,
             in("r10") arg4,
             in("r8") arg5,
-            lateout("rcx") _,
-            lateout("r11") _,
+            out("rcx") _,
+            out("r11") _,
             options(nostack, preserves_flags)
         );
     }
@@ -183,8 +183,8 @@ pub unsafe fn syscall6(
             in("r10") arg4,
             in("r8") arg5,
             in("r9") arg6,
-            lateout("rcx") _,
-            lateout("r11") _,
+            out("rcx") _,
+            out("r11") _,
             options(nostack, preserves_flags)
         );
     }
