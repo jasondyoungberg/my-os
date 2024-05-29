@@ -88,7 +88,7 @@ apps:
 	cd kernel/app && find . -name '*.asm' -exec nasm {} \;
 
 	@echo "Building the rust apps..."
-	cd app/hello && cargo build --release -Z unstable-options --out-dir dist
+	cd app/hello && cargo.exe build --release -Z unstable-options --out-dir dist
 	cd app/hello/dist && \
 		objcopy --input-target elf64-x86-64 --output-target binary hello hello.bin && \
 		objdump -d hello > hello.asm && \
@@ -99,7 +99,7 @@ kernel: apps
 	@echo "Building the kernel..."
 
 	mkdir -p kernel/dist
-	cd kernel && cargo build --profile $(RUST_PROFILE) -Z unstable-options --out-dir dist
+	cd kernel && cargo.exe build --profile $(RUST_PROFILE) -Z unstable-options --out-dir dist
 
 $(IMAGE_NAME).iso: limine/limine kernel
 	@echo "Generating the ISO image..."
