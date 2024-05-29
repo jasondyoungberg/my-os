@@ -13,9 +13,7 @@ use x86_64::{
     },
     structures::{
         idt::InterruptStackFrame,
-        paging::{
-            FrameAllocator, Mapper, OffsetPageTable, Page, PageTable, PageTableFlags, PhysFrame,
-        },
+        paging::{Page, PageTable, PageTableFlags, PhysFrame},
     },
     VirtAddr,
 };
@@ -24,7 +22,7 @@ use crate::{
     dbg,
     gdt::GDT,
     gsdata::KernelData,
-    memory::{map_page, phys_to_virt, virt_to_phys, MemoryMapFrameAllocator, MEMORY_OFFSET},
+    memory::{map_page, phys_to_virt, virt_to_phys},
 };
 
 pub static MANAGER: Once<Mutex<Manager>> = Once::new();
