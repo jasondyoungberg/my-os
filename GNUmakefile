@@ -49,7 +49,7 @@ all-hdd: $(IMAGE_NAME).hdd
 debug: $(IMAGE_NAME).iso
 	@echo "Launching QEMU in debug mode..."
 	qemu-system-x86_64 $(QEMU_ARGS) -cdrom $(IMAGE_NAME).iso -boot d \
-		-d int,cpu_reset,unimp,guest_errors
+		-d cpu_reset,unimp,guest_errors
 
 .PHONY: run
 run: $(IMAGE_NAME).iso
@@ -111,7 +111,7 @@ $(IMAGE_NAME).iso: limine/limine kernel
 	mkdir -p iso_root/EFI/BOOT
 	cp limine/BOOTX64.EFI iso_root/EFI/BOOT/
 	cp limine/BOOTIA32.EFI iso_root/EFI/BOOT/
-	cp files/* iso_root/
+	cp -r files/* iso_root/
 	xorriso -as mkisofs -quiet \
 		-b boot/limine/limine-bios-cd.bin \
 		-no-emul-boot -boot-load-size 4 -boot-info-table \
@@ -133,6 +133,7 @@ $(IMAGE_NAME).hdd: limine/limine kernel
 	mcopy -i $(IMAGE_NAME).hdd@@1M limine.cfg limine/limine-bios.sys ::/boot/limine
 	mcopy -i $(IMAGE_NAME).hdd@@1M limine/BOOTX64.EFI ::/EFI/BOOT
 	mcopy -i $(IMAGE_NAME).hdd@@1M limine/BOOTIA32.EFI ::/EFI/BOOT
+	mcopy -i $(IMAGE_NAME).hdd@@1M -s files/* ::/
 
 .PHONY: clean
 clean:
