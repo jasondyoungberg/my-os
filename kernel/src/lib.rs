@@ -58,10 +58,7 @@ pub static STACK_SIZE_RESPONSE: Lazy<&limine::response::StackSizeResponse> =
     Lazy::new(|| STACK_SIZE_REQUEST.get_response().unwrap());
 
 #[used]
-pub static MODULE_REQUEST: limine::request::ModuleRequest = limine::request::ModuleRequest::new()
-    .with_internal_modules(&[
-        &limine::modules::InternalModule::new().with_path(limine::cstr!("/hello.txt"))
-    ]);
+pub static MODULE_REQUEST: limine::request::ModuleRequest = limine::request::ModuleRequest::new();
 pub static MODULE_RESPONSE: Lazy<&limine::response::ModuleResponse> =
     Lazy::new(|| MODULE_REQUEST.get_response().unwrap());
 
