@@ -13,7 +13,6 @@
 pub extern "C" fn _start() -> ! {
     print("Hello, world! I'm (barely) a rust program!\n");
     exit(0);
-    loop {}
 }
 
 #[panic_handler]
