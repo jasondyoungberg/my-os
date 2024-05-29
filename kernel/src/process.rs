@@ -80,6 +80,14 @@ pub struct Registers {
     pub r13: u64,
     pub r14: u64,
     pub r15: u64,
+    pub mm0: u64,
+    pub mm1: u64,
+    pub mm2: u64,
+    pub mm3: u64,
+    pub mm4: u64,
+    pub mm5: u64,
+    pub mm6: u64,
+    pub mm7: u64,
 }
 
 impl Manager {
@@ -328,5 +336,13 @@ impl Registers {
         r13: 0,
         r14: 0,
         r15: 0,
+        mm0: 0,
+        mm1: 0,
+        mm2: 0,
+        mm3: 0,
+        mm4: 0,
+        mm5: 0,
+        mm6: 0,
+        mm7: 0,
     };
 }

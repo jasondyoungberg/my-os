@@ -78,11 +78,13 @@ mmx_test:
     paddq mm0, mm4
     paddq mm0, mm5
     paddq mm0, mm6
+    paddq mm0, mm6
+    paddq mm0, mm7
     paddq mm0, mm7
 
     movq [sum], mm0
     mov rax, [sum]
-    cmp rax, 36
+    cmp rax, 51
     jne .fail
     .pass:
         mov rax, 1

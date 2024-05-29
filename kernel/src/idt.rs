@@ -82,6 +82,12 @@ pub static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
 #[macro_export]
 macro_rules! wrap {
     (push) => {"
+        sub rsp, 64;
+        movq [rsp], mm0; movq [rsp+8], mm1;
+        movq [rsp+16], mm2; movq [rsp+24], mm3;
+        movq [rsp+32], mm4; movq [rsp+40], mm5;
+        movq [rsp+48], mm6; movq [rsp+56], mm7;
+
         push r15; push r14; push r13; push r12;
         push r11; push r10; push r9;  push r8;
                   push rbp; push rdi; push rsi;
@@ -92,6 +98,12 @@ macro_rules! wrap {
         pop rsi; pop rdi; pop rbp;
         pop r8;  pop r9;  pop r10; pop r11;
         pop r12; pop r13; pop r14; pop r15;
+
+        movq mm0, [rsp]; movq mm1, [rsp+8];
+        movq mm2, [rsp+16]; movq mm3, [rsp+24];
+        movq mm4, [rsp+32]; movq mm5, [rsp+40];
+        movq mm6, [rsp+48]; movq mm7, [rsp+56];
+        add rsp, 64;
     "};
     (irq, $i:ident => $w: ident) => {
         const _: unsafe extern "C" fn(&mut $crate::process::Context) = $i;
@@ -128,26 +140,39 @@ macro_rules! wrap {
             _error_code: $c
         ) {
             unsafe {
-                core::arch::asm!(
-                    "swapgs",
-                    "push r14",
-                    "mov r14, [rsp+8]",
-                    "mov [rsp+8], r15",
-                    "push r13",
-                    "push r12",
-                    "push r11",
-                    "push r10",
-                    "push r9",
-                    "push r8",
-                    "push rbp",
-                    "push rdi",
-                    "push rsi",
-                    "push rdx",
-                    "push rcx",
-                    "push rbx",
-                    "push rax",
+                core::arch::asm!("
+                    swapgs
+                    sub rsp, 56
+                    movq [rsp], mm0
+                    movq [rsp+8], mm1
+                    movq [rsp+16], mm2
+                    movq [rsp+24], mm3
+                    movq [rsp+32], mm4
+                    movq [rsp+40], mm5
+                    movq [rsp+48], mm6
+
+                    // save the error code in r15
+                    push r15
+                    mov r15, [rsp+64]
+                    movq [rsp+64], mm7
+
+                    push r14
+                    push r13
+                    push r12
+                    push r11
+                    push r10
+                    push r9
+                    push r8
+                    push rbp
+                    push rdi
+                    push rsi
+                    push rdx
+                    push rcx
+                    push rbx
+                    push rax",
+
                     "mov rdi, rsp",
-                    "mov rsi, r14",
+                    "mov rsi, r15",
                     "call {inner}",
                     $crate::wrap!(pop),
                     "swapgs",

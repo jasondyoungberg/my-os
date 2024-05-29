@@ -120,9 +120,10 @@ extern "C" fn page_fault_handler_inner(context: &mut Context, error_code: PageFa
     if stack_frame.code_segment.rpl() as u8 == 0 {
         panic!(
             "\
-            Kernel Page Fault
-            Accessed Address: {address:?}
-            Error Code: {error_code:?}
+Kernel Page Fault
+Accessed Address: {address:?}
+Error Code: {error_code:?}
+Registers: {registers:#?}
 {stack_frame:#?}",
         );
     } else {
