@@ -10,19 +10,19 @@ pub use syscall::*;
 #[macro_export]
 macro_rules! entry {
     ($main:path) => {
-        const _: fn() = $main;
+        const _: fn() -> i64 = $main;
 
         #[no_mangle]
         pub extern "C" fn _start() -> ! {
-            $main();
-            $crate::exit(0)
+            let code = $main();
+            $crate::exit(code);
         }
     };
 }
 
 #[panic_handler]
-fn panic(_info: &core::panic::PanicInfo) -> ! {
-    // eprintln!("{}", info); // todo: get this to not page fault
+fn panic(info: &core::panic::PanicInfo) -> ! {
+    eprintln!("{}", info);
     // we don't call exit here because we want to recurse if it fails
     let _ = unsafe { syscall1(60, -1i64 as u64) };
     loop {}

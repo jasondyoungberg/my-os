@@ -11,6 +11,8 @@ use x86_64::{
 };
 
 use crate::{
+    color::Color,
+    console,
     gdt::GDT,
     gsdata::KernelData,
     print,
@@ -72,15 +74,23 @@ fn result_to_u64(res: Result<u64, u64>) -> u64 {
 }
 
 fn write(fd: u64, ptr: u64, len: u64) -> Result<u64, u64> {
-    if fd != 1 {
-        return Err(1);
-    }
-
     let bytes = unsafe { core::slice::from_raw_parts(ptr as *const u8, len as usize) };
     let string = core::str::from_utf8(bytes).map_err(|_| 2u64)?;
-    print!("{}", string);
-
-    Ok(string.len() as u64)
+    match fd {
+        1 => {
+            print!("{}", string);
+            Ok(string.len() as u64)
+        }
+        2 => {
+            let mut console = console::CONSOLE.lock();
+            console.set_colors(Color::RED, Color::BLACK);
+            console.write_str(string);
+            console.set_colors(Color::WHITE, Color::BLACK);
+            console.flush();
+            Ok(string.len() as u64)
+        }
+        _ => Err(1),
+    }
 }
 
 fn sys_yield(registers: &mut Registers) -> Result<u64, u64> {

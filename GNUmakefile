@@ -82,14 +82,21 @@ limine/limine:
 	git clone https://github.com/limine-bootloader/limine.git --branch=v7.x-binary --depth=1
 	$(MAKE) -C limine
 
-.PHONY: kernel
-kernel:
-	@echo "Building the kernel..."
-	
+.PHONY: apps
+apps:
+	@echo "Building the assembly apps..."
 	cd kernel/app && find . -name '*.asm' -exec nasm {} \;
 
+	@echo "Building the rust apps..."
 	cd app/hello && cargo build --release -Z unstable-options --out-dir dist
-	cd app/hello/dist && objcopy -O binary hello hello.bin
+	cd app/hello/dist && \
+		objcopy --input-target elf64-x86-64 --output-target binary hello hello.bin && \
+		objdump -d hello > hello.asm && \
+		objdump -s hello > hello.dump
+
+.PHONY: kernel
+kernel: apps
+	@echo "Building the kernel..."
 
 	mkdir -p kernel/dist
 	cd kernel && cargo build --profile $(RUST_PROFILE) -Z unstable-options --out-dir dist

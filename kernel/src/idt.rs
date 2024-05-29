@@ -1,6 +1,5 @@
 use spin::Lazy;
 use x86_64::{
-    instructions::hlt,
     registers::segmentation::GS,
     set_general_handler,
     structures::idt::{InterruptDescriptorTable, InterruptStackFrame},

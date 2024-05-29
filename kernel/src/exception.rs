@@ -1,6 +1,6 @@
 use x86_64::{
     instructions::hlt,
-    registers::{self, control::Cr2, rflags, segmentation::GS},
+    registers::{control::Cr2, segmentation::GS},
     structures::idt::{InterruptStackFrame, PageFaultErrorCode},
 };
 

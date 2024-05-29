@@ -209,17 +209,15 @@ impl Manager {
         let flags =
             PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::USER_ACCESSIBLE;
 
-        let code_frame = map_page(page, flags, &mut l4_table);
-        for i in 1..8 {
+        for i in 0..8 {
             map_page(page + i as u64, flags, &mut l4_table);
         }
 
-        // todo: make this robust to non adjecent frames
-
-        let code_dest: &mut [u8; 4096 * 8] =
-            unsafe { &mut *phys_to_virt(code_frame.start_address()).as_mut_ptr() };
-
+        let old_cr3 = Cr3::read();
+        unsafe { Cr3::write(cr3.0, cr3.1) }
+        let code_dest: &mut [u8; 4096 * 8] = unsafe { &mut *VirtAddr::new(0x1000).as_mut_ptr() };
         code_dest[..code.len()].copy_from_slice(code);
+        unsafe { Cr3::write(old_cr3.0, old_cr3.1) }
 
         let process_id = ProcessId(self.next_process_id);
         self.next_process_id += 1;
@@ -232,7 +230,7 @@ impl Manager {
                 stack_frame: InterruptStackFrame::new(
                     VirtAddr::new(0x1000),
                     GDT.user_code,
-                    RFlags::INTERRUPT_FLAG | RFlags::TRAP_FLAG,
+                    RFlags::INTERRUPT_FLAG,
                     VirtAddr::new(0x8000), // todo: get better stack location
                     GDT.user_data,
                 ),

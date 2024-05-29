@@ -41,11 +41,11 @@ impl<'a> Console<'a> {
         self.background = background;
     }
 
-    fn flush(&mut self) {
+    pub fn flush(&mut self) {
         self.framebuffer.flush();
     }
 
-    fn write_str(&mut self, s: &str) {
+    pub fn write_str(&mut self, s: &str) {
         for c in s.chars() {
             self.write_char(c);
         }
