@@ -10,12 +10,12 @@ pub use syscall::*;
 #[macro_export]
 macro_rules! entry {
     ($main:path) => {
-        const _: fn() -> i64 = $main;
+        const _: fn() = $main;
 
         #[no_mangle]
         pub extern "C" fn _start() -> ! {
-            let code = $main();
-            $crate::exit(code);
+            $main();
+            $crate::exit(0)
         }
     };
 }
