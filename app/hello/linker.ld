@@ -27,7 +27,7 @@ SECTIONS {
     /DISCARD/ : {
         *(.hash)
         *(.gnu.hash)
-        *(.eh_frame)
+        *(.eh_frame .eh_frame.*)
         *(.note .note.*)
         *(.comment .comment.*)
     }
