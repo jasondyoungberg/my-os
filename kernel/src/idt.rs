@@ -143,8 +143,8 @@ macro_rules! wrap {
                 core::arch::asm!(
                     "swapgs",
                     "push r14",
-                    "mov r14, [rsp+16]",
-                    "mov [rsp+16], r15",
+                    "mov r14, [rsp+8]",
+                    "mov [rsp+8], r15",
                     "push r13",
                     "push r12",
                     "push r11",
