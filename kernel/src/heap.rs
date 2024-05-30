@@ -2,6 +2,8 @@ use core::ptr::addr_of;
 
 use spin::{Lazy, Mutex};
 
+use crate::instructions;
+
 const HEAP_SIZE: usize = 256 * 1024 * 1024;
 static mut HEAP_DATA: [u8; HEAP_SIZE] = [0; HEAP_SIZE];
 
@@ -26,17 +28,19 @@ impl Heap {
 }
 unsafe impl core::alloc::GlobalAlloc for Heap {
     unsafe fn alloc(&self, layout: core::alloc::Layout) -> *mut u8 {
-        let mut data = self.data.lock();
-        let start = align_up(data.next, layout.align());
-        let end = start + layout.size();
+        instructions::without_interrupts(|| {
+            let mut data = self.data.lock();
+            let start = align_up(data.next, layout.align());
+            let end = start + layout.size();
 
-        if end > data.start + data.size {
-            return core::ptr::null_mut();
-        }
+            if end > data.start + data.size {
+                return core::ptr::null_mut();
+            }
 
-        data.next = end;
+            data.next = end;
 
-        start as *mut u8
+            start as *mut u8
+        })
     }
 
     unsafe fn dealloc(&self, _ptr: *mut u8, _layout: core::alloc::Layout) {}
