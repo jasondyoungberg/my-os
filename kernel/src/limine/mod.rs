@@ -23,14 +23,20 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-use core::cell::UnsafeCell;
+mod framebuffer;
+
+pub use framebuffer::*;
+
+use core::{cell::UnsafeCell, ptr::NonNull};
+
+const MAGIC_1: u64 = 0xc7b1dd30df4c8b88;
+const MAGIC_2: u64 = 0x0a82e883a194f07b;
 
 #[repr(C)]
 pub struct BaseRevision {
     _id: [u64; 2],
     revision: UnsafeCell<u64>,
 }
-
 impl BaseRevision {
     pub const fn new() -> Self {
         Self {
@@ -43,6 +49,25 @@ impl BaseRevision {
         (unsafe { self.revision.get().read_volatile() }) == 0
     }
 }
-
 unsafe impl Sync for BaseRevision {}
 unsafe impl Send for BaseRevision {}
+
+#[repr(transparent)]
+pub struct Response<T> {
+    inner: UnsafeCell<Option<NonNull<T>>>,
+}
+impl<T> Response<T> {
+    pub const fn none() -> Self {
+        Self {
+            inner: UnsafeCell::new(None),
+        }
+    }
+    pub fn get(&self) -> Option<&T> {
+        Some(unsafe { core::ptr::read_volatile(self.inner.get())?.as_ref() })
+    }
+    pub fn get_mut(&mut self) -> Option<&mut T> {
+        Some(unsafe { core::ptr::read_volatile(self.inner.get())?.as_mut() })
+    }
+}
+unsafe impl<T: Sync> Sync for Response<T> {}
+unsafe impl<T: Send> Send for Response<T> {}
