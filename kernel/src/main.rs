@@ -4,6 +4,8 @@
 #![allow(dead_code)]
 #![deny(unsafe_op_in_unsafe_fn)]
 
+use drivers::display;
+
 mod drivers;
 mod instructions;
 mod limine;
@@ -23,19 +25,27 @@ extern "C" fn _start() -> ! {
 
     println!("Hello, World!");
 
-    for framebuffer in FRAMEBUFFER_REQUEST.response.get().unwrap().framebuffers() {
-        for i in 0..100_u64 {
-            // Calculate the pixel offset using the framebuffer information we obtained above.
-            // We skip `i` scanlines (pitch is provided in bytes) and add `i * 4` to skip `i` pixels forward.
-            let pixel_offset = i * framebuffer.pitch() + i * 4;
+    let framebuffer = FRAMEBUFFER_REQUEST
+        .response
+        .get()
+        .unwrap()
+        .framebuffers()
+        .next();
 
-            // Write 0xFFFFFFFF to the provided pixel offset to fill it white.
-            unsafe { *(framebuffer.addr().add(pixel_offset as usize) as *mut u32) = 0xFFFFFFFF };
-        }
-    }
+    let display = display::Display::new(framebuffer.unwrap());
 
     loop {
-        instructions::hlt()
+        for z in 0..255 {
+            for y in 0..display.height {
+                for x in 0..display.width {
+                    let r = (x % 255) as u32;
+                    let g = (y % 255) as u32;
+                    let b = z;
+                    let color = (r << 16) | (g << 8) | b;
+                    display.set_pixel(x, y, color);
+                }
+            }
+        }
     }
 }
 
