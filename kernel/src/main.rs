@@ -6,8 +6,7 @@
 
 extern crate alloc;
 
-use alloc::boxed::Box;
-use drivers::display;
+use drivers::{console, display};
 
 mod drivers;
 mod heap;
@@ -37,19 +36,12 @@ extern "C" fn _start() -> ! {
         .next();
 
     let display = display::Display::new(framebuffer.unwrap());
+    let mut console = console::Console::new(display);
+
+    console.write_str("Hello, World!");
 
     loop {
-        for z in 0..255 {
-            for y in 0..display.height {
-                for x in 0..display.width {
-                    let r = (x % 255) as u32;
-                    let g = (y % 255) as u32;
-                    let b = z;
-                    let color = (r << 16) | (g << 8) | b;
-                    display.set_pixel(x, y, color);
-                }
-            }
-        }
+        instructions::hlt();
     }
 }
 
