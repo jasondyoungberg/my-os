@@ -11,7 +11,6 @@ use drivers::{
     console::{self, Console},
     display,
 };
-use limine::FramebufferRequest;
 use spin::{Lazy, Mutex};
 
 mod drivers;
