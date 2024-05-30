@@ -1,4 +1,4 @@
-use core::fmt;
+use core::{fmt, ops};
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(transparent)]
@@ -87,6 +87,18 @@ impl PhysAddr {
 impl fmt::Debug for PhysAddr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "PhysAddr({:#x})", self.0)
+    }
+}
+impl ops::Add<u64> for PhysAddr {
+    type Output = Self;
+    fn add(self, rhs: u64) -> Self {
+        PhysAddr::new(self.0 + rhs)
+    }
+}
+impl ops::Sub<u64> for PhysAddr {
+    type Output = Self;
+    fn sub(self, rhs: u64) -> Self {
+        PhysAddr::new(self.0 - rhs)
     }
 }
 
