@@ -143,15 +143,15 @@ where
 type HandlerFunc = extern "x86-interrupt" fn(InterruptStackFrame);
 type HandlerFuncWithCode = extern "x86-interrupt" fn(InterruptStackFrame, u64);
 
-unsafe trait HandlerFuncTrait {
+trait HandlerFuncTrait {
     fn addr(self) -> VirtAddr;
 }
-unsafe impl HandlerFuncTrait for HandlerFunc {
+impl HandlerFuncTrait for HandlerFunc {
     fn addr(self) -> VirtAddr {
         VirtAddr::from_ptr(self as *const ())
     }
 }
-unsafe impl HandlerFuncTrait for HandlerFuncWithCode {
+impl HandlerFuncTrait for HandlerFuncWithCode {
     fn addr(self) -> VirtAddr {
         VirtAddr::from_ptr(self as *const ())
     }

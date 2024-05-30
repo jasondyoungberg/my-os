@@ -7,6 +7,11 @@ edition = "2021"
 strip = true
 opt-level = 3
 codegen-units = 1
+panic = "abort"
+
+[profile.dev]
+opt-level = 0
+panic = "abort"
 
 [dependencies]
 spin = "0.9.8"
