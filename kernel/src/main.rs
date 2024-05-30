@@ -42,6 +42,8 @@ unsafe extern "C" fn _start() -> ! {
 
 #[panic_handler]
 fn rust_panic(_info: &core::panic::PanicInfo) -> ! {
+    instructions::disable_interrupts();
+
     loop {
         instructions::hlt()
     }

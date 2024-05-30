@@ -7,3 +7,11 @@ pub unsafe fn outb(port: u16, value: u8) {
 pub fn hlt() {
     unsafe { asm!("hlt") };
 }
+
+pub fn enable_interrupts() {
+    unsafe { asm!("sti") };
+}
+
+pub fn disable_interrupts() {
+    unsafe { asm!("cli") };
+}
