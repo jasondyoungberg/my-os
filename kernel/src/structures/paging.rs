@@ -4,6 +4,7 @@ pub struct PageTable {
 }
 
 const ADDR_MASK: u64 = 0x000f_ffff_ffff_f000;
+const FLAG_MASK: u64 = 0x0000_0000_0000_001f;
 
 bitflags! {
     #[derive(Clone, Copy)]
@@ -36,7 +37,7 @@ impl PageTableEntry {
     }
 
     pub fn set_flags(&mut self, flags: PageTableFlags) {
-        self.0 = (self.0 & ADDR_MASK) | flags.bits();
+        self.0 = (self.0 & ADDR_MASK) | (flags.bits() & FLAG_MASK);
     }
 
     pub fn addr(&self) -> PhysAddr {
@@ -46,5 +47,23 @@ impl PageTableEntry {
     pub fn set_addr(&mut self, addr: PhysAddr) {
         assert_eq!(addr & !ADDR_MASK, 0);
         self.0 = addr | self.flags().bits();
+    }
+}
+
+struct PhysFrame(PhysAddr);
+impl PhysFrame {
+    pub fn new(addr: PhysAddr) -> Self {
+        PhysFrame(addr)
+    }
+    pub fn try_new(addr: PhysAddr) -> Option<Self> {
+        if addr == Self::new_truncate(addr) {
+            Some(PhysFrame(addr))
+        } else {
+            None
+        }
+    }
+    pub fn new_truncate(addr: PhysAddr) -> Self {
+        let addr = addr.as_u64() & !(1 << 12 - 1);
+        PhysFrame(addr)
     }
 }

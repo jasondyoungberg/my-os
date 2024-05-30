@@ -12,7 +12,7 @@ use drivers::{
     display,
 };
 use instructions::enable_interrupts;
-use registers::RFlags;
+use registers::rflags::RFlags;
 use spin::{Lazy, Mutex};
 
 mod address;
@@ -32,6 +32,10 @@ static BASE_REVISION: limine::BaseRevision = limine::BaseRevision::new();
 #[link_section = ".requests"]
 static FRAMEBUFFER_REQUEST: limine::FramebufferRequest = limine::FramebufferRequest::new();
 
+#[used]
+#[link_section = ".requests"]
+static MEMORY_MAP_REQUEST: limine::MemoryMapRequest = limine::MemoryMapRequest::new();
+
 static CONSOLE: Lazy<Mutex<Console>> = Lazy::new(|| {
     let framebuffer = FRAMEBUFFER_REQUEST
         .response
@@ -48,6 +52,7 @@ static CONSOLE: Lazy<Mutex<Console>> = Lazy::new(|| {
 extern "C" fn _start() -> ! {
     assert!(BASE_REVISION.is_supported());
     assert!(FRAMEBUFFER_REQUEST.response.get().is_some());
+    assert!(MEMORY_MAP_REQUEST.response.get().is_some());
 
     structures::gdt::init();
     structures::idt::init();

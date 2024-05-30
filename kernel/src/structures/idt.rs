@@ -13,6 +13,9 @@ static IDTR: Lazy<IdtDescriptor> = Lazy::new(|| IdtDescriptor {
 static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
     let mut idt = InterruptDescriptorTable::new();
 
+    #[cfg(test)]
+    panic!();
+
     idt.breakpoint.set_handler(interrupts::breakpoint);
     idt.double_fault.set_handler(interrupts::double_fault);
 

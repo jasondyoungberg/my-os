@@ -24,8 +24,11 @@
 // SOFTWARE.
 
 mod framebuffer;
+pub mod memory_map;
+pub mod stack_size;
 
 pub use framebuffer::*;
+pub use memory_map::*;
 
 use core::{cell::UnsafeCell, ptr::NonNull};
 
@@ -34,13 +37,13 @@ const MAGIC_2: u64 = 0x0a82e883a194f07b;
 
 #[repr(C)]
 pub struct BaseRevision {
-    _id: [u64; 2],
+    id: [u64; 2],
     revision: UnsafeCell<u64>,
 }
 impl BaseRevision {
     pub const fn new() -> Self {
         Self {
-            _id: [0xf9562b2d5c95a6c8, 0x6a7b384944536bdc],
+            id: [0xf9562b2d5c95a6c8, 0x6a7b384944536bdc],
             revision: UnsafeCell::new(1),
         }
     }

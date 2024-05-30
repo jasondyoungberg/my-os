@@ -4,14 +4,14 @@ use super::{Response, MAGIC_1, MAGIC_2};
 
 #[repr(C)]
 pub struct FramebufferRequest {
-    _id: [u64; 4],
+    id: [u64; 4],
     revision: u64,
     pub response: Response<FramebufferResponse>,
 }
 impl FramebufferRequest {
     pub const fn new() -> Self {
         Self {
-            _id: [MAGIC_1, MAGIC_2, 0x9d5827dcd881dd75, 0xa3148604f6fab11b],
+            id: [MAGIC_1, MAGIC_2, 0x9d5827dcd881dd75, 0xa3148604f6fab11b],
             revision: 0,
             response: Response::none(),
         }
@@ -21,7 +21,7 @@ impl FramebufferRequest {
 #[repr(C)]
 pub struct FramebufferResponse {
     revision: u64,
-    framebuffer_ct: u64,
+    framebuffer_countt: u64,
     framebuffers: *const *const RawFramebuffer,
 }
 unsafe impl Sync for FramebufferResponse {}
@@ -32,9 +32,11 @@ impl FramebufferResponse {
     }
 
     pub fn framebuffers(&self) -> impl Iterator<Item = &RawFramebuffer> {
-        (unsafe { core::slice::from_raw_parts(self.framebuffers, self.framebuffer_ct as usize) })
-            .iter()
-            .map(|&fb| unsafe { &*fb })
+        (unsafe {
+            core::slice::from_raw_parts(self.framebuffers, self.framebuffer_countt as usize)
+        })
+        .iter()
+        .map(|&fb| unsafe { &*fb })
     }
 }
 
