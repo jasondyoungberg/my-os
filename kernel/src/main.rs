@@ -1,22 +1,27 @@
 #![no_std]
 #![no_main]
+//
+#![allow(dead_code)]
+#![deny(unsafe_op_in_unsafe_fn)]
 
 mod drivers;
 mod instructions;
 mod limine;
 
 #[used]
+#[link_section = ".requests"]
 static BASE_REVISION: limine::BaseRevision = limine::BaseRevision::new();
 
 #[used]
+#[link_section = ".requests"]
 static FRAMEBUFFER_REQUEST: limine::FramebufferRequest = limine::FramebufferRequest::new();
 
 #[no_mangle]
-unsafe extern "C" fn _start() -> ! {
+extern "C" fn _start() -> ! {
     assert!(BASE_REVISION.is_supported());
     assert!(FRAMEBUFFER_REQUEST.response.get().is_some());
 
-    drivers::debucon::print("Hello, World!\n");
+    println!("Hello, World!");
 
     let framebuffer = FRAMEBUFFER_REQUEST
         .response
@@ -32,7 +37,7 @@ unsafe extern "C" fn _start() -> ! {
         let pixel_offset = i * framebuffer.pitch() + i * 4;
 
         // Write 0xFFFFFFFF to the provided pixel offset to fill it white.
-        *(framebuffer.addr().add(pixel_offset as usize) as *mut u32) = 0xFFFFFFFF;
+        unsafe { *(framebuffer.addr().add(pixel_offset as usize) as *mut u32) = 0xFFFFFFFF };
     }
 
     loop {
@@ -41,9 +46,9 @@ unsafe extern "C" fn _start() -> ! {
 }
 
 #[panic_handler]
-fn rust_panic(_info: &core::panic::PanicInfo) -> ! {
+fn rust_panic(info: &core::panic::PanicInfo) -> ! {
     instructions::disable_interrupts();
-
+    println!("{}", info);
     loop {
         instructions::hlt()
     }

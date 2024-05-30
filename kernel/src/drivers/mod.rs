@@ -1,1 +1,1 @@
-pub mod debucon;
+pub mod debug_console;
