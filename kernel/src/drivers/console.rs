@@ -7,6 +7,7 @@ pub struct Console {
     cursor_x: usize,
     cursor_y: usize,
 }
+unsafe impl Send for Console {}
 
 impl Console {
     pub fn new(display: Display) -> Self {

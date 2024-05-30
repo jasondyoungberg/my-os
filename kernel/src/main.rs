@@ -1,17 +1,25 @@
 #![no_std]
 #![cfg_attr(not(test), no_main)]
+#![feature(abi_x86_interrupt)]
 //
 #![allow(dead_code)]
 #![deny(unsafe_op_in_unsafe_fn)]
 
 extern crate alloc;
 
-use drivers::{console, display};
+use drivers::{
+    console::{self, Console},
+    display,
+};
 use limine::FramebufferRequest;
+use spin::{Lazy, Mutex};
 
 mod drivers;
+mod gdt;
 mod heap;
+mod idt;
 mod instructions;
+mod interrupts;
 mod limine;
 
 #[used]
@@ -22,26 +30,38 @@ static BASE_REVISION: limine::BaseRevision = limine::BaseRevision::new();
 #[link_section = ".requests"]
 static FRAMEBUFFER_REQUEST: limine::FramebufferRequest = limine::FramebufferRequest::new();
 
-#[cfg_attr(not(test), no_mangle)]
-extern "C" fn _start() -> ! {
-    assert!(BASE_REVISION.is_supported());
-    assert!(FRAMEBUFFER_REQUEST.response.get().is_some());
-
-    println!("Hello, World!");
-
+static CONSOLE: Lazy<Mutex<Console>> = Lazy::new(|| {
     let framebuffer = FRAMEBUFFER_REQUEST
         .response
         .get()
         .unwrap()
         .framebuffers()
-        .next();
+        .next()
+        .unwrap();
+    let console = Console::new(display::Display::new(framebuffer));
+    Mutex::new(console)
+});
 
-    let display = display::Display::new(framebuffer.unwrap());
-    let mut console = console::Console::new(display);
+#[cfg_attr(not(test), no_mangle)]
+extern "C" fn _start() -> ! {
+    assert!(BASE_REVISION.is_supported());
+    assert!(FRAMEBUFFER_REQUEST.response.get().is_some());
 
-    console.write_str("Hello, World!");
+    gdt::init();
+    idt::init();
 
-    panic!("End of main");
+    println!("Hello, World!");
+    CONSOLE.lock().write_str("Hello, World!\n");
+
+    unsafe {
+        core::arch::asm!("int 3");
+    }
+
+    CONSOLE.lock().write_str("We're back!\n");
+
+    loop {
+        instructions::hlt();
+    }
 }
 
 #[cfg_attr(not(test), panic_handler)]
