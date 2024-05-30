@@ -3,21 +3,22 @@ use core::{fmt, marker::PhantomData};
 use spin::Lazy;
 
 use super::gdt::KERNEL_CODE_SELECTOR;
-use crate::{address::VirtAddr, interrupts};
+use crate::{address::VirtAddr, interrupts, registers::rflags::RFlags};
 
 static IDTR: Lazy<IdtDescriptor> = Lazy::new(|| IdtDescriptor {
     size: core::mem::size_of_val(&*IDT) as u16 - 1,
     offset: VirtAddr::from_ptr(&*IDT),
 });
 
+#[cfg_attr(test, allow(unused, unreachable_code))]
 static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
     let mut idt = InterruptDescriptorTable::new();
 
     #[cfg(test)]
-    panic!();
+    panic!("Attempted to load IDT in test environment.");
 
-    idt.breakpoint.set_handler(interrupts::breakpoint);
-    idt.double_fault.set_handler(interrupts::double_fault);
+    idt.breakpoint.set_handler(interrupts::breakpoint, 0);
+    idt.double_fault.set_handler(interrupts::double_fault, 0);
 
     idt
 });
@@ -128,12 +129,14 @@ where
         }
     }
 
-    fn set_handler(&mut self, handler: F) {
+    fn set_handler(&mut self, handler: F, ist: u8) {
+        assert!(ist < 8);
+
         let offset = handler.addr().as_u64();
 
         self.offset_low = offset as u16;
         self.selector = KERNEL_CODE_SELECTOR;
-        self.ist = 0;
+        self.ist = ist;
         self.flags = 0b_1000_1110;
         self.offset_mid = (offset >> 16) as u16;
         self.offset_high = (offset >> 32) as u32;
@@ -159,11 +162,11 @@ impl HandlerFuncTrait for HandlerFuncWithCode {
 
 #[repr(C)]
 pub struct InterruptStackFrame {
-    instruction_pointer: u64,
+    instruction_pointer: VirtAddr,
     code_segment: u16,
     _reserved1: [u8; 6],
-    cpu_flags: u64,
-    stack_pointer: u64,
+    cpu_flags: RFlags,
+    stack_pointer: VirtAddr,
     stack_segment: u16,
     _reserved2: [u8; 6],
 }

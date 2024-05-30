@@ -16,11 +16,12 @@ use registers::rflags::RFlags;
 use spin::{Lazy, Mutex};
 
 mod address;
+mod allocation;
 mod drivers;
-mod heap;
 mod instructions;
 mod interrupts;
 mod limine;
+mod mapping;
 mod registers;
 mod structures;
 

@@ -1,6 +1,6 @@
 use core::{fmt, ops};
 
-use crate::address::PhysAddr;
+use crate::{address::PhysAddr, allocation::frame::alloc_frame};
 
 use super::frame::PhysFrame;
 
@@ -24,6 +24,16 @@ impl PageTable {
     }
     pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut PageTableEntry> {
         self.entries.iter_mut()
+    }
+
+    pub fn next_table(&mut self, index: usize, flags: PageTableFlags) -> &mut PageTable {
+        let mut entry = self.entries[index];
+        if entry.is_unused() {
+            entry.set_frame(alloc_frame());
+        }
+        entry.set_flags(entry.flags() | flags);
+        let addr = entry.frame().start();
+        unsafe { &mut *(addr.as_u64() as *mut PageTable) }
     }
 }
 impl fmt::Debug for PageTable {
@@ -84,7 +94,7 @@ impl PageTableEntry {
     pub fn frame(&self) -> PhysFrame {
         PhysFrame::try_from(PhysAddr::new(self.0 & ADDR_MASK)).unwrap()
     }
-    pub fn set_frame(&mut self, frame: &PhysFrame) {
+    pub fn set_frame(&mut self, frame: PhysFrame) {
         assert_eq!(frame.start().as_u64() & !ADDR_MASK, 0);
         self.0 = frame.start().as_u64() | self.flags().bits();
     }
@@ -108,7 +118,7 @@ mod test {
         #[test]
         fn page_table_entry(addr in 0..0x0000_00ff_ffff_ffffu64, flags in 0..0x1ffu64) {
             let phys_addr = PhysAddr::new(addr);
-            let frame = PhysFrame::containing(phys_addr);
+            let frame = PhysFrame::containing_addr(phys_addr);
             let flags = PageTableFlags::from_bits_truncate(flags);
 
             let mut entry = PageTableEntry::new();

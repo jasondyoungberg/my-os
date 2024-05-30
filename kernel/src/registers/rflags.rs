@@ -1,5 +1,6 @@
 bitflags::bitflags! {
     #[derive(Clone, Copy, Debug, Default)]
+    #[repr(transparent)]
     pub struct RFlags: u64 {
         const CARRY = 1 << 0;
         const _ = 1 << 1;
@@ -22,7 +23,6 @@ bitflags::bitflags! {
         const ID = 1 << 21;
     }
 }
-
 impl RFlags {
     pub fn read() -> Self {
         let rflags: u64;
@@ -30,5 +30,10 @@ impl RFlags {
             core::arch::asm!("pushfq; pop {}", out(reg) rflags, options(nomem, preserves_flags))
         };
         Self::from_bits_retain(rflags)
+    }
+
+    pub unsafe fn write(self) {
+        let rflags = self.bits();
+        unsafe { core::arch::asm!("push {}; popfq", in(reg) rflags, options(nomem)) };
     }
 }

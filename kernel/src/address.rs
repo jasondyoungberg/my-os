@@ -50,6 +50,18 @@ impl fmt::Debug for VirtAddr {
         write!(f, "VirtAddr({:#x})", self.0)
     }
 }
+impl ops::Add<u64> for VirtAddr {
+    type Output = Self;
+    fn add(self, rhs: u64) -> Self {
+        VirtAddr::new(self.0 + rhs)
+    }
+}
+impl ops::Sub<u64> for VirtAddr {
+    type Output = Self;
+    fn sub(self, rhs: u64) -> Self {
+        VirtAddr::new(self.0 - rhs)
+    }
+}
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(transparent)]
