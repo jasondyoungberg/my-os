@@ -7,6 +7,7 @@
 extern crate alloc;
 
 use drivers::{console, display};
+use limine::FramebufferRequest;
 
 mod drivers;
 mod heap;
@@ -40,15 +41,25 @@ extern "C" fn _start() -> ! {
 
     console.write_str("Hello, World!");
 
-    loop {
-        instructions::hlt();
-    }
+    panic!("End of main");
 }
 
 #[cfg_attr(not(test), panic_handler)]
 fn rust_panic(info: &core::panic::PanicInfo) -> ! {
+    use core::fmt::Write;
+
     instructions::disable_interrupts();
     println!("{}", info);
+
+    if let Some(framebuffers) = FRAMEBUFFER_REQUEST.response.get() {
+        for framebuffer in framebuffers.framebuffers() {
+            let display = display::Display::new(framebuffer);
+            let mut console = console::Console::new(display);
+
+            let _ = console.write_fmt(format_args!("{}\n", info));
+        }
+    }
+
     loop {
         instructions::hlt()
     }
