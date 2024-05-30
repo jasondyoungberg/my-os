@@ -7,3 +7,6 @@ edition = "2021"
 strip = true
 opt-level = 3
 codegen-units = 1
+
+[dependencies]
+spin = "0.9.8"
