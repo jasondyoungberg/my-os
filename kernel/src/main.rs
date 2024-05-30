@@ -20,6 +20,7 @@ mod idt;
 mod instructions;
 mod interrupts;
 mod limine;
+mod registers;
 
 #[used]
 #[link_section = ".requests"]

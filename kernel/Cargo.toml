@@ -10,3 +10,4 @@ codegen-units = 1
 
 [dependencies]
 spin = "0.9.8"
+bitflags = "2.5.0"
