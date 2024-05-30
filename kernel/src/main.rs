@@ -23,21 +23,15 @@ extern "C" fn _start() -> ! {
 
     println!("Hello, World!");
 
-    let framebuffer = FRAMEBUFFER_REQUEST
-        .response
-        .get()
-        .unwrap()
-        .framebuffers()
-        .next()
-        .unwrap();
+    for framebuffer in FRAMEBUFFER_REQUEST.response.get().unwrap().framebuffers() {
+        for i in 0..100_u64 {
+            // Calculate the pixel offset using the framebuffer information we obtained above.
+            // We skip `i` scanlines (pitch is provided in bytes) and add `i * 4` to skip `i` pixels forward.
+            let pixel_offset = i * framebuffer.pitch() + i * 4;
 
-    for i in 0..100_u64 {
-        // Calculate the pixel offset using the framebuffer information we obtained above.
-        // We skip `i` scanlines (pitch is provided in bytes) and add `i * 4` to skip `i` pixels forward.
-        let pixel_offset = i * framebuffer.pitch() + i * 4;
-
-        // Write 0xFFFFFFFF to the provided pixel offset to fill it white.
-        unsafe { *(framebuffer.addr().add(pixel_offset as usize) as *mut u32) = 0xFFFFFFFF };
+            // Write 0xFFFFFFFF to the provided pixel offset to fill it white.
+            unsafe { *(framebuffer.addr().add(pixel_offset as usize) as *mut u32) = 0xFFFFFFFF };
+        }
     }
 
     loop {
