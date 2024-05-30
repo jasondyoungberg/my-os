@@ -1,7 +1,7 @@
 # Nuke built-in rules and variables.
 override MAKEFLAGS += -rR
 
-override IMAGE_NAME := template
+override IMAGE_NAME := myos
 
 # Convenience macro to reliably declare user overridable variables.
 define DEFAULT_VAR =
@@ -13,6 +13,28 @@ define DEFAULT_VAR =
     endif
 endef
 
+ifeq ($(RUST_PROFILE),)
+    override RUST_PROFILE := dev
+endif
+
+override RUST_PROFILE_SUBDIR := $(RUST_PROFILE)
+ifeq ($(RUST_PROFILE),dev)
+    override RUST_PROFILE_SUBDIR := debug
+endif
+
+QEMU_ARGS := \
+	-M q35 \
+	-m 2G \
+	-debugcon stdio
+
+ifeq ($(KVM),1)
+	QEMU_ARGS += -enable-kvm
+endif
+
+ifeq ($(UEFI),1)
+	QEMU_ARGS += -bios ovmf/OVMF.fd
+endif
+
 .PHONY: all
 all: $(IMAGE_NAME).iso
 
@@ -20,21 +42,12 @@ all: $(IMAGE_NAME).iso
 all-hdd: $(IMAGE_NAME).hdd
 
 .PHONY: run
-run: $(IMAGE_NAME).iso
-	qemu-system-x86_64 -M q35 -m 2G -cdrom $(IMAGE_NAME).iso -boot d\
-		-debugcon stdio
-
-.PHONY: run-uefi
-run-uefi: ovmf $(IMAGE_NAME).iso
-	qemu-system-x86_64 -M q35 -m 2G -bios ovmf/OVMF.fd -cdrom $(IMAGE_NAME).iso -boot d
+run: $(IMAGE_NAME).iso ovmf
+	qemu-system-x86_64 $(QEMU_ARGS) -cdrom $(IMAGE_NAME).iso -boot d
 
 .PHONY: run-hdd
-run-hdd: $(IMAGE_NAME).hdd
-	qemu-system-x86_64 -M q35 -m 2G -hda $(IMAGE_NAME).hdd
-
-.PHONY: run-hdd-uefi
-run-hdd-uefi: ovmf $(IMAGE_NAME).hdd
-	qemu-system-x86_64 -M q35 -m 2G -bios ovmf/OVMF.fd -hda $(IMAGE_NAME).hdd
+run-hdd: $(IMAGE_NAME).hdd ovmf
+	qemu-system-x86_64 $(QEMU_ARGS) -hda $(IMAGE_NAME).hdd
 
 ovmf:
 	mkdir -p ovmf
@@ -47,12 +60,13 @@ limine/limine:
 
 .PHONY: kernel
 kernel:
-	$(MAKE) -C kernel
+	cd kernel && cargo build --target x86_64-unknown-none --profile $(RUST_PROFILE)
+
 
 $(IMAGE_NAME).iso: limine/limine kernel
 	rm -rf iso_root
 	mkdir -p iso_root/boot
-	cp -v kernel/kernel iso_root/boot/
+	cp -v kernel/target/x86_64-unknown-none/$(RUST_PROFILE_SUBDIR)/kernel iso_root/boot/
 	mkdir -p iso_root/boot/limine
 	cp -v limine.cfg limine/limine-bios.sys limine/limine-bios-cd.bin limine/limine-uefi-cd.bin iso_root/boot/limine/
 	mkdir -p iso_root/EFI/BOOT
@@ -73,7 +87,7 @@ $(IMAGE_NAME).hdd: limine/limine kernel
 	./limine/limine bios-install $(IMAGE_NAME).hdd
 	mformat -i $(IMAGE_NAME).hdd@@1M
 	mmd -i $(IMAGE_NAME).hdd@@1M ::/EFI ::/EFI/BOOT ::/boot ::/boot/limine
-	mcopy -i $(IMAGE_NAME).hdd@@1M kernel/kernel ::/boot
+	mcopy -i $(IMAGE_NAME).hdd@@1M kernel/target/x86_64-unknown-none/$(RUST_PROFILE_SUBDIR)/kernel ::/boot
 	mcopy -i $(IMAGE_NAME).hdd@@1M limine.cfg limine/limine-bios.sys ::/boot/limine
 	mcopy -i $(IMAGE_NAME).hdd@@1M limine/BOOTX64.EFI ::/EFI/BOOT
 	mcopy -i $(IMAGE_NAME).hdd@@1M limine/BOOTIA32.EFI ::/EFI/BOOT
