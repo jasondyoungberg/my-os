@@ -1,4 +1,4 @@
-use crate::{idt::InterruptStackFrame, println, CONSOLE};
+use crate::{println, structures::idt::InterruptStackFrame, CONSOLE};
 
 pub extern "x86-interrupt" fn breakpoint(_stack_frame: InterruptStackFrame) {
     println!("Breakpoint");

@@ -2,14 +2,12 @@ use core::{fmt, marker::PhantomData};
 
 use spin::Lazy;
 
-use crate::{gdt::KERNEL_CODE_SELECTOR, interrupts};
+use super::gdt::KERNEL_CODE_SELECTOR;
+use crate::{address::VirtAddr, interrupts};
 
-static IDTR: Lazy<IdtDescriptor> = Lazy::new(|| {
-    let idt = &*IDT;
-    IdtDescriptor {
-        size: core::mem::size_of_val(idt) as u16 - 1,
-        offset: idt,
-    }
+static IDTR: Lazy<IdtDescriptor> = Lazy::new(|| IdtDescriptor {
+    size: core::mem::size_of_val(&*IDT) as u16 - 1,
+    offset: VirtAddr::from_ptr(&*IDT),
 });
 
 static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
@@ -28,7 +26,7 @@ pub fn init() {
 #[repr(C, packed)]
 struct IdtDescriptor {
     size: u16,
-    offset: *const InterruptDescriptorTable,
+    offset: VirtAddr,
 }
 unsafe impl Send for IdtDescriptor {}
 unsafe impl Sync for IdtDescriptor {}
@@ -128,7 +126,7 @@ where
     }
 
     fn set_handler(&mut self, handler: F) {
-        let offset = handler.addr();
+        let offset = handler.addr().as_u64();
 
         self.offset_low = offset as u16;
         self.selector = KERNEL_CODE_SELECTOR;
@@ -143,16 +141,16 @@ type HandlerFunc = extern "x86-interrupt" fn(InterruptStackFrame);
 type HandlerFuncWithCode = extern "x86-interrupt" fn(InterruptStackFrame, u64);
 
 unsafe trait HandlerFuncTrait {
-    fn addr(self) -> u64;
+    fn addr(self) -> VirtAddr;
 }
 unsafe impl HandlerFuncTrait for HandlerFunc {
-    fn addr(self) -> u64 {
-        self as u64
+    fn addr(self) -> VirtAddr {
+        VirtAddr::from_ptr(self as *const ())
     }
 }
 unsafe impl HandlerFuncTrait for HandlerFuncWithCode {
-    fn addr(self) -> u64 {
-        self as u64
+    fn addr(self) -> VirtAddr {
+        VirtAddr::from_ptr(self as *const ())
     }
 }
 

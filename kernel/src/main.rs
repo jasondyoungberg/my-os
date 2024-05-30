@@ -11,16 +11,18 @@ use drivers::{
     console::{self, Console},
     display,
 };
+use instructions::enable_interrupts;
+use registers::RFlags;
 use spin::{Lazy, Mutex};
 
+mod address;
 mod drivers;
-mod gdt;
 mod heap;
-mod idt;
 mod instructions;
 mod interrupts;
 mod limine;
 mod registers;
+mod structures;
 
 #[used]
 #[link_section = ".requests"]
@@ -47,17 +49,19 @@ extern "C" fn _start() -> ! {
     assert!(BASE_REVISION.is_supported());
     assert!(FRAMEBUFFER_REQUEST.response.get().is_some());
 
-    gdt::init();
-    idt::init();
+    structures::gdt::init();
+    structures::idt::init();
 
     println!("Hello, World!");
     CONSOLE.lock().write_str("Hello, World!\n");
 
-    unsafe {
-        core::arch::asm!("int 3");
-    }
+    instructions::breakpoint();
 
+    println!("We're back!");
     CONSOLE.lock().write_str("We're back!\n");
+
+    println!("{:?}", RFlags::read());
+    enable_interrupts();
 
     loop {
         instructions::hlt();

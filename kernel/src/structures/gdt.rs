@@ -1,13 +1,15 @@
 pub const KERNEL_CODE_SELECTOR: u16 = 1 << 3;
 pub const KERNEL_DATA_SELECTOR: u16 = 2 << 3;
-// pub const USER_DATA_SELECTOR: u16 = 3 << 3;
-// pub const USER_CODE_SELECTOR: u16 = 4 << 3;
+pub const USER_DATA_SELECTOR: u16 = 3 << 3;
+pub const USER_CODE_SELECTOR: u16 = 4 << 3;
 
 static GDT: GlobalDescriptorTable = GlobalDescriptorTable {
     entries: [
         GdtEntry::null(),
         GdtEntry::kernel_code(),
         GdtEntry::kernel_data(),
+        GdtEntry::user_data(),
+        GdtEntry::user_code(),
     ],
 };
 
@@ -53,7 +55,7 @@ impl GdtDescriptor {
 
 #[repr(C)]
 struct GlobalDescriptorTable {
-    entries: [GdtEntry; 3],
+    entries: [GdtEntry; 5],
 }
 
 #[repr(C)]
@@ -90,6 +92,26 @@ impl GdtEntry {
             _unused1: 0,
             _unused2: 0,
             access: 0b_1001_0011, // present, ring 0, data, writable, accessed
+            flags: 0b_0010 << 4,  // 64-bit
+            _unused3: 0,
+        }
+    }
+
+    const fn user_code() -> Self {
+        Self {
+            _unused1: 0,
+            _unused2: 0,
+            access: 0b_1111_1011, // present, ring 3, code, readable, accessed
+            flags: 0b_0010 << 4,  // 64-bit
+            _unused3: 0,
+        }
+    }
+
+    const fn user_data() -> Self {
+        Self {
+            _unused1: 0,
+            _unused2: 0,
+            access: 0b_1111_0011, // present, ring 3, data, writable, accessed
             flags: 0b_0010 << 4,  // 64-bit
             _unused3: 0,
         }
