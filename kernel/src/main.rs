@@ -9,13 +9,9 @@ extern crate alloc;
 
 use core::fmt::Write;
 
-use drivers::{
-    console::{self, Console},
-    display,
-};
+use drivers::{console, display};
 use instructions::enable_interrupts;
 use registers::rflags::RFlags;
-use spin::{Lazy, Mutex};
 
 mod address;
 mod allocation;
@@ -23,6 +19,7 @@ mod drivers;
 mod instructions;
 mod interrupts;
 mod limine;
+mod macros;
 mod mapping;
 mod registers;
 mod structures;
@@ -51,18 +48,6 @@ static STACK_SIZE_REQUEST: limine::StackSizeRequest = limine::StackSizeRequest::
 #[link_section = ".requests"]
 static MODULE_REQUEST: limine::ModuleRequest = limine::ModuleRequest::new(&[]);
 
-static CONSOLE: Lazy<Mutex<Console>> = Lazy::new(|| {
-    let framebuffer = FRAMEBUFFER_REQUEST
-        .response
-        .get()
-        .unwrap()
-        .framebuffers()
-        .next()
-        .unwrap();
-    let console = Console::new(display::Display::new(framebuffer));
-    Mutex::new(console)
-});
-
 #[cfg_attr(not(test), no_mangle)]
 extern "C" fn _start() -> ! {
     assert!(BASE_REVISION.is_supported());
@@ -76,24 +61,16 @@ extern "C" fn _start() -> ! {
     structures::idt::init();
 
     println!("Hello, World!");
-    CONSOLE.lock().write_str("Hello, World!\n");
 
     println!("{:?}", SMP_REQUEST.response.get().unwrap());
-    let _ = CONSOLE
-        .lock()
-        .write_fmt(format_args!("{:#?}\n", SMP_REQUEST.response.get().unwrap()));
 
     for file in MODULE_REQUEST.response.get().unwrap().modules() {
         println!("Module: {}", file.path());
-        let _ = CONSOLE
-            .lock()
-            .write_fmt(format_args!("Module: {}\n", file.path()));
     }
 
     instructions::breakpoint();
 
     println!("We're back!");
-    CONSOLE.lock().write_str("We're back!\n");
 
     SMP_REQUEST
         .response
@@ -104,9 +81,6 @@ extern "C" fn _start() -> ! {
         .skip(1)
         .for_each(|info| {
             println!("Starting CPU {}", info.processor_id);
-            let _ = CONSOLE
-                .lock()
-                .write_fmt(format_args!("Starting CPU {}\n", info.processor_id));
             info.goto_address.write(smp_start);
         });
 
@@ -119,9 +93,7 @@ extern "C" fn _start() -> ! {
 }
 
 extern "C" fn smp_start(info: &limine::SmpInfo) -> ! {
-    let _ = CONSOLE
-        .lock()
-        .write_fmt(format_args!("Hello from CPU {}\n", info.processor_id));
+    println!("Hello from CPU {}", info.processor_id);
 
     loop {
         instructions::hlt();
