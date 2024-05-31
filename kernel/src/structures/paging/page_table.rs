@@ -122,7 +122,7 @@ mod test {
             let flags = PageTableFlags::from_bits_truncate(flags);
 
             let mut entry = PageTableEntry::new();
-            entry.set_frame(&frame);
+            entry.set_frame(frame);
             entry.set_flags(flags);
             prop_assert_eq!(entry.frame().start(), frame.start());
             prop_assert_eq!(entry.flags(), flags);

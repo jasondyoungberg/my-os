@@ -1,6 +1,14 @@
 use core::fmt;
 
-use super::display::Display;
+use spin::Lazy;
+
+use super::{display::Display, psf2::Font};
+
+const FONT_DATA: &[u8; 95 * FONT_WIDTH * FONT_HEIGHT] = include_bytes!("font.bin");
+const FONT_WIDTH: usize = 8;
+const FONT_HEIGHT: usize = 16;
+
+static FONT: Lazy<Font> = Lazy::new(|| Font::parse(include_bytes!("font/ter-u16n.psf")));
 
 pub struct Console {
     display: Display,
@@ -27,25 +35,27 @@ impl Console {
                 self.cursor_x = 0;
                 self.cursor_y += 1;
             }
-            ' '..='~' => {
-                let ascii = c as u8;
-                let data_index = (ascii - 0x20) as usize * FONT_WIDTH * FONT_HEIGHT;
-                for y in 0..FONT_HEIGHT {
-                    for x in 0..FONT_WIDTH {
-                        let gray = FONT_DATA[data_index + y * FONT_WIDTH + x] as u32;
+            c => {
+                if let Some(glyph) = FONT.get_char(c) {
+                    for y in 0..FONT.height() {
+                        for x in 0..FONT.width() {
+                            let row_index = y * ((FONT.width() + 7) / 8);
+                            let byte_index = row_index + x / 8;
+                            let bit_index = 7 - (x % 8);
+                            let bit = glyph[byte_index] >> bit_index & 1;
 
-                        let color = gray << 16 | gray << 8 | gray;
+                            let color = if bit == 1 { 0xffffff } else { 0x000000 };
 
-                        self.display.set_pixel(
-                            self.cursor_x * FONT_WIDTH + x,
-                            self.cursor_y * FONT_HEIGHT + y,
-                            color,
-                        );
+                            self.display.set_pixel(
+                                self.cursor_x * FONT.width() + x,
+                                self.cursor_y * FONT.height() + y,
+                                color,
+                            );
+                        }
                     }
+                    self.cursor_x += 1;
                 }
-                self.cursor_x += 1;
             }
-            _ => panic!("disallowed character"),
         }
     }
 
@@ -62,7 +72,3 @@ impl fmt::Write for Console {
         Ok(())
     }
 }
-
-const FONT_DATA: &[u8; 95 * FONT_WIDTH * FONT_HEIGHT] = include_bytes!("font.bin");
-const FONT_WIDTH: usize = 16;
-const FONT_HEIGHT: usize = 32;
