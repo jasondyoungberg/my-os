@@ -25,12 +25,15 @@
 
 mod framebuffer;
 mod memory_map;
+mod module;
 mod smp;
 mod stack_size;
 
 pub use framebuffer::*;
 pub use memory_map::*;
+pub use module::*;
 pub use smp::*;
+pub use stack_size::*;
 
 use core::{cell::UnsafeCell, ptr::NonNull};
 

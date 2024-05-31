@@ -2,9 +2,21 @@ use core::fmt;
 
 use spin::Lazy;
 
+use crate::MODULE_REQUEST;
+
 use super::{display::Display, psf2::Font};
 
-static FONT: Lazy<Font> = Lazy::new(|| Font::parse(include_bytes!("font/ter-u16n.psf")));
+static FONT: Lazy<Font> = Lazy::new(|| {
+    let file = MODULE_REQUEST
+        .response
+        .get()
+        .unwrap()
+        .modules()
+        .iter()
+        .find(|file| file.path().starts_with("/font/"))
+        .unwrap();
+    Font::parse(file.slice())
+});
 
 pub struct Console {
     display: Display,

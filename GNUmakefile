@@ -63,7 +63,7 @@ limine/limine:
 kernel:
 	cd kernel && cargo.exe build --target x86_64-unknown-none --profile $(RUST_PROFILE)
 
-.fsroot: limine/limine kernel
+.fsroot: limine/limine kernel files/*
 	rm -rf .fsroot
 	mkdir -p .fsroot/boot/limine
 	mkdir -p .fsroot/EFI/BOOT
@@ -71,6 +71,8 @@ kernel:
 	cp kernel/target/x86_64-unknown-none/$(RUST_PROFILE_SUBDIR)/kernel .fsroot/boot/
 	cp limine.cfg limine/limine-bios.sys limine/limine-bios-cd.bin limine/limine-uefi-cd.bin .fsroot/boot/limine/
 	cp limine/BOOTX64.EFI limine/BOOTIA32.EFI .fsroot/EFI/BOOT/
+
+	cp -r files/* .fsroot/
 
 $(IMAGE_NAME).iso: .fsroot
 	xorriso -as mkisofs -b boot/limine/limine-bios-cd.bin \
@@ -86,11 +88,7 @@ $(IMAGE_NAME).hdd: limine/limine kernel
 	sgdisk $(IMAGE_NAME).hdd -n 1:2048 -t 1:ef00
 	./limine/limine bios-install $(IMAGE_NAME).hdd
 	mformat -i $(IMAGE_NAME).hdd@@1M
-	mmd -i $(IMAGE_NAME).hdd@@1M ::/EFI ::/EFI/BOOT ::/boot ::/boot/limine
-	mcopy -i $(IMAGE_NAME).hdd@@1M kernel/target/x86_64-unknown-none/$(RUST_PROFILE_SUBDIR)/kernel ::/boot
-	mcopy -i $(IMAGE_NAME).hdd@@1M limine.cfg limine/limine-bios.sys ::/boot/limine
-	mcopy -i $(IMAGE_NAME).hdd@@1M limine/BOOTX64.EFI ::/EFI/BOOT
-	mcopy -i $(IMAGE_NAME).hdd@@1M limine/BOOTIA32.EFI ::/EFI/BOOT
+	mcopy -i $(IMAGE_NAME).hdd@@1M -s .fsroot/* ::/
 
 .PHONY: clean
 clean:

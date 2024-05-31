@@ -43,6 +43,14 @@ static MEMORY_MAP_REQUEST: limine::MemoryMapRequest = limine::MemoryMapRequest::
 #[link_section = ".requests"]
 static SMP_REQUEST: limine::SmpRequest = limine::SmpRequest::new(limine::SmpFlags::X2APIC);
 
+#[used]
+#[link_section = ".requests"]
+static STACK_SIZE_REQUEST: limine::StackSizeRequest = limine::StackSizeRequest::new(1024 * 1024);
+
+#[used]
+#[link_section = ".requests"]
+static MODULE_REQUEST: limine::ModuleRequest = limine::ModuleRequest::new(&[]);
+
 static CONSOLE: Lazy<Mutex<Console>> = Lazy::new(|| {
     let framebuffer = FRAMEBUFFER_REQUEST
         .response
@@ -61,6 +69,8 @@ extern "C" fn _start() -> ! {
     assert!(FRAMEBUFFER_REQUEST.response.get().is_some());
     assert!(MEMORY_MAP_REQUEST.response.get().is_some());
     assert!(SMP_REQUEST.response.get().is_some());
+    assert!(STACK_SIZE_REQUEST.response.get().is_some());
+    assert!(MODULE_REQUEST.response.get().is_some());
 
     structures::gdt::init();
     structures::idt::init();
@@ -72,6 +82,13 @@ extern "C" fn _start() -> ! {
     let _ = CONSOLE
         .lock()
         .write_fmt(format_args!("{:#?}\n", SMP_REQUEST.response.get().unwrap()));
+
+    for file in MODULE_REQUEST.response.get().unwrap().modules() {
+        println!("Module: {}", file.path());
+        let _ = CONSOLE
+            .lock()
+            .write_fmt(format_args!("Module: {}\n", file.path()));
+    }
 
     instructions::breakpoint();
 
