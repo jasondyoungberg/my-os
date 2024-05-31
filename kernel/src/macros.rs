@@ -3,11 +3,7 @@ use core::fmt;
 use spin::{Lazy, Mutex};
 
 use crate::{
-    drivers::{
-        debug_console::{self, DebugConsole},
-        display::Display,
-        video_console::Console,
-    },
+    drivers::{debug_console::DebugConsole, display::Display, video_console::Console},
     instructions::without_interrupts,
     FRAMEBUFFER_REQUEST,
 };
