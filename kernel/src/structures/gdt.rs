@@ -1,27 +1,42 @@
+use core::mem::size_of;
+
+use alloc::{boxed::Box, vec};
+use bitflags::bitflags;
+use spin::Lazy;
+
 pub const KERNEL_CODE_SELECTOR: u16 = 1 << 3;
 pub const KERNEL_DATA_SELECTOR: u16 = 2 << 3;
-pub const USER_DATA_SELECTOR: u16 = 3 << 3;
-pub const USER_CODE_SELECTOR: u16 = 4 << 3;
+pub const USER_DATA_SELECTOR: u16 = 3 << 3 | 3;
+pub const USER_CODE_SELECTOR: u16 = 4 << 3 | 3;
 
-static GDT: GlobalDescriptorTable = GlobalDescriptorTable {
-    entries: [
+static GDT: Lazy<GdtInfo> = Lazy::new(|| {
+    let gdt = vec![
         GdtEntry::null(),
         GdtEntry::kernel_code(),
         GdtEntry::kernel_data(),
         GdtEntry::user_data(),
         GdtEntry::user_code(),
-    ],
-};
+    ];
 
-static GDTR: GdtDescriptor = GdtDescriptor {
-    size: core::mem::size_of::<GlobalDescriptorTable>() as u16 - 1,
-    offset: &GDT,
-};
+    let gdtr = GdtDescriptor {
+        size: (size_of::<GdtEntry>() * gdt.len()) as u16 - 1,
+        offset: gdt.leak().as_ptr(),
+    };
+    let gdtr = Box::into_raw(Box::new(gdtr));
+
+    GdtInfo { gdtr }
+});
+
+struct GdtInfo {
+    gdtr: *const GdtDescriptor,
+}
+unsafe impl Send for GdtInfo {}
+unsafe impl Sync for GdtInfo {}
 
 pub fn init() {
-    GDTR.load();
     unsafe {
         core::arch::asm!("
+            lgdt [{gdtr}]
             mov ss, {data}
 
             // set up code segment
@@ -31,6 +46,7 @@ pub fn init() {
             retfq
             1:
         ",
+            gdtr = in(reg) GDT.gdtr,
             code = in(reg) KERNEL_CODE_SELECTOR as u64,
             data = in(reg) KERNEL_DATA_SELECTOR as u64,
             tmp = lateout(reg) _,
@@ -43,7 +59,7 @@ pub fn init() {
 #[repr(C, packed)]
 struct GdtDescriptor {
     size: u16,
-    offset: *const GlobalDescriptorTable,
+    offset: *const GdtEntry,
 }
 unsafe impl Send for GdtDescriptor {}
 unsafe impl Sync for GdtDescriptor {}
@@ -53,67 +69,74 @@ impl GdtDescriptor {
     }
 }
 
-#[repr(C)]
-struct GlobalDescriptorTable {
-    entries: [GdtEntry; 5],
+bitflags! {
+    #[derive(Clone, Copy, Debug)]
+    pub struct GdtFlags: u64 {
+        const ACCESSED =    1 << 40;
+        const READ_WRITE =  1 << 41;
+        const CONFORMING =  1 << 42;
+        const EXECUTABLE =  1 << 43;
+        const CODE_DATA =   1 << 44;
+        const DPL_RING3 =   3 << 45;
+        const PRESENT =     1 << 47;
+        const LONG_MODE =   1 << 53;
+        const SIZE =        1 << 54;
+        const GRANULARITY = 1 << 55;
+    }
 }
 
 #[repr(C)]
-struct GdtEntry {
-    _unused1: u32,
-    _unused2: u8,
-    access: u8,
-    flags: u8,
-    _unused3: u8,
-}
+struct GdtEntry(u64);
 impl GdtEntry {
     const fn null() -> Self {
-        Self {
-            _unused1: 0,
-            _unused2: 0,
-            access: 0,
-            flags: 0,
-            _unused3: 0,
-        }
+        Self(0)
     }
 
-    const fn kernel_code() -> Self {
-        Self {
-            _unused1: 0,
-            _unused2: 0,
-            access: 0b_1001_1011, // present, ring 0, code, readable, accessed
-            flags: 0b_0010 << 4,  // 64-bit
-            _unused3: 0,
-        }
+    fn kernel_code() -> Self {
+        Self(
+            (GdtFlags::ACCESSED
+                | GdtFlags::READ_WRITE
+                | GdtFlags::EXECUTABLE
+                | GdtFlags::CODE_DATA
+                | GdtFlags::PRESENT
+                | GdtFlags::LONG_MODE)
+                .bits(),
+        )
     }
 
-    const fn kernel_data() -> Self {
-        Self {
-            _unused1: 0,
-            _unused2: 0,
-            access: 0b_1001_0011, // present, ring 0, data, writable, accessed
-            flags: 0b_0010 << 4,  // 64-bit
-            _unused3: 0,
-        }
+    fn kernel_data() -> Self {
+        Self(
+            (GdtFlags::ACCESSED
+                | GdtFlags::READ_WRITE
+                | GdtFlags::CODE_DATA
+                | GdtFlags::PRESENT
+                | GdtFlags::LONG_MODE)
+                .bits(),
+        )
     }
 
-    const fn user_code() -> Self {
-        Self {
-            _unused1: 0,
-            _unused2: 0,
-            access: 0b_1111_1011, // present, ring 3, code, readable, accessed
-            flags: 0b_0010 << 4,  // 64-bit
-            _unused3: 0,
-        }
+    fn user_code() -> Self {
+        Self(
+            (GdtFlags::ACCESSED
+                | GdtFlags::READ_WRITE
+                | GdtFlags::EXECUTABLE
+                | GdtFlags::CODE_DATA
+                | GdtFlags::DPL_RING3
+                | GdtFlags::PRESENT
+                | GdtFlags::LONG_MODE)
+                .bits(),
+        )
     }
 
-    const fn user_data() -> Self {
-        Self {
-            _unused1: 0,
-            _unused2: 0,
-            access: 0b_1111_0011, // present, ring 3, data, writable, accessed
-            flags: 0b_0010 << 4,  // 64-bit
-            _unused3: 0,
-        }
+    fn user_data() -> Self {
+        Self(
+            (GdtFlags::ACCESSED
+                | GdtFlags::READ_WRITE
+                | GdtFlags::CODE_DATA
+                | GdtFlags::DPL_RING3
+                | GdtFlags::PRESENT
+                | GdtFlags::LONG_MODE)
+                .bits(),
+        )
     }
 }
