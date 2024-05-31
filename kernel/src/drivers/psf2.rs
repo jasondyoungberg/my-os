@@ -110,7 +110,7 @@ mod tests {
     proptest! {
         #[test]
         fn ascii(n in 32..=95u32) {
-            let data = include_bytes!("font/ter-u24n.psf");
+            let data = include_bytes!("../../../files/font/ter-u24n.psf");
             let font = Font::parse(data);
             let c = char::from_u32(n).unwrap();
             assert!(font.get_char(c).is_some());
