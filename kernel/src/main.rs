@@ -7,6 +7,8 @@
 
 extern crate alloc;
 
+use core::fmt::Write;
+
 use drivers::{
     console::{self, Console},
     display,
@@ -37,6 +39,10 @@ static FRAMEBUFFER_REQUEST: limine::FramebufferRequest = limine::FramebufferRequ
 #[link_section = ".requests"]
 static MEMORY_MAP_REQUEST: limine::MemoryMapRequest = limine::MemoryMapRequest::new();
 
+#[used]
+#[link_section = ".requests"]
+static SMP_REQUEST: limine::SmpRequest = limine::SmpRequest::new(limine::SmpFlags::X2APIC);
+
 static CONSOLE: Lazy<Mutex<Console>> = Lazy::new(|| {
     let framebuffer = FRAMEBUFFER_REQUEST
         .response
@@ -54,6 +60,7 @@ extern "C" fn _start() -> ! {
     assert!(BASE_REVISION.is_supported());
     assert!(FRAMEBUFFER_REQUEST.response.get().is_some());
     assert!(MEMORY_MAP_REQUEST.response.get().is_some());
+    assert!(SMP_REQUEST.response.get().is_some());
 
     structures::gdt::init();
     structures::idt::init();
@@ -61,10 +68,30 @@ extern "C" fn _start() -> ! {
     println!("Hello, World!");
     CONSOLE.lock().write_str("Hello, World!\n");
 
+    println!("{:?}", SMP_REQUEST.response.get().unwrap());
+    let _ = CONSOLE
+        .lock()
+        .write_fmt(format_args!("{:#?}\n", SMP_REQUEST.response.get().unwrap()));
+
     instructions::breakpoint();
 
     println!("We're back!");
     CONSOLE.lock().write_str("We're back!\n");
+
+    SMP_REQUEST
+        .response
+        .get()
+        .unwrap()
+        .cpus()
+        .iter()
+        .skip(1)
+        .for_each(|info| {
+            println!("Starting CPU {}", info.processor_id);
+            let _ = CONSOLE
+                .lock()
+                .write_fmt(format_args!("Starting CPU {}\n", info.processor_id));
+            info.goto_address.write(smp_start);
+        });
 
     println!("{:?}", RFlags::read());
     enable_interrupts();
@@ -74,10 +101,18 @@ extern "C" fn _start() -> ! {
     }
 }
 
+extern "C" fn smp_start(info: &limine::SmpInfo) -> ! {
+    let _ = CONSOLE
+        .lock()
+        .write_fmt(format_args!("Hello from CPU {}\n", info.processor_id));
+
+    loop {
+        instructions::hlt();
+    }
+}
+
 #[cfg_attr(not(test), panic_handler)]
 fn rust_panic(info: &core::panic::PanicInfo) -> ! {
-    use core::fmt::Write;
-
     instructions::disable_interrupts();
     println!("{}", info);
 

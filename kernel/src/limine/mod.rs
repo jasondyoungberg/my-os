@@ -24,11 +24,13 @@
 // SOFTWARE.
 
 mod framebuffer;
-pub mod memory_map;
-pub mod stack_size;
+mod memory_map;
+mod smp;
+mod stack_size;
 
 pub use framebuffer::*;
 pub use memory_map::*;
+pub use smp::*;
 
 use core::{cell::UnsafeCell, ptr::NonNull};
 
