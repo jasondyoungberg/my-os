@@ -3,13 +3,13 @@ use core::fmt;
 use spin::{Lazy, Mutex};
 
 use crate::{
-    drivers::{debug_console::DebugConsole, display::Display, video_console::Console},
+    drivers::{debug_console::DebugConsole, display::Display, video_console::VideoConsole},
     instructions::without_interrupts,
     FRAMEBUFFER_REQUEST,
 };
 
 static DEBUG_CONSOLE: Mutex<DebugConsole> = Mutex::new(DebugConsole);
-static VIDEO_CONSOLE: Lazy<Mutex<Console>> = Lazy::new(|| {
+static VIDEO_CONSOLE: Lazy<Mutex<VideoConsole>> = Lazy::new(|| {
     let framebuffer = FRAMEBUFFER_REQUEST
         .response
         .get()
@@ -17,7 +17,7 @@ static VIDEO_CONSOLE: Lazy<Mutex<Console>> = Lazy::new(|| {
         .framebuffers()
         .next()
         .unwrap();
-    let console = Console::new(Display::new(framebuffer));
+    let console = VideoConsole::new(Display::new(framebuffer));
     Mutex::new(console)
 });
 

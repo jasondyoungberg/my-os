@@ -18,14 +18,14 @@ static FONT: Lazy<Font> = Lazy::new(|| {
     Font::parse(file.slice())
 });
 
-pub struct Console {
+pub struct VideoConsole {
     display: Display,
     cursor_x: usize,
     cursor_y: usize,
 }
-unsafe impl Send for Console {}
+unsafe impl Send for VideoConsole {}
 
-impl Console {
+impl VideoConsole {
     pub fn new(display: Display) -> Self {
         Self {
             display,
@@ -76,7 +76,7 @@ impl Console {
     }
 }
 
-impl fmt::Write for Console {
+impl fmt::Write for VideoConsole {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         self.write_str(s);
         Ok(())
