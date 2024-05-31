@@ -35,26 +35,28 @@ impl Console {
                 self.cursor_x = 0;
                 self.cursor_y += 1;
             }
+            '\t' => {
+                self.cursor_x = (self.cursor_x + 4) & !3;
+            }
             c => {
-                if let Some(glyph) = FONT.get_char(c) {
-                    for y in 0..FONT.height() {
-                        for x in 0..FONT.width() {
-                            let row_index = y * ((FONT.width() + 7) / 8);
-                            let byte_index = row_index + x / 8;
-                            let bit_index = 7 - (x % 8);
-                            let bit = glyph[byte_index] >> bit_index & 1;
+                let glyph = FONT.get_char_fallback(c);
+                for y in 0..FONT.height() {
+                    for x in 0..FONT.width() {
+                        let row_index = y * ((FONT.width() + 7) / 8);
+                        let byte_index = row_index + x / 8;
+                        let bit_index = 7 - (x % 8);
+                        let bit = glyph[byte_index] >> bit_index & 1;
 
-                            let color = if bit == 1 { 0xffffff } else { 0x000000 };
+                        let color = if bit == 1 { 0xffffff } else { 0x000000 };
 
-                            self.display.set_pixel(
-                                self.cursor_x * FONT.width() + x,
-                                self.cursor_y * FONT.height() + y,
-                                color,
-                            );
-                        }
+                        self.display.set_pixel(
+                            self.cursor_x * FONT.width() + x,
+                            self.cursor_y * FONT.height() + y,
+                            color,
+                        );
                     }
-                    self.cursor_x += 1;
                 }
+                self.cursor_x += 1;
             }
         }
     }

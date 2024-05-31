@@ -45,6 +45,13 @@ impl<'a> Font<'a> {
         Some(&self.glyphs[start..end])
     }
 
+    pub fn get_char_fallback(&self, c: char) -> &'a [u8] {
+        self.get_char(c).unwrap_or(
+            self.get_char('\u{fffd}')
+                .unwrap_or(self.get_char('?').unwrap()),
+        )
+    }
+
     fn unicode_index(&self, c: char) -> Option<usize> {
         let mut utf8 = [0; 4];
         c.encode_utf8(&mut utf8);
