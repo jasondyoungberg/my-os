@@ -4,9 +4,9 @@ use spin::{Lazy, Mutex};
 
 use crate::{
     drivers::{
-        console::Console,
         debug_console::{self, DebugConsole},
         display::Display,
+        video_console::Console,
     },
     instructions::without_interrupts,
     FRAMEBUFFER_REQUEST,

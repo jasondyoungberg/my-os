@@ -9,7 +9,7 @@ extern crate alloc;
 
 use core::fmt::Write;
 
-use drivers::{console, display};
+use drivers::{display, video_console};
 use instructions::enable_interrupts;
 use registers::rflags::RFlags;
 
@@ -108,7 +108,7 @@ fn rust_panic(info: &core::panic::PanicInfo) -> ! {
     if let Some(framebuffers) = FRAMEBUFFER_REQUEST.response.get() {
         for framebuffer in framebuffers.framebuffers() {
             let display = display::Display::new(framebuffer);
-            let mut console = console::Console::new(display);
+            let mut console = video_console::Console::new(display);
 
             let _ = console.write_fmt(format_args!("{}\n", info));
         }
