@@ -4,10 +4,6 @@ use spin::Lazy;
 
 use super::{display::Display, psf2::Font};
 
-const FONT_DATA: &[u8; 95 * FONT_WIDTH * FONT_HEIGHT] = include_bytes!("font.bin");
-const FONT_WIDTH: usize = 8;
-const FONT_HEIGHT: usize = 16;
-
 static FONT: Lazy<Font> = Lazy::new(|| Font::parse(include_bytes!("font/ter-u16n.psf")));
 
 pub struct Console {
