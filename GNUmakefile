@@ -22,11 +22,21 @@ ifeq ($(RUST_PROFILE),dev)
     override RUST_PROFILE_SUBDIR := debug
 endif
 
+ifeq ($(CPUS),)
+	override CPUS := 4
+endif
+
+ifeq ($(MEM),)
+	override MEM := 2G
+endif
+
 QEMU_ARGS := \
 	-M q35 \
-	-m 2G \
-	-smp 4 \
-	-debugcon stdio
+	-m $(MEM) \
+	-smp $(CPUS) \
+	-debugcon stdio \
+	-D qemu.log \
+	-d guest_errors,unimp \
 
 ifeq ($(KVM),1)
 	QEMU_ARGS += -enable-kvm

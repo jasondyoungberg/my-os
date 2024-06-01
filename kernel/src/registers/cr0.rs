@@ -1,5 +1,3 @@
-use crate::{address::PhysAddr, structures::paging::PhysFrame};
-
 bitflags::bitflags! {
     #[derive(Clone, Copy, Debug, Default)]
     #[repr(transparent)]

@@ -1,7 +1,4 @@
-use crate::{
-    address::{PhysAddr, VirtAddr},
-    structures::paging::PhysFrame,
-};
+use crate::address::VirtAddr;
 
 pub struct Cr2;
 impl Cr2 {

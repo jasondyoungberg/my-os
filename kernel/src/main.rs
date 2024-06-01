@@ -5,14 +5,9 @@
 #![allow(dead_code)]
 #![deny(unsafe_op_in_unsafe_fn)]
 
+use crate::{instructions::enable_interrupts, registers::ApicBase};
+
 extern crate alloc;
-
-use core::fmt::Write;
-
-use drivers::{display, video_console};
-use instructions::enable_interrupts;
-
-use crate::registers::{Cr0, Cr2, Cr3, Cr4};
 
 mod address;
 mod allocation;
@@ -39,7 +34,7 @@ static MEMORY_MAP_REQUEST: limine::MemoryMapRequest = limine::MemoryMapRequest::
 
 #[used]
 #[link_section = ".requests"]
-static SMP_REQUEST: limine::SmpRequest = limine::SmpRequest::new(limine::SmpFlags::X2APIC);
+static SMP_REQUEST: limine::SmpRequest = limine::SmpRequest::new(limine::SmpFlags::empty());
 
 #[used]
 #[link_section = ".requests"]
@@ -86,7 +81,7 @@ extern "C" fn _start() -> ! {
             info.goto_address.write(smp_start);
         });
 
-    enable_interrupts();
+    // enable_interrupts();
 
     loop {
         instructions::hlt();
@@ -95,6 +90,10 @@ extern "C" fn _start() -> ! {
 
 extern "C" fn smp_start(info: &limine::SmpInfo) -> ! {
     println!("Hello from CPU {}", info.processor_id);
+
+    ApicBase::enable();
+
+    enable_interrupts();
 
     loop {
         instructions::hlt();
@@ -105,15 +104,6 @@ extern "C" fn smp_start(info: &limine::SmpInfo) -> ! {
 fn rust_panic(info: &core::panic::PanicInfo) -> ! {
     instructions::disable_interrupts();
     println!("{}", info);
-
-    if let Some(framebuffers) = FRAMEBUFFER_REQUEST.response.get() {
-        for framebuffer in framebuffers.framebuffers() {
-            let display = display::Display::new(framebuffer);
-            let mut console = video_console::VideoConsole::new(display);
-
-            let _ = console.write_fmt(format_args!("{}\n", info));
-        }
-    }
 
     loop {
         instructions::hlt()
