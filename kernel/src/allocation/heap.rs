@@ -4,7 +4,7 @@ use crate::{address::VirtAddr, instructions};
 
 const HEAP_SIZE: usize = 256 * 1024 * 1024;
 
-#[cfg_attr(not(test), global_allocator)]
+#[global_allocator]
 static GLOBAL_ALLOC: GlobalAlloc = GlobalAlloc;
 
 static HEAP: Lazy<Mutex<Heap>> = Lazy::new(|| {

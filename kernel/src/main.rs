@@ -1,5 +1,5 @@
 #![no_std]
-#![cfg_attr(not(test), no_main)]
+#![no_main]
 #![feature(abi_x86_interrupt)]
 //
 #![allow(dead_code)]
@@ -48,7 +48,7 @@ static MODULE_REQUEST: limine::ModuleRequest = limine::ModuleRequest::new(&[]);
 #[link_section = ".requests"]
 static HHDP_REQUEST: limine::HhdmRequest = limine::HhdmRequest::new();
 
-#[cfg_attr(not(test), no_mangle)]
+#[no_mangle]
 extern "C" fn _start() -> ! {
     assert!(BASE_REVISION.is_supported());
     assert!(FRAMEBUFFER_REQUEST.response.get().is_some());
@@ -98,7 +98,7 @@ extern "C" fn smp_start(info: &limine::SmpInfo) -> ! {
     }
 }
 
-#[cfg_attr(not(test), panic_handler)]
+#[panic_handler]
 fn rust_panic(info: &core::panic::PanicInfo) -> ! {
     instructions::disable_interrupts();
 

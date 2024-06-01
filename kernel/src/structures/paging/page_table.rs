@@ -118,25 +118,3 @@ impl fmt::Debug for PageTableEntry {
         }
     }
 }
-
-#[cfg(test)]
-mod test {
-    use super::*;
-    use alloc::format;
-    use proptest::prelude::*;
-
-    proptest!(
-        #[test]
-        fn page_table_entry(addr in 0..0x0000_00ff_ffff_ffffu64, flags in 0..0x1ffu64) {
-            let phys_addr = PhysAddr::new(addr);
-            let frame = PhysFrame::containing_addr(phys_addr);
-            let flags = PageTableFlags::from_bits_truncate(flags);
-
-            let mut entry = PageTableEntry::new();
-            entry.set_frame(frame);
-            entry.set_flags(flags);
-            prop_assert_eq!(entry.frame().start(), frame.start());
-            prop_assert_eq!(entry.flags(), flags);
-        }
-    );
-}

@@ -10,12 +10,8 @@ static IDTR: Lazy<IdtDescriptor> = Lazy::new(|| IdtDescriptor {
     offset: VirtAddr::from_ptr(&*IDT),
 });
 
-#[cfg_attr(test, allow(unused, unreachable_code))]
 static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
     let mut idt = InterruptDescriptorTable::new();
-
-    #[cfg(test)]
-    panic!("Attempted to load IDT in test environment.");
 
     idt.breakpoint.set_handler(interrupts::breakpoint, 0);
     idt.double_fault.set_handler(interrupts::double_fault, 0);

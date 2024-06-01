@@ -22,6 +22,8 @@ ifeq ($(RUST_PROFILE),dev)
     override RUST_PROFILE_SUBDIR := debug
 endif
 
+override RUST_TARGET_SUBDIR := x86_64-myos
+
 ifeq ($(CPUS),)
 	override CPUS := 4
 endif
@@ -75,14 +77,14 @@ limine/limine:
 
 .PHONY: kernel
 kernel:
-	cd kernel && cargo build --target x86_64-unknown-none --profile $(RUST_PROFILE)
+	cd kernel && cargo build --profile $(RUST_PROFILE)
 
 .fsroot: limine/limine kernel files/*
 	rm -rf .fsroot
 	mkdir -p .fsroot/boot/limine
 	mkdir -p .fsroot/EFI/BOOT
 
-	cp kernel/target/x86_64-unknown-none/$(RUST_PROFILE_SUBDIR)/kernel .fsroot/boot/
+	cp kernel/target/$(RUST_TARGET_SUBDIR)/$(RUST_PROFILE_SUBDIR)/kernel .fsroot/boot/
 	cp limine.cfg limine/limine-bios.sys limine/limine-bios-cd.bin limine/limine-uefi-cd.bin .fsroot/boot/limine/
 	cp limine/BOOTX64.EFI limine/BOOTIA32.EFI .fsroot/EFI/BOOT/
 
