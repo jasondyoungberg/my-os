@@ -15,7 +15,7 @@ impl Cr3 {
         let value: u64;
         unsafe { core::arch::asm!("mov {}, cr3", out(reg) value, options(nomem, preserves_flags)) };
         let addr = PhysAddr::new(value & 0x_ffff_ffff_ffff_f000);
-        let frame = PhysFrame::containing_addr(addr);
+        let frame = PhysFrame::from_start(addr).unwrap();
         let flags = Cr3Flags::from_bits_truncate(value);
         (frame, flags)
     }

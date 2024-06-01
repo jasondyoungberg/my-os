@@ -3,7 +3,7 @@ use core::{fmt, marker::PhantomData};
 use spin::Lazy;
 
 use super::gdt::KERNEL_CODE_SELECTOR;
-use crate::{address::VirtAddr, interrupts, registers::rflags::RFlags};
+use crate::{address::VirtAddr, interrupts, registers::RFlags};
 
 static IDTR: Lazy<IdtDescriptor> = Lazy::new(|| IdtDescriptor {
     size: core::mem::size_of_val(&*IDT) as u16 - 1,

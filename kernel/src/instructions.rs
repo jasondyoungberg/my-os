@@ -1,6 +1,9 @@
 use core::arch::asm;
 
-use crate::registers::rflags::RFlags;
+use crate::{
+    address::VirtAddr,
+    registers::{Cr3, RFlags},
+};
 
 pub unsafe fn outb(port: u16, value: u8) {
     unsafe { asm!("out dx, al", in("dx") port, in("al") value) };
@@ -59,5 +62,16 @@ where
         res
     } else {
         f()
+    }
+}
+
+pub fn flush_tlb(addr: VirtAddr) {
+    unsafe { asm!("invlpg [{}]", in(reg) addr.as_u64()) };
+}
+
+pub fn flush_tlb_all() {
+    let (frame, flags) = Cr3::read();
+    unsafe {
+        Cr3::write(frame, flags);
     }
 }

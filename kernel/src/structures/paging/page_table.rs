@@ -14,6 +14,10 @@ impl PageTable {
             entries: [PageTableEntry::new(); 512],
         }
     }
+    pub fn from_frame(frame: PhysFrame) -> &'static mut Self {
+        let addr = frame.start().to_virt().as_mut_ptr::<Self>();
+        unsafe { &mut *addr }
+    }
     pub fn set_empty(&mut self) {
         for entry in self.entries.iter_mut() {
             entry.set_unused();
@@ -38,7 +42,9 @@ impl PageTable {
 }
 impl fmt::Debug for PageTable {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_list().entries(self.entries.iter()).finish()
+        f.debug_map()
+            .entries(self.entries.iter().enumerate())
+            .finish()
     }
 }
 impl ops::Index<usize> for PageTable {
@@ -65,6 +71,7 @@ bitflags::bitflags! {
         const DIRTY =           1 << 6;
         const HUGE_PAGE =       1 << 7;
         const GLOBAL =          1 << 8;
+        const NO_EXECUTE =      1 << 63;
     }
 }
 
@@ -101,10 +108,14 @@ impl PageTableEntry {
 }
 impl fmt::Debug for PageTableEntry {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("PageTableEntry")
-            .field("frame", &self.frame())
-            .field("flags", &self.flags())
-            .finish()
+        if self.is_unused() {
+            write!(f, "PageTableEntry {{ empty }}")
+        } else {
+            f.debug_struct("PageTableEntry")
+                .field("frame", &self.frame())
+                .field("flags", &self.flags())
+                .finish()
+        }
     }
 }
 

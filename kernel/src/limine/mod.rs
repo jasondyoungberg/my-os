@@ -24,12 +24,14 @@
 // SOFTWARE.
 
 mod framebuffer;
+mod hhdm;
 mod memory_map;
 mod module;
 mod smp;
 mod stack_size;
 
 pub use framebuffer::*;
+pub use hhdm::*;
 pub use memory_map::*;
 pub use module::*;
 pub use smp::*;

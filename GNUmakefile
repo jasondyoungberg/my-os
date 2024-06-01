@@ -46,6 +46,10 @@ all-hdd: $(IMAGE_NAME).hdd
 run: $(IMAGE_NAME).iso ovmf
 	qemu-system-x86_64 $(QEMU_ARGS) -cdrom $(IMAGE_NAME).iso -boot d
 
+.PHONY: debug
+debug: $(IMAGE_NAME).iso ovmf
+	qemu-system-x86_64 $(QEMU_ARGS) -cdrom $(IMAGE_NAME).iso -boot d -s -S
+
 .PHONY: run-hdd
 run-hdd: $(IMAGE_NAME).hdd ovmf
 	qemu-system-x86_64 $(QEMU_ARGS) -hda $(IMAGE_NAME).hdd
@@ -82,7 +86,7 @@ $(IMAGE_NAME).iso: .fsroot
 		.fsroot -o $(IMAGE_NAME).iso -quiet
 	./limine/limine bios-install $(IMAGE_NAME).iso --quiet
 
-$(IMAGE_NAME).hdd: limine/limine kernel
+$(IMAGE_NAME).hdd: .fsroot
 	rm -f $(IMAGE_NAME).hdd
 	dd if=/dev/zero bs=1M count=0 seek=64 of=$(IMAGE_NAME).hdd
 	sgdisk $(IMAGE_NAME).hdd -n 1:2048 -t 1:ef00

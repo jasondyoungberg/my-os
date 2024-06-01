@@ -1,4 +1,22 @@
-use crate::structures::paging::{Page, PageTable, PageTableFlags, PhysFrame};
+use crate::{
+    allocation::frame::alloc_frame,
+    instructions::flush_tlb_all,
+    registers::Cr3,
+    structures::paging::{Page, PageTable, PageTableFlags, PhysFrame},
+};
+
+pub fn init() {
+    let (frame, _) = Cr3::read();
+    let table = PageTable::from_frame(frame);
+
+    table.iter_mut().skip(256).for_each(|entry| {
+        if entry.is_unused() {
+            entry.set_frame(alloc_frame());
+        }
+        entry.set_flags(PageTableFlags::WRITABLE | PageTableFlags::PRESENT);
+    });
+    flush_tlb_all();
+}
 
 pub fn map_page_to_frame(
     l4_table: &mut PageTable,

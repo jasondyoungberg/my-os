@@ -11,7 +11,8 @@ use core::fmt::Write;
 
 use drivers::{display, video_console};
 use instructions::enable_interrupts;
-use registers::rflags::RFlags;
+
+use crate::registers::{Cr0, Cr2, Cr3, Cr4};
 
 mod address;
 mod allocation;
@@ -48,6 +49,10 @@ static STACK_SIZE_REQUEST: limine::StackSizeRequest = limine::StackSizeRequest::
 #[link_section = ".requests"]
 static MODULE_REQUEST: limine::ModuleRequest = limine::ModuleRequest::new(&[]);
 
+#[used]
+#[link_section = ".requests"]
+static HHDP_REQUEST: limine::HhdmRequest = limine::HhdmRequest::new();
+
 #[cfg_attr(not(test), no_mangle)]
 extern "C" fn _start() -> ! {
     assert!(BASE_REVISION.is_supported());
@@ -56,6 +61,7 @@ extern "C" fn _start() -> ! {
     assert!(SMP_REQUEST.response.get().is_some());
     assert!(STACK_SIZE_REQUEST.response.get().is_some());
     assert!(MODULE_REQUEST.response.get().is_some());
+    assert!(HHDP_REQUEST.response.get().is_some());
 
     structures::gdt::init();
     structures::idt::init();
@@ -67,10 +73,6 @@ extern "C" fn _start() -> ! {
     for file in MODULE_REQUEST.response.get().unwrap().modules() {
         println!("Module: {}", file.path());
     }
-
-    instructions::breakpoint();
-
-    println!("We're back!");
 
     SMP_REQUEST
         .response
@@ -84,7 +86,6 @@ extern "C" fn _start() -> ! {
             info.goto_address.write(smp_start);
         });
 
-    println!("{:?}", RFlags::read());
     enable_interrupts();
 
     loop {

@@ -1,5 +1,7 @@
 use core::{fmt, ops};
 
+use crate::HHDP_REQUEST;
+
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(transparent)]
 pub struct VirtAddr(u64);
@@ -94,6 +96,10 @@ impl PhysAddr {
     }
     pub fn align_down(&self, align: u64) -> Self {
         PhysAddr::new(align_down(self.0, align))
+    }
+    pub fn to_virt(self) -> VirtAddr {
+        let offset = HHDP_REQUEST.response.get().unwrap().offset;
+        VirtAddr::new(self.0 + offset)
     }
 }
 impl fmt::Debug for PhysAddr {
