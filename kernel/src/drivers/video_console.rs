@@ -4,7 +4,10 @@ use spin::Lazy;
 
 use crate::MODULE_REQUEST;
 
-use super::{display::Display, psf2::Font};
+use super::{
+    display::{Color, Display},
+    psf2::Font,
+};
 
 static FONT: Lazy<Font> = Lazy::new(|| {
     let file = MODULE_REQUEST
@@ -40,8 +43,7 @@ impl VideoConsole {
                 self.cursor_x = 0;
             }
             '\n' => {
-                self.cursor_x = 0;
-                self.cursor_y += 1;
+                self.newline();
             }
             '\t' => {
                 self.cursor_x = (self.cursor_x + 4) & !3;
@@ -55,7 +57,11 @@ impl VideoConsole {
                         let bit_index = 7 - (x % 8);
                         let bit = glyph[byte_index] >> bit_index & 1;
 
-                        let color = if bit == 1 { 0xffffff } else { 0x000000 };
+                        let color = if bit == 1 {
+                            Color::new(0, 128, 255)
+                        } else {
+                            Color::new(0, 0, 0)
+                        };
 
                         self.display.set_pixel(
                             self.cursor_x * FONT.width() + x,
@@ -67,11 +73,36 @@ impl VideoConsole {
                 self.cursor_x += 1;
             }
         }
+
+        if self.cursor_x * FONT.width() >= self.display.width() {
+            self.newline();
+        }
     }
 
     pub fn write_str(&mut self, s: &str) {
         for c in s.chars() {
             self.write_char(c);
+        }
+    }
+
+    fn newline(&mut self) {
+        self.cursor_x = 0;
+        self.cursor_y += 1;
+        if self.cursor_y * FONT.height() >= self.display.height() {
+            self.scroll();
+        }
+    }
+
+    fn scroll(&mut self) {
+        self.display.scroll(0, -(FONT.height() as isize));
+        self.cursor_y -= 1;
+
+        let clear_start = self.cursor_y * FONT.height();
+        let clear_end = self.display.height();
+        for y in clear_start..clear_end {
+            for x in 0..self.display.width() {
+                self.display.set_pixel(x, y, Color::new(0, 0, 0));
+            }
         }
     }
 }

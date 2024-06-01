@@ -75,7 +75,7 @@ limine/limine:
 
 .PHONY: kernel
 kernel:
-	cd kernel && cargo.exe build --target x86_64-unknown-none --profile $(RUST_PROFILE)
+	cd kernel && cargo build --target x86_64-unknown-none --profile $(RUST_PROFILE)
 
 .fsroot: limine/limine kernel files/*
 	rm -rf .fsroot

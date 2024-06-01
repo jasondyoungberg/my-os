@@ -5,7 +5,10 @@
 #![allow(dead_code)]
 #![deny(unsafe_op_in_unsafe_fn)]
 
-use crate::{instructions::enable_interrupts, registers::ApicBase};
+use crate::{
+    instructions::{enable_interrupts, inb},
+    registers::ApicBase,
+};
 
 extern crate alloc;
 
@@ -103,7 +106,8 @@ extern "C" fn smp_start(info: &limine::SmpInfo) -> ! {
 #[cfg_attr(not(test), panic_handler)]
 fn rust_panic(info: &core::panic::PanicInfo) -> ! {
     instructions::disable_interrupts();
-    println!("{}", info);
+
+    unsafe { macros::force_print(format_args!("{}", info)) };
 
     loop {
         instructions::hlt()
