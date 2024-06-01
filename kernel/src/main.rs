@@ -5,10 +5,7 @@
 #![allow(dead_code)]
 #![deny(unsafe_op_in_unsafe_fn)]
 
-use crate::{
-    instructions::{enable_interrupts, inb},
-    registers::ApicBase,
-};
+use crate::{instructions::enable_interrupts, registers::ApicBase};
 
 extern crate alloc;
 
@@ -86,9 +83,7 @@ extern "C" fn _start() -> ! {
 
     // enable_interrupts();
 
-    loop {
-        instructions::hlt();
-    }
+    smp_start(SMP_REQUEST.response.get().unwrap().cpus()[0])
 }
 
 extern "C" fn smp_start(info: &limine::SmpInfo) -> ! {

@@ -50,7 +50,7 @@ impl Display {
         let offset = x * self.bytes_per_pixel as isize + y * self.bytes_per_row as isize;
 
         if offset < 0 {
-            self.buffer.rotate_left(offset.abs() as usize);
+            self.buffer.rotate_left(offset.unsigned_abs());
         } else {
             self.buffer.rotate_right(offset as usize);
         }

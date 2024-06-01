@@ -3,11 +3,7 @@ use core::fmt;
 use spin::{Lazy, Mutex};
 
 use crate::{
-    drivers::{
-        debug_console::DebugConsole,
-        display::Display,
-        video_console::{self, VideoConsole},
-    },
+    drivers::{debug_console::DebugConsole, display::Display, video_console::VideoConsole},
     instructions::without_interrupts,
     FRAMEBUFFER_REQUEST,
 };
@@ -39,8 +35,8 @@ pub unsafe fn force_print(args: fmt::Arguments) {
     use fmt::Write;
     let _ = DebugConsole.write_fmt(args);
     loop {
-        if let Some(video_console) = VIDEO_CONSOLE.try_lock() {
-            let mut video_console = VIDEO_CONSOLE.lock();
+        if let Some(mut video_console) = VIDEO_CONSOLE.try_lock() {
+            let _ = video_console.write_fmt(args);
             return;
         }
         unsafe { VIDEO_CONSOLE.force_unlock() }
