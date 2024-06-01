@@ -1,4 +1,4 @@
-use crate::{address::PhysAddr, structures::paging::PhysFrame};
+use crate::{address::PhysAddr, println, structures::paging::PhysFrame};
 
 use super::ModelSpecificRegister;
 

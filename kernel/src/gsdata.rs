@@ -2,7 +2,7 @@ use alloc::boxed::Box;
 
 use crate::{
     address::VirtAddr,
-    drivers::lapic::{self, LocalApic},
+    drivers::lapic::LocalApic,
     registers::{Gs, KernelGsBase},
 };
 
@@ -27,7 +27,7 @@ impl GsData {
             syscall_rsp,
             sysret_rsp: VirtAddr::null(),
             cpu_id,
-            lapic: LocalApic::new(),
+            lapic,
         };
 
         let ptr = Box::into_raw(Box::new(gsdata));

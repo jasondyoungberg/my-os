@@ -5,14 +5,14 @@ use crate::address::VirtAddr;
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Page(VirtAddr);
 impl Page {
-    pub fn from_start(addr: VirtAddr) -> Option<Self> {
-        if addr == Self::containing_addr(addr).0 {
+    pub const fn from_start(addr: VirtAddr) -> Option<Self> {
+        if addr.as_u64() == Self::containing_addr(addr).0.as_u64() {
             Some(Page(addr))
         } else {
             None
         }
     }
-    pub fn containing_addr(addr: VirtAddr) -> Self {
+    pub const fn containing_addr(addr: VirtAddr) -> Self {
         let addr = addr.as_u64() & !0xfff;
         Page(VirtAddr::new(addr))
     }
@@ -76,7 +76,7 @@ pub struct PageRange {
     pub end: Page,
 }
 impl PageRange {
-    pub fn new(start: Page, end: Page) -> Self {
+    pub const fn new(start: Page, end: Page) -> Self {
         PageRange { start, end }
     }
 }

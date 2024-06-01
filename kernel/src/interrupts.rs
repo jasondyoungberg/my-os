@@ -1,6 +1,4 @@
-use crate::{
-    dbg, gsdata::GsData, print, println, registers::Gs, structures::idt::InterruptStackFrame,
-};
+use crate::{gsdata::GsData, print, println, registers::Gs, structures::idt::InterruptStackFrame};
 
 pub extern "x86-interrupt" fn breakpoint(_stack_frame: InterruptStackFrame) {
     println!("Breakpoint");
@@ -28,7 +26,7 @@ pub extern "x86-interrupt" fn double_fault(stack_frame: InterruptStackFrame, _er
 pub extern "x86-interrupt" fn timer(_stack_frame: InterruptStackFrame) {
     Gs::swap();
     let gsdata = GsData::load().unwrap();
-    print!(".");
+    print!("{}.", gsdata.cpu_id);
     gsdata.lapic.eoi();
     Gs::swap();
 }

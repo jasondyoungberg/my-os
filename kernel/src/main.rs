@@ -8,10 +8,8 @@
 use address::VirtAddr;
 use drivers::lapic;
 use gsdata::GsData;
-use mapping::map_kernel_page_to_frame;
-use structures::paging::PageTableFlags;
 
-use crate::{instructions::enable_interrupts, registers::ApicBase};
+use crate::instructions::enable_interrupts;
 
 extern crate alloc;
 
@@ -65,17 +63,7 @@ extern "C" fn _start() -> ! {
     assert!(MODULE_REQUEST.response.get().is_some());
     assert!(HHDP_REQUEST.response.get().is_some());
 
-    structures::gdt::init();
-    structures::idt::init();
-
-    println!("Hello, World!");
-
-    println!("{:?}", SMP_REQUEST.response.get().unwrap());
-
-    for file in MODULE_REQUEST.response.get().unwrap().modules() {
-        println!("Module: {}", file.path());
-    }
-
+    println!("Starting CPUs");
     SMP_REQUEST
         .response
         .get()
@@ -84,32 +72,21 @@ extern "C" fn _start() -> ! {
         .iter()
         .skip(1)
         .for_each(|info| {
-            println!("Starting CPU {}", info.processor_id);
             info.goto_address.write(smp_start);
         });
-
-    // enable_interrupts();
 
     smp_start(SMP_REQUEST.response.get().unwrap().cpus()[0])
 }
 
 extern "C" fn smp_start(info: &limine::SmpInfo) -> ! {
-    println!("CPU{} Started", info.processor_id);
+    println!("Hello from CPU {}", info.processor_id);
 
-    ApicBase::enable();
+    structures::gdt::init();
+    structures::idt::init();
 
-    println!(
-        "CPU{}: LAPIC ID: {:#x} APIC Base: {:?}",
-        info.processor_id,
-        info.lapic_id,
-        ApicBase::get_base()
-    );
-
-    if info.processor_id == 0 {
-        let lapic = lapic::LocalApic::new();
-        lapic.init();
-        GsData::init(VirtAddr::null(), info.processor_id, lapic);
-    }
+    let lapic = lapic::LocalApic::new();
+    lapic.init();
+    GsData::init(VirtAddr::null(), info.processor_id, lapic);
 
     enable_interrupts();
 

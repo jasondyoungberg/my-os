@@ -5,6 +5,11 @@ use crate::{
     structures::paging::{Page, PageRange},
 };
 
+pub static MMIO_ALLOCATOR: PageAllocator = PageAllocator::new(PageRange::new(
+    Page::containing_addr(VirtAddr::new(0xffff_e000_0000_0000)),
+    Page::containing_addr(VirtAddr::new(0xffff_f000_0000_0000)),
+));
+
 pub struct PageAllocator {
     next: AtomicU64,
     end: VirtAddr,
