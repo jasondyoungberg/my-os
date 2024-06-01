@@ -1,8 +1,7 @@
 use spin::{Lazy, Mutex};
 
 use crate::{
-    allocation::frame::{self, alloc_frame},
-    dbg,
+    allocation::frame::alloc_frame,
     instructions::{flush_tlb, flush_tlb_all, without_interrupts},
     registers::Cr3,
     structures::paging::{Page, PageTable, PageTableFlags, PhysFrame},

@@ -1,6 +1,6 @@
 use core::{fmt, ops};
 
-use crate::{address::PhysAddr, allocation::frame::alloc_frame, dbg};
+use crate::{address::PhysAddr, allocation::frame::alloc_frame};
 
 use super::frame::PhysFrame;
 

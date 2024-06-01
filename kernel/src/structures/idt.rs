@@ -16,6 +16,7 @@ static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
     idt.breakpoint.set_handler(interrupts::breakpoint, 0);
     idt.page_fault.set_handler(interrupts::page_fault, 0);
     idt.double_fault.set_handler(interrupts::double_fault, 0);
+    idt.user_defined[0].set_handler(interrupts::timer, 0);
 
     idt
 });

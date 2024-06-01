@@ -1,5 +1,6 @@
 use crate::address::VirtAddr;
 
+#[derive(Debug)]
 pub struct Mmio {
     base: VirtAddr,
     size: usize,
