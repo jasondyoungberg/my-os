@@ -3,4 +3,4 @@
 /.fsroot
 *.iso
 *.hdd
-gemu.log
+qemu.log
