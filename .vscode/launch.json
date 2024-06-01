@@ -8,7 +8,7 @@
             "name": "Debug",
             "type": "gdb",
             "request": "attach",
-            "executable": "./target/x86_64-unknown-none/debug/kernel",
+            "executable": "./target/x86_64-myos/debug/kernel",
             "target": "localhost:1234",
             "remote": true,
             "cwd": "${workspaceRoot}/kernel",

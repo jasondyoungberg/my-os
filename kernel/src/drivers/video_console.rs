@@ -94,16 +94,13 @@ impl VideoConsole {
     }
 
     fn scroll(&mut self) {
-        self.display.scroll(0, -(FONT.height() as isize));
-        self.cursor_y -= 1;
-
-        let clear_start = self.cursor_y * FONT.height();
-        let clear_end = self.display.height();
-        for y in clear_start..clear_end {
+        for y in 0..FONT.height() {
             for x in 0..self.display.width() {
                 self.display.set_pixel(x, y, Color::new(0, 0, 0));
             }
         }
+        self.display.scroll(0, -(FONT.height() as isize));
+        self.cursor_y -= 1;
     }
 }
 

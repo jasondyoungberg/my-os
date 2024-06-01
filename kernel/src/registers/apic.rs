@@ -1,3 +1,5 @@
+use crate::{address::PhysAddr, structures::paging::PhysFrame};
+
 use super::ModelSpecificRegister;
 
 pub struct ApicBase;
@@ -21,6 +23,17 @@ impl ApicBase {
     pub fn disable() {
         let mut value = Self::read();
         value &= !(1 << 11);
+        Self::write(value);
+    }
+
+    pub fn get_base() -> PhysFrame {
+        PhysFrame::containing_addr(PhysAddr::new_truncate(Self::read()))
+    }
+
+    pub fn set_base(base: PhysFrame) {
+        let mut value = Self::read();
+        value &= 0x0FFF;
+        value |= base.start().as_u64();
         Self::write(value);
     }
 

@@ -1,6 +1,6 @@
 use core::{fmt, ops};
 
-use crate::{address::PhysAddr, allocation::frame::alloc_frame};
+use crate::{address::PhysAddr, allocation::frame::alloc_frame, dbg};
 
 use super::frame::PhysFrame;
 
@@ -9,11 +9,6 @@ pub struct PageTable {
     entries: [PageTableEntry; 512],
 }
 impl PageTable {
-    pub fn new() -> Self {
-        PageTable {
-            entries: [PageTableEntry::new(); 512],
-        }
-    }
     pub fn from_frame(frame: PhysFrame) -> &'static mut Self {
         let addr = frame.start().to_virt().as_mut_ptr::<Self>();
         unsafe { &mut *addr }
@@ -31,13 +26,15 @@ impl PageTable {
     }
 
     pub fn next_table(&mut self, index: usize, flags: PageTableFlags) -> &mut PageTable {
-        let mut entry = self.entries[index];
+        let entry = &mut self.entries[index];
         if entry.is_unused() {
-            entry.set_frame(alloc_frame());
+            let frame = alloc_frame();
+            let new_table = PageTable::from_frame(frame);
+            new_table.set_empty();
+            entry.set_frame(frame);
         }
         entry.set_flags(entry.flags() | flags);
-        let addr = entry.frame().start();
-        unsafe { &mut *(addr.as_u64() as *mut PageTable) }
+        Self::from_frame(entry.frame())
     }
 }
 impl fmt::Debug for PageTable {
@@ -77,7 +74,7 @@ bitflags::bitflags! {
 
 const ADDR_MASK: u64 = 0x000f_ffff_ffff_f000;
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 #[repr(transparent)]
 pub struct PageTableEntry(u64);
 impl PageTableEntry {

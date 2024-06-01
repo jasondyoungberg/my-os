@@ -5,6 +5,10 @@
 #![allow(dead_code)]
 #![deny(unsafe_op_in_unsafe_fn)]
 
+use address::VirtAddr;
+use mapping::map_kernel_page_to_frame;
+use structures::paging::PageTableFlags;
+
 use crate::{instructions::enable_interrupts, registers::ApicBase};
 
 extern crate alloc;
@@ -87,9 +91,32 @@ extern "C" fn _start() -> ! {
 }
 
 extern "C" fn smp_start(info: &limine::SmpInfo) -> ! {
-    println!("Hello from CPU {}", info.processor_id);
+    println!("CPU{} Started", info.processor_id);
 
     ApicBase::enable();
+
+    println!(
+        "CPU{}: LAPIC ID: {:#x} APIC Base: {:?}",
+        info.processor_id,
+        info.lapic_id,
+        ApicBase::get_base()
+    );
+
+    if info.processor_id == 0 {
+        let frame = ApicBase::get_base();
+        let page = structures::paging::Page::containing_addr(VirtAddr::new(0xffff_e000_0000_0000));
+        map_kernel_page_to_frame(
+            page,
+            frame,
+            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE,
+        );
+        let lapic = unsafe { structures::mmio::Mmio::new(page.start(), 0x400) };
+
+        let lapic_id = lapic.read::<u32>(0x20);
+        let lapic_version = lapic.read::<u32>(0x30);
+
+        println!("LAPIC ID: {:#x} Version: {:#x}", lapic_id, lapic_version);
+    }
 
     enable_interrupts();
 
