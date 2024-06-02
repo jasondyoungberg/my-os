@@ -5,25 +5,20 @@
 #![allow(dead_code)]
 #![deny(unsafe_op_in_unsafe_fn)]
 
-use address::VirtAddr;
 use drivers::lapic;
 use gsdata::GsData;
-
-use crate::instructions::enable_interrupts;
+use spin::Lazy;
+use x86_64::VirtAddr;
 
 extern crate alloc;
 
-mod address;
 mod allocation;
 mod drivers;
+mod gdt;
 mod gsdata;
-mod instructions;
-mod interrupts;
-mod limine;
+mod idt;
 mod macros;
 mod mapping;
-mod registers;
-mod structures;
 
 #[used]
 #[link_section = ".requests"]
@@ -31,42 +26,57 @@ static BASE_REVISION: limine::BaseRevision = limine::BaseRevision::new();
 
 #[used]
 #[link_section = ".requests"]
-static FRAMEBUFFER_REQUEST: limine::FramebufferRequest = limine::FramebufferRequest::new();
+static FRAMEBUFFER_REQUEST: limine::request::FramebufferRequest =
+    limine::request::FramebufferRequest::new();
 
 #[used]
 #[link_section = ".requests"]
-static MEMORY_MAP_REQUEST: limine::MemoryMapRequest = limine::MemoryMapRequest::new();
+static MEMORY_MAP_REQUEST: limine::request::MemoryMapRequest =
+    limine::request::MemoryMapRequest::new();
 
 #[used]
 #[link_section = ".requests"]
-static SMP_REQUEST: limine::SmpRequest = limine::SmpRequest::new(limine::SmpFlags::empty());
+static SMP_REQUEST: limine::request::SmpRequest = limine::request::SmpRequest::new();
 
 #[used]
 #[link_section = ".requests"]
-static STACK_SIZE_REQUEST: limine::StackSizeRequest = limine::StackSizeRequest::new(1024 * 1024);
+static STACK_SIZE_REQUEST: limine::request::StackSizeRequest =
+    limine::request::StackSizeRequest::new().with_size(1024 * 1024);
 
 #[used]
 #[link_section = ".requests"]
-static MODULE_REQUEST: limine::ModuleRequest = limine::ModuleRequest::new(&[]);
+static MODULE_REQUEST: limine::request::ModuleRequest = limine::request::ModuleRequest::new();
 
 #[used]
 #[link_section = ".requests"]
-static HHDP_REQUEST: limine::HhdmRequest = limine::HhdmRequest::new();
+static HHDP_REQUEST: limine::request::HhdmRequest = limine::request::HhdmRequest::new();
+
+static FRAMEBUFFER_RESPONSE: Lazy<&limine::response::FramebufferResponse> =
+    Lazy::new(|| FRAMEBUFFER_REQUEST.get_response().unwrap());
+static MEMORY_MAP_RESPONSE: Lazy<&limine::response::MemoryMapResponse> =
+    Lazy::new(|| MEMORY_MAP_REQUEST.get_response().unwrap());
+static SMP_RESPONSE: Lazy<&limine::response::SmpResponse> =
+    Lazy::new(|| SMP_REQUEST.get_response().unwrap());
+static STACK_SIZE_RESPONSE: Lazy<&limine::response::StackSizeResponse> =
+    Lazy::new(|| STACK_SIZE_REQUEST.get_response().unwrap());
+static MODULE_RESPONSE: Lazy<&limine::response::ModuleResponse> =
+    Lazy::new(|| MODULE_REQUEST.get_response().unwrap());
+static HHDP_RESPONSE: Lazy<&limine::response::HhdmResponse> =
+    Lazy::new(|| HHDP_REQUEST.get_response().unwrap());
 
 #[no_mangle]
 extern "C" fn _start() -> ! {
     assert!(BASE_REVISION.is_supported());
-    assert!(FRAMEBUFFER_REQUEST.response.get().is_some());
-    assert!(MEMORY_MAP_REQUEST.response.get().is_some());
-    assert!(SMP_REQUEST.response.get().is_some());
-    assert!(STACK_SIZE_REQUEST.response.get().is_some());
-    assert!(MODULE_REQUEST.response.get().is_some());
-    assert!(HHDP_REQUEST.response.get().is_some());
+    assert!(FRAMEBUFFER_REQUEST.get_response().is_some());
+    assert!(MEMORY_MAP_REQUEST.get_response().is_some());
+    assert!(SMP_REQUEST.get_response().is_some());
+    assert!(STACK_SIZE_REQUEST.get_response().is_some());
+    assert!(MODULE_REQUEST.get_response().is_some());
+    assert!(HHDP_REQUEST.get_response().is_some());
 
     println!("Starting CPUs");
     SMP_REQUEST
-        .response
-        .get()
+        .get_response()
         .unwrap()
         .cpus()
         .iter()
@@ -75,33 +85,33 @@ extern "C" fn _start() -> ! {
             info.goto_address.write(smp_start);
         });
 
-    smp_start(SMP_REQUEST.response.get().unwrap().cpus()[0])
+    smp_start(SMP_REQUEST.get_response().unwrap().cpus()[0])
 }
 
-extern "C" fn smp_start(info: &limine::SmpInfo) -> ! {
-    println!("Hello from CPU {}", info.processor_id);
+extern "C" fn smp_start(cpu: &limine::smp::Cpu) -> ! {
+    println!("Hello from CPU {}", cpu.id);
 
-    structures::gdt::init();
-    structures::idt::init();
+    gdt::init();
+    idt::init();
 
-    let lapic = lapic::LocalApic::new();
+    let mut lapic = lapic::LocalApic::new();
     lapic.init();
-    GsData::init(VirtAddr::null(), info.processor_id, lapic);
+    GsData::init(VirtAddr::zero(), cpu.id, lapic);
 
-    enable_interrupts();
+    x86_64::instructions::interrupts::enable();
 
     loop {
-        instructions::hlt();
+        x86_64::instructions::hlt();
     }
 }
 
 #[panic_handler]
 fn rust_panic(info: &core::panic::PanicInfo) -> ! {
-    instructions::disable_interrupts();
+    x86_64::instructions::interrupts::disable();
 
     unsafe { macros::force_print(format_args!("{}", info)) };
 
     loop {
-        instructions::hlt()
+        x86_64::instructions::hlt();
     }
 }

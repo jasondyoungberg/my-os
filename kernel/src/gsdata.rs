@@ -1,10 +1,10 @@
 use alloc::boxed::Box;
-
-use crate::{
-    address::VirtAddr,
-    drivers::lapic::LocalApic,
-    registers::{Gs, KernelGsBase},
+use x86_64::{
+    registers::model_specific::{GsBase, KernelGsBase},
+    VirtAddr,
 };
+
+use crate::drivers::lapic::LocalApic;
 
 const MAGIC: [u8; 8] = *b"GS DATA ";
 
@@ -16,16 +16,16 @@ pub struct GsData {
     syscall_rsp: VirtAddr,
     sysret_rsp: VirtAddr,
     pub cpu_id: u32,
-    pub lapic: LocalApic,
+    pub lapic: LocalApic<'static>,
 }
 
 impl GsData {
-    pub fn init(syscall_rsp: VirtAddr, cpu_id: u32, lapic: LocalApic) {
+    pub fn init(syscall_rsp: VirtAddr, cpu_id: u32, lapic: LocalApic<'static>) {
         let gsdata = Self {
-            self_ptr: VirtAddr::null(),
+            self_ptr: VirtAddr::zero(),
             magic: MAGIC,
             syscall_rsp,
-            sysret_rsp: VirtAddr::null(),
+            sysret_rsp: VirtAddr::zero(),
             cpu_id,
             lapic,
         };
@@ -39,7 +39,7 @@ impl GsData {
     }
 
     pub fn load() -> Option<&'static mut Self> {
-        let addr = VirtAddr::try_new(Gs::read_at())?;
+        let addr = GsBase::read();
         let data = unsafe { &mut *(addr.as_mut_ptr::<Self>()) };
 
         if data.self_ptr == addr && data.magic == MAGIC {

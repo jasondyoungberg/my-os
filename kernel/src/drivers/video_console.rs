@@ -1,8 +1,8 @@
-use core::fmt;
+use core::{fmt, slice};
 
 use spin::Lazy;
 
-use crate::MODULE_REQUEST;
+use crate::MODULE_RESPONSE;
 
 use super::{
     display::{Color, Display},
@@ -10,15 +10,15 @@ use super::{
 };
 
 static FONT: Lazy<Font> = Lazy::new(|| {
-    let file = MODULE_REQUEST
-        .response
-        .get()
-        .unwrap()
+    let file = MODULE_RESPONSE
         .modules()
         .iter()
-        .find(|file| file.path().starts_with("/font/"))
+        .find(|file| file.path().starts_with(b"/font/"))
         .unwrap();
-    Font::parse(file.slice())
+    let addr = file.addr();
+    let size = file.size() as usize;
+    let slice = unsafe { slice::from_raw_parts(addr, size) };
+    Font::parse(slice)
 });
 
 pub struct VideoConsole {

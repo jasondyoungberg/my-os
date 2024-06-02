@@ -1,62 +1,70 @@
 use spin::{Lazy, Mutex};
-
-use crate::{
-    allocation::frame::alloc_frame,
-    instructions::{flush_tlb, flush_tlb_all, without_interrupts},
-    registers::Cr3,
-    structures::paging::{Page, PageTable, PageTableFlags, PhysFrame},
+use x86_64::{
+    instructions::interrupts::without_interrupts,
+    registers::control::Cr3,
+    structures::paging::{
+        FrameAllocator, Mapper, OffsetPageTable, Page, PageTable, PageTableFlags, PhysFrame,
+    },
+    VirtAddr,
 };
 
-static KERNEL_L4_TABLE: Lazy<Mutex<&mut PageTable>> = Lazy::new(|| {
-    let (frame, _) = Cr3::read();
-    let table = PageTable::from_frame(frame);
+use crate::{allocation::frame::MyFrameAllocator, HHDP_RESPONSE};
 
-    table.iter_mut().skip(256).for_each(|entry| {
-        if entry.is_unused() {
-            let frame = alloc_frame();
-            let table = PageTable::from_frame(frame);
-            table.set_empty();
-            entry.set_frame(frame);
+pub static MEMORY_OFFSET: Lazy<u64> = Lazy::new(|| HHDP_RESPONSE.offset());
+
+static KERNEL_MAPPER: Lazy<Mutex<OffsetPageTable>> = Lazy::new(|| {
+    let (l4_frame, _) = Cr3::read();
+    let l4_phys = l4_frame.start_address();
+    let l4_virt = VirtAddr::new(l4_phys.as_u64() + *MEMORY_OFFSET);
+    let l4_ptr = l4_virt.as_mut_ptr::<PageTable>();
+    let l4_table = unsafe { &mut *l4_ptr };
+
+    l4_table.iter_mut().skip(256).for_each(|l4_entry| {
+        if l4_entry.is_unused() {
+            let l3_frame = MyFrameAllocator.allocate_frame().unwrap();
+            let l3_phys = l3_frame.start_address();
+            let l3_virt = VirtAddr::new(l3_phys.as_u64() + *MEMORY_OFFSET);
+            let l3_ptr = l3_virt.as_mut_ptr::<PageTable>();
+            let l3_table = unsafe { &mut *l3_ptr };
+            l3_table.zero();
+            l4_entry.set_frame(l3_frame, PageTableFlags::WRITABLE | PageTableFlags::PRESENT);
         }
-        entry.set_flags(PageTableFlags::WRITABLE | PageTableFlags::PRESENT);
     });
-    flush_tlb_all();
-    Mutex::new(table)
+
+    Mutex::new(unsafe { OffsetPageTable::new(l4_table, VirtAddr::new(*MEMORY_OFFSET)) })
 });
 
-pub fn map_page_to_frame(
-    l4_table: &mut PageTable,
+pub unsafe fn map_page_to_frame(
+    mapper: &mut OffsetPageTable,
     page: Page,
     frame: PhysFrame,
     flags: PageTableFlags,
 ) {
-    let l3_table = l4_table.next_table(page.p4_index(), flags);
-    let l2_table = l3_table.next_table(page.p3_index(), flags);
-    let l1_table = l2_table.next_table(page.p2_index(), flags);
-    let entry = &mut l1_table[page.p1_index()];
-
-    entry.set_frame(frame);
-    entry.set_flags(flags);
-
-    flush_tlb(page.start());
+    unsafe { mapper.map_to(page, frame, flags, &mut MyFrameAllocator) }
+        .unwrap()
+        .flush();
 }
 
-pub fn map_page(l4_table: &mut PageTable, page: Page, flags: PageTableFlags) -> PhysFrame {
-    let frame = alloc_frame();
-    map_page_to_frame(l4_table, page, frame, flags);
+pub unsafe fn map_page(
+    mapper: &mut OffsetPageTable,
+    page: Page,
+    flags: PageTableFlags,
+) -> PhysFrame {
+    let frame = MyFrameAllocator.allocate_frame().unwrap();
+    unsafe { map_page_to_frame(mapper, page, frame, flags) };
     frame
 }
 
-pub fn map_kernel_page_to_frame(page: Page, frame: PhysFrame, flags: PageTableFlags) {
+pub unsafe fn map_kernel_page_to_frame(page: Page, frame: PhysFrame, flags: PageTableFlags) {
     without_interrupts(|| {
-        let mut l4_table = KERNEL_L4_TABLE.lock();
-        map_page_to_frame(*l4_table, page, frame, flags)
+        let mut mapper = KERNEL_MAPPER.lock();
+        unsafe { map_page_to_frame(&mut mapper, page, frame, flags) }
     })
 }
 
-pub fn map_kernel_page(page: Page, flags: PageTableFlags) -> PhysFrame {
+pub unsafe fn map_kernel_page(page: Page, flags: PageTableFlags) -> PhysFrame {
     without_interrupts(|| {
-        let mut l4_table = KERNEL_L4_TABLE.lock();
-        map_page(*l4_table, page, flags)
+        let mut mapper = KERNEL_MAPPER.lock();
+        unsafe { map_page(&mut mapper, page, flags) }
     })
 }

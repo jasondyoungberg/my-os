@@ -1,23 +1,17 @@
 use core::fmt;
 
 use spin::{Lazy, Mutex};
+use x86_64::instructions::interrupts::without_interrupts;
 
 use crate::{
     drivers::{debug_console::DebugConsole, display::Display, video_console::VideoConsole},
-    instructions::without_interrupts,
-    FRAMEBUFFER_REQUEST,
+    FRAMEBUFFER_RESPONSE,
 };
 
 static DEBUG_CONSOLE: Mutex<DebugConsole> = Mutex::new(DebugConsole);
 static VIDEO_CONSOLE: Lazy<Mutex<VideoConsole>> = Lazy::new(|| {
-    let framebuffer = FRAMEBUFFER_REQUEST
-        .response
-        .get()
-        .unwrap()
-        .framebuffers()
-        .next()
-        .unwrap();
-    let console = VideoConsole::new(Display::new(framebuffer));
+    let framebuffer = FRAMEBUFFER_RESPONSE.framebuffers().next().unwrap();
+    let console = VideoConsole::new(Display::new(&framebuffer));
     Mutex::new(console)
 });
 

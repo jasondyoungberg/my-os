@@ -1,4 +1,4 @@
-use crate::limine::RawFramebuffer;
+use limine::framebuffer::Framebuffer;
 
 pub struct Display {
     width: usize,
@@ -12,11 +12,11 @@ pub struct Display {
 }
 
 impl Display {
-    pub fn new(framebuffer: &RawFramebuffer) -> Self {
+    pub fn new(framebuffer: &Framebuffer) -> Self {
         let width = framebuffer.width() as usize;
         let height = framebuffer.height() as usize;
 
-        let bytes_per_pixel = framebuffer.bits_per_pixel() as usize / 8;
+        let bytes_per_pixel = framebuffer.bpp() as usize / 8;
         let bytes_per_row = framebuffer.pitch() as usize;
         let total_bytes = height * bytes_per_row;
 
