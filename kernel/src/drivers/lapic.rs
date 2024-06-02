@@ -105,7 +105,8 @@ impl LocalApic<'_> {
         // self.0.write::<u32>(LVT_TIMER, 0x0002_0020);
         self.lvt_timer.write(0x0002_0020);
         self.divide_configuration.write(0b1011);
-        self.initial_count.write(1_000_000_000);
+        // self.initial_count.write(1_000_000_000);
+        self.initial_count.write(25_000_000);
     }
 
     pub fn signal_eoi(&self) {

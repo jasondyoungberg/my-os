@@ -1,4 +1,4 @@
-use core::sync::atomic::AtomicU64;
+use core::sync::atomic::{AtomicU64, Ordering};
 
 use x86_64::{
     structures::paging::{page::PageRange, Page},
@@ -34,5 +34,17 @@ impl PageAllocator {
             .fetch_add(4096, core::sync::atomic::Ordering::Relaxed);
         assert!(next + 4096 < self.end.as_u64());
         Page::containing_address(VirtAddr::new(next))
+    }
+    pub fn alloc_range(&self, size: u64) -> PageRange {
+        let size = (size + 4095) / 4096 * 4096;
+        let next = self.next.fetch_add(size, Ordering::Relaxed);
+
+        let start_addr = VirtAddr::new(next);
+        let end_addr = start_addr + size;
+
+        Page::range(
+            Page::containing_address(start_addr),
+            Page::containing_address(end_addr),
+        )
     }
 }

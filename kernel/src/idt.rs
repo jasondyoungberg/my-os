@@ -9,10 +9,14 @@ use crate::{gsdata::GsData, print, println};
 static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
     let mut idt = InterruptDescriptorTable::new();
 
-    idt.breakpoint.set_handler_fn(breakpoint);
-    idt.page_fault.set_handler_fn(page_fault);
-    idt.double_fault.set_handler_fn(double_fault);
-    idt[0x20].set_handler_fn(timer);
+    unsafe {
+        idt.breakpoint.set_handler_fn(breakpoint);
+        idt.page_fault.set_handler_fn(page_fault).set_stack_index(1);
+        idt.double_fault
+            .set_handler_fn(double_fault)
+            .set_stack_index(2);
+        idt[0x20].set_handler_fn(timer);
+    }
 
     idt
 });

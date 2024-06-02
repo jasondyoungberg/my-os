@@ -1,16 +1,19 @@
 use alloc::vec::Vec;
 use spin::Lazy;
-use x86_64::structures::{
-    gdt::{Descriptor, GlobalDescriptorTable, SegmentSelector},
-    tss::TaskStateSegment,
+use x86_64::{
+    instructions::tables::load_tss,
+    registers::segmentation::{Segment, CS, SS},
+    structures::{
+        gdt::{Descriptor, GlobalDescriptorTable, SegmentSelector},
+        paging::PageTableFlags,
+        tss::TaskStateSegment,
+    },
+    VirtAddr,
 };
 
-use crate::SMP_RESPONSE;
+use crate::{allocation::page::STACK_ALLOCATOR, mapping::map_kernel_page, SMP_RESPONSE};
 
-pub const KERNEL_CODE_SELECTOR: u16 = 1 << 3;
-pub const KERNEL_DATA_SELECTOR: u16 = 2 << 3;
-pub const USER_DATA_SELECTOR: u16 = 3 << 3 | 3;
-pub const USER_CODE_SELECTOR: u16 = 4 << 3 | 3;
+const STACK_SIZE: u64 = 64 * 1024;
 
 static GDT: Lazy<GdtInfo> = Lazy::new(|| {
     let mut gdt = GlobalDescriptorTable::empty();
@@ -37,7 +40,21 @@ static GDT: Lazy<GdtInfo> = Lazy::new(|| {
 
 static TSS: Lazy<Vec<TaskStateSegment>> = Lazy::new(|| {
     let cpu_count = SMP_RESPONSE.cpus().len();
-    (0..cpu_count).map(|_| TaskStateSegment::new()).collect()
+    (0..cpu_count)
+        .map(|_| {
+            let mut tss = TaskStateSegment::new();
+
+            for i in 0..7 {
+                tss.interrupt_stack_table[i] = create_stack();
+            }
+
+            for i in 0..3 {
+                tss.privilege_stack_table[i] = create_stack();
+            }
+
+            tss
+        })
+        .collect()
 });
 
 struct GdtInfo {
@@ -49,4 +66,22 @@ struct GdtInfo {
     tss: Vec<SegmentSelector>,
 }
 
-pub fn init() {}
+fn create_stack() -> VirtAddr {
+    let pages = STACK_ALLOCATOR.alloc_range(STACK_SIZE);
+    let rsp = pages.end.start_address();
+    for page in pages {
+        unsafe { map_kernel_page(page, PageTableFlags::PRESENT | PageTableFlags::WRITABLE) };
+    }
+    rsp
+}
+
+pub fn init(cpu_id: u32) {
+    GDT.gdt.load();
+
+    unsafe {
+        CS::set_reg(GDT.kernel_code);
+        SS::set_reg(GDT.kernel_data);
+
+        load_tss(GDT.tss[cpu_id as usize])
+    }
+}

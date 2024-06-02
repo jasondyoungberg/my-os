@@ -91,7 +91,7 @@ extern "C" fn _start() -> ! {
 extern "C" fn smp_start(cpu: &limine::smp::Cpu) -> ! {
     println!("Hello from CPU {}", cpu.id);
 
-    gdt::init();
+    gdt::init(cpu.id);
     idt::init();
 
     let mut lapic = lapic::LocalApic::new();
