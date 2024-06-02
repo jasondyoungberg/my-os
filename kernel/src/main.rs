@@ -1,12 +1,14 @@
 #![no_std]
 #![no_main]
 #![feature(abi_x86_interrupt)]
+#![feature(naked_functions)]
 //
 #![allow(dead_code)]
 #![deny(unsafe_op_in_unsafe_fn)]
 
 use drivers::lapic;
 use gsdata::GsData;
+use process::Process;
 use spin::Lazy;
 use x86_64::VirtAddr;
 
@@ -113,9 +115,23 @@ extern "C" fn smp_start(this_cpu: &limine::smp::Cpu) -> ! {
     lapic.init();
     GsData::init(VirtAddr::zero(), cpuid, lapic);
 
+    if cpuid == 0 {
+        Process::create_root(root_process);
+    }
+
     x86_64::instructions::interrupts::enable();
 
     loop {
+        println!("CPU {} is doing nothing", cpuid);
+        x86_64::instructions::hlt();
+    }
+}
+
+extern "C" fn root_process() -> ! {
+    println!("Hello from root");
+
+    loop {
+        println!("Root is doing nothing");
         x86_64::instructions::hlt();
     }
 }

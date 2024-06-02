@@ -15,7 +15,7 @@ use crate::{allocation::page::STACK_ALLOCATOR, mapping::map_kernel_page, SMP_RES
 
 const STACK_SIZE: u64 = 64 * 1024;
 
-static GDT: Lazy<GdtInfo> = Lazy::new(|| {
+pub static GDT: Lazy<GdtInfo> = Lazy::new(|| {
     let mut gdt = GlobalDescriptorTable::empty();
 
     let kernel_code = gdt.append(Descriptor::kernel_code_segment());
@@ -57,12 +57,12 @@ static TSS: Lazy<Vec<TaskStateSegment>> = Lazy::new(|| {
         .collect()
 });
 
-struct GdtInfo {
+pub struct GdtInfo {
     gdt: GlobalDescriptorTable<69>,
-    kernel_code: SegmentSelector,
-    kernel_data: SegmentSelector,
-    user_data: SegmentSelector,
-    user_code: SegmentSelector,
+    pub kernel_code: SegmentSelector,
+    pub kernel_data: SegmentSelector,
+    pub user_data: SegmentSelector,
+    pub user_code: SegmentSelector,
     tss: Vec<SegmentSelector>,
 }
 

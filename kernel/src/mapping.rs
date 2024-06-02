@@ -1,4 +1,4 @@
-use spin::{Lazy, Mutex};
+use spin::{Lazy, RwLock};
 use x86_64::{
     instructions::interrupts::without_interrupts,
     registers::control::Cr3,
@@ -12,7 +12,7 @@ use crate::{allocation::frame::MyFrameAllocator, HHDP_RESPONSE};
 
 pub static MEMORY_OFFSET: Lazy<u64> = Lazy::new(|| HHDP_RESPONSE.offset());
 
-static KERNEL_MAPPER: Lazy<Mutex<OffsetPageTable>> = Lazy::new(|| {
+static KERNEL_MAPPER: Lazy<RwLock<OffsetPageTable>> = Lazy::new(|| {
     let (l4_frame, _) = Cr3::read();
     let l4_phys = l4_frame.start_address();
     let l4_virt = VirtAddr::new(l4_phys.as_u64() + *MEMORY_OFFSET);
@@ -31,8 +31,20 @@ static KERNEL_MAPPER: Lazy<Mutex<OffsetPageTable>> = Lazy::new(|| {
         }
     });
 
-    Mutex::new(unsafe { OffsetPageTable::new(l4_table, VirtAddr::new(*MEMORY_OFFSET)) })
+    RwLock::new(unsafe { OffsetPageTable::new(l4_table, VirtAddr::new(*MEMORY_OFFSET)) })
 });
+
+pub unsafe fn new_page_table(frame: PhysFrame) -> &'static mut PageTable {
+    let phys = frame.start_address();
+    let virt = VirtAddr::new(phys.as_u64() + *MEMORY_OFFSET);
+    let ptr = virt.as_mut_ptr::<PageTable>();
+    let table = unsafe { &mut *ptr };
+
+    let mapper = KERNEL_MAPPER.read();
+    table.clone_from(mapper.level_4_table());
+
+    table
+}
 
 pub unsafe fn map_page_to_frame(
     mapper: &mut OffsetPageTable,
@@ -57,14 +69,14 @@ pub unsafe fn map_page(
 
 pub unsafe fn map_kernel_page_to_frame(page: Page, frame: PhysFrame, flags: PageTableFlags) {
     without_interrupts(|| {
-        let mut mapper = KERNEL_MAPPER.lock();
+        let mut mapper = KERNEL_MAPPER.write();
         unsafe { map_page_to_frame(&mut mapper, page, frame, flags) }
     })
 }
 
 pub unsafe fn map_kernel_page(page: Page, flags: PageTableFlags) -> PhysFrame {
     without_interrupts(|| {
-        let mut mapper = KERNEL_MAPPER.lock();
+        let mut mapper = KERNEL_MAPPER.write();
         unsafe { map_page(&mut mapper, page, flags) }
     })
 }
