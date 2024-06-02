@@ -75,13 +75,13 @@ fn create_stack() -> VirtAddr {
     rsp
 }
 
-pub fn init(cpu_id: u32) {
+pub fn init(cpuid: usize) {
     GDT.gdt.load();
 
     unsafe {
         CS::set_reg(GDT.kernel_code);
         SS::set_reg(GDT.kernel_data);
 
-        load_tss(GDT.tss[cpu_id as usize])
+        load_tss(GDT.tss[cpuid])
     }
 }

@@ -19,6 +19,7 @@ mod gsdata;
 mod idt;
 mod macros;
 mod mapping;
+mod process;
 
 #[used]
 #[link_section = ".requests"]
@@ -75,28 +76,42 @@ extern "C" fn _start() -> ! {
     assert!(HHDP_REQUEST.get_response().is_some());
 
     println!("Starting CPUs");
-    SMP_REQUEST
-        .get_response()
-        .unwrap()
+    let bsp_lapic_id = SMP_RESPONSE.bsp_lapic_id();
+    SMP_RESPONSE
         .cpus()
         .iter()
-        .skip(1)
-        .for_each(|info| {
-            info.goto_address.write(smp_start);
-        });
+        .filter(|cpu| cpu.lapic_id != bsp_lapic_id)
+        .for_each(|cpu| cpu.goto_address.write(smp_start));
 
-    smp_start(SMP_REQUEST.get_response().unwrap().cpus()[0])
+    let bsp_cpu = SMP_RESPONSE
+        .cpus()
+        .iter()
+        .find(|cpu| cpu.lapic_id == bsp_lapic_id)
+        .unwrap();
+
+    smp_start(bsp_cpu)
 }
 
-extern "C" fn smp_start(cpu: &limine::smp::Cpu) -> ! {
-    println!("Hello from CPU {}", cpu.id);
+extern "C" fn smp_start(this_cpu: &limine::smp::Cpu) -> ! {
+    let bsp_lapic_id = SMP_RESPONSE.bsp_lapic_id();
 
-    gdt::init(cpu.id);
+    let cpuid = SMP_RESPONSE
+        .cpus()
+        .iter()
+        .filter(|cpu| cpu.lapic_id != bsp_lapic_id)
+        .enumerate()
+        .find(|(_, cpu)| cpu.lapic_id == this_cpu.lapic_id);
+
+    let cpuid = cpuid.map(|(i, _)| i + 1).unwrap_or(0);
+
+    println!("Hello from CPU {}", cpuid);
+
+    gdt::init(cpuid);
     idt::init();
 
     let mut lapic = lapic::LocalApic::new();
     lapic.init();
-    GsData::init(VirtAddr::zero(), cpu.id, lapic);
+    GsData::init(VirtAddr::zero(), cpuid, lapic);
 
     x86_64::instructions::interrupts::enable();
 

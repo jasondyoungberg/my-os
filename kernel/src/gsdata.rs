@@ -15,18 +15,18 @@ pub struct GsData {
     magic: [u8; 8],
     syscall_rsp: VirtAddr,
     sysret_rsp: VirtAddr,
-    pub cpu_id: u32,
+    pub cpuid: u64,
     pub lapic: LocalApic<'static>,
 }
 
 impl GsData {
-    pub fn init(syscall_rsp: VirtAddr, cpu_id: u32, lapic: LocalApic<'static>) {
+    pub fn init(syscall_rsp: VirtAddr, cpuid: usize, lapic: LocalApic<'static>) {
         let gsdata = Self {
             self_ptr: VirtAddr::zero(),
             magic: MAGIC,
             syscall_rsp,
             sysret_rsp: VirtAddr::zero(),
-            cpu_id,
+            cpuid: cpuid as u64,
             lapic,
         };
 

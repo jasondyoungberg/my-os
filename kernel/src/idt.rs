@@ -52,7 +52,7 @@ extern "x86-interrupt" fn double_fault(stack_frame: InterruptStackFrame, _error_
 extern "x86-interrupt" fn timer(_stack_frame: InterruptStackFrame) {
     unsafe { GS::swap() };
     let gsdata = GsData::load().unwrap();
-    print!("{}.", gsdata.cpu_id);
+    print!("{}.", gsdata.cpuid);
     gsdata.lapic.signal_eoi();
     unsafe { GS::swap() };
 }
