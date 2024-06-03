@@ -7,7 +7,7 @@ use crate::{
     drivers::{
         debug_console::DebugConsole,
         display::{Color, Display},
-        video_console::{self, VideoConsole},
+        video_console::VideoConsole,
     },
     FRAMEBUFFER_RESPONSE,
 };
