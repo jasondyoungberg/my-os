@@ -6,7 +6,10 @@
 #![allow(dead_code)]
 #![deny(unsafe_op_in_unsafe_fn)]
 
+use core::slice;
+
 use drivers::lapic;
+use gdt::create_ministack;
 use gsdata::GsData;
 use process::Process;
 use spin::Lazy;
@@ -22,6 +25,7 @@ mod idt;
 mod macros;
 mod mapping;
 mod process;
+mod syscall;
 
 #[used]
 #[link_section = ".requests"]
@@ -66,6 +70,17 @@ static MODULE_RESPONSE: Lazy<&limine::response::ModuleResponse> =
     Lazy::new(|| MODULE_REQUEST.get_response().unwrap());
 static HHDP_RESPONSE: Lazy<&limine::response::HhdmResponse> =
     Lazy::new(|| HHDP_REQUEST.get_response().unwrap());
+
+fn load_file(name: &str) -> &'static [u8] {
+    let file = MODULE_RESPONSE
+        .modules()
+        .iter()
+        .find(|file| file.path() == name.as_bytes())
+        .unwrap();
+    let addr = file.addr();
+    let size = file.size() as usize;
+    unsafe { slice::from_raw_parts(addr, size) }
+}
 
 #[no_mangle]
 extern "C" fn _start() -> ! {
@@ -113,7 +128,9 @@ extern "C" fn smp_start(this_cpu: &limine::smp::Cpu) -> ! {
 
     let mut lapic = lapic::LocalApic::new();
     lapic.init();
-    GsData::init(VirtAddr::zero(), cpuid, lapic);
+    GsData::init(create_ministack(), cpuid, lapic);
+
+    syscall::init();
 
     if cpuid == 0 {
         Process::create_root(root_process);
@@ -130,6 +147,11 @@ extern "C" fn smp_start(this_cpu: &limine::smp::Cpu) -> ! {
 extern "C" fn root_process() -> ! {
     println!("Hello from root");
 
+    let gsdata = unsafe { GsData::load_kernel().unwrap() };
+    let process = gsdata.process.as_mut().unwrap();
+
+    process.create_user(load_file("/bin/hello"));
+
     loop {
         println!("Root is doing nothing");
         x86_64::instructions::hlt();
@@ -140,7 +162,7 @@ extern "C" fn root_process() -> ! {
 fn rust_panic(info: &core::panic::PanicInfo) -> ! {
     x86_64::instructions::interrupts::disable();
 
-    unsafe { macros::force_print(format_args!("{}", info)) };
+    unsafe { macros::force_print(format_args!("{}\n", info)) };
 
     loop {
         x86_64::instructions::hlt();

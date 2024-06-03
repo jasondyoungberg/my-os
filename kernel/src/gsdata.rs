@@ -58,4 +58,23 @@ impl GsData {
             None
         }
     }
+
+    /// # Safety
+    /// This function is unsafe because it can create multiple mutable references to the same data.
+    /// Make sure to drop the returned reference before calling this function again.
+    pub unsafe fn load_kernel() -> Option<&'static mut Self> {
+        let addr = KernelGsBase::read();
+
+        if addr.as_u64() < 0xFFFF_FFFF_8000_0000 {
+            return None;
+        }
+
+        let data = unsafe { &mut *(addr.as_mut_ptr::<Self>()) };
+
+        if data.self_ptr == addr && data.magic == MAGIC {
+            Some(data)
+        } else {
+            None
+        }
+    }
 }

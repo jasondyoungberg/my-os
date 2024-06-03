@@ -23,8 +23,9 @@ use x86_64::{
 
 use crate::{
     allocation::frame::MyFrameAllocator,
+    dbg,
     gdt::GDT,
-    mapping::{map_page, new_page_table, MEMORY_OFFSET},
+    mapping::{map_page, new_page_table, physical_to_virtual, MEMORY_OFFSET},
 };
 
 static QUEUE: SegQueue<Process> = SegQueue::new();
@@ -46,7 +47,7 @@ pub struct Process {
 
 impl Process {
     pub fn create_root(func: extern "C" fn() -> !) {
-        let stack_start_addr = VirtAddr::new(0x1_0000_0000);
+        let stack_start_addr = VirtAddr::new(0xffff_a000_0000_0000);
         let stack_end_addr = stack_start_addr + 64 * 1024;
         let stack_page_start = Page::containing_address(stack_start_addr);
         let stack_page_end = Page::containing_address(stack_end_addr);
@@ -85,6 +86,77 @@ impl Process {
             page_table,
             page_table_frame,
             stack,
+        };
+
+        QUEUE.push(root);
+    }
+
+    pub fn create_user(&mut self, code: &[u8]) {
+        let stack_start_addr = VirtAddr::new(0x1_0000_0000);
+        let stack_end_addr = stack_start_addr + 64 * 1024;
+        let stack_page_start = Page::containing_address(stack_start_addr);
+        let stack_page_end = Page::containing_address(stack_end_addr);
+        let stack_pages = Page::range(stack_page_start, stack_page_end);
+
+        let code_start_addr = VirtAddr::new(0x1_0000);
+        let code_end_addr = code_start_addr + 64 * 1024;
+        let code_page_start = Page::containing_address(code_start_addr);
+        let code_page_end = Page::containing_address(code_end_addr);
+        let code_pages = Page::range(code_page_start, code_page_end);
+
+        let page_table_frame = MyFrameAllocator
+            .allocate_frame()
+            .expect("no frames available");
+        let page_table = unsafe { new_page_table(page_table_frame) };
+        let mut mapper = unsafe { OffsetPageTable::new(page_table, VirtAddr::new(*MEMORY_OFFSET)) };
+        for page in stack_pages {
+            unsafe {
+                map_page(
+                    &mut mapper,
+                    page,
+                    PageTableFlags::PRESENT
+                        | PageTableFlags::WRITABLE
+                        | PageTableFlags::USER_ACCESSIBLE,
+                );
+            }
+        }
+        for (i, page) in code_pages.enumerate() {
+            let frame = unsafe {
+                map_page(
+                    &mut mapper,
+                    page,
+                    PageTableFlags::PRESENT
+                        | PageTableFlags::WRITABLE
+                        | PageTableFlags::USER_ACCESSIBLE,
+                )
+            };
+            if i * 4096 < code.len() {
+                let virt = physical_to_virtual(frame.start_address());
+                let dest_ptr = virt.as_mut_ptr::<u8>();
+                let src_ptr = code.as_ptr().wrapping_add(i * 4096);
+                let len = core::cmp::min(4096, code.len() - i * 4096);
+                unsafe { dest_ptr.copy_from_nonoverlapping(src_ptr, len) };
+            }
+        }
+
+        let root = Self {
+            name: "root".to_string(),
+            state: ProcessState::Paused {
+                regs: Registers::ZERO,
+                stack_frame: InterruptStackFrameValue::new(
+                    VirtAddr::new(0x1_0000),
+                    GDT.user_code,
+                    RFlags::INTERRUPT_FLAG,
+                    stack_pages.end.start_address(),
+                    GDT.user_data,
+                ),
+            },
+            signal_down: async_channel::unbounded::<SignalDown>().1,
+            signal_up: async_channel::unbounded::<SignalUp>().0,
+            children: Vec::new(),
+            page_table,
+            page_table_frame,
+            stack: stack_pages,
         };
 
         QUEUE.push(root);
@@ -162,21 +234,21 @@ pub enum SignalUp {
 #[repr(C)]
 #[derive(Clone, Debug)]
 pub struct Registers {
-    rax: u64,
-    rbx: u64,
-    rcx: u64,
-    rdx: u64,
-    rsi: u64,
-    rdi: u64,
-    rbp: u64,
-    r8: u64,
-    r9: u64,
-    r10: u64,
-    r11: u64,
-    r12: u64,
-    r13: u64,
-    r14: u64,
-    r15: u64,
+    pub rax: u64,
+    pub rbx: u64,
+    pub rcx: u64,
+    pub rdx: u64,
+    pub rsi: u64,
+    pub rdi: u64,
+    pub rbp: u64,
+    pub r8: u64,
+    pub r9: u64,
+    pub r10: u64,
+    pub r11: u64,
+    pub r12: u64,
+    pub r13: u64,
+    pub r14: u64,
+    pub r15: u64,
 }
 impl Registers {
     const ZERO: Registers = Registers {

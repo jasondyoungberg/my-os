@@ -38,7 +38,7 @@ QEMU_ARGS := \
 	-smp $(CPUS) \
 	-debugcon stdio \
 	-D qemu.log \
-	-d guest_errors,unimp \
+	-d int,cpu_reset,unimp,guest_errors \
 
 ifeq ($(KVM),1)
 	QEMU_ARGS += -enable-kvm
@@ -75,20 +75,28 @@ limine/limine:
 	git clone https://github.com/limine-bootloader/limine.git --branch=v7.x-binary --depth=1
 	$(MAKE) -C limine
 
+.PHONY: apps
+apps:
+	rm -rf apps/.dist
+	mkdir -p apps/.dist
+	cd apps && nasm hello.asm -o .dist/hello
+
 .PHONY: kernel
-kernel:
+kernel: apps
 	cd kernel && cargo build --profile $(RUST_PROFILE)
 
 .fsroot: limine/limine kernel files/*
 	rm -rf .fsroot
 	mkdir -p .fsroot/boot/limine
 	mkdir -p .fsroot/EFI/BOOT
+	mkdir -p .fsroot/bin
 
 	cp kernel/target/$(RUST_TARGET_SUBDIR)/$(RUST_PROFILE_SUBDIR)/kernel .fsroot/boot/
 	cp limine.cfg limine/limine-bios.sys limine/limine-bios-cd.bin limine/limine-uefi-cd.bin .fsroot/boot/limine/
 	cp limine/BOOTX64.EFI limine/BOOTIA32.EFI .fsroot/EFI/BOOT/
 
 	cp -r files/* .fsroot/
+	cp -r apps/.dist/* .fsroot/bin/
 
 $(IMAGE_NAME).iso: .fsroot
 	xorriso -as mkisofs -b boot/limine/limine-bios-cd.bin \

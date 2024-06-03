@@ -3,6 +3,7 @@ use core::arch::asm;
 use spin::Lazy;
 use x86_64::{
     registers::control::Cr2,
+    set_general_handler,
     structures::idt::{
         InterruptDescriptorTable, InterruptStackFrame, InterruptStackFrameValue, PageFaultErrorCode,
     },
@@ -15,7 +16,22 @@ use crate::{
 };
 
 static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
+    fn my_general_handler(stack_frame: InterruptStackFrame, index: u8, error_code: Option<u64>) {
+        if let Some(error_code) = error_code {
+            todo!(
+                "handle irq {} ({:?})\n{:#?}",
+                index,
+                error_code,
+                stack_frame
+            );
+        } else {
+            todo!("handle irq {}\n{:#?}", index, stack_frame);
+        }
+    }
+
     let mut idt = InterruptDescriptorTable::new();
+
+    set_general_handler!(&mut idt, my_general_handler);
 
     unsafe {
         idt.breakpoint.set_handler_fn(breakpoint);

@@ -5,7 +5,7 @@ use x86_64::{
     structures::paging::{
         FrameAllocator, Mapper, OffsetPageTable, Page, PageTable, PageTableFlags, PhysFrame,
     },
-    VirtAddr,
+    PhysAddr, VirtAddr,
 };
 
 use crate::{allocation::frame::MyFrameAllocator, HHDP_RESPONSE};
@@ -79,4 +79,8 @@ pub unsafe fn map_kernel_page(page: Page, flags: PageTableFlags) -> PhysFrame {
         let mut mapper = KERNEL_MAPPER.write();
         unsafe { map_page(&mut mapper, page, flags) }
     })
+}
+
+pub fn physical_to_virtual(phys: PhysAddr) -> VirtAddr {
+    VirtAddr::new(phys.as_u64() + *MEMORY_OFFSET)
 }

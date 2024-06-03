@@ -45,11 +45,11 @@ static TSS: Lazy<Vec<TaskStateSegment>> = Lazy::new(|| {
             let mut tss = TaskStateSegment::new();
 
             for i in 0..7 {
-                tss.interrupt_stack_table[i] = create_stack();
+                tss.interrupt_stack_table[i] = create_ministack();
             }
 
             for i in 0..3 {
-                tss.privilege_stack_table[i] = create_stack();
+                tss.privilege_stack_table[i] = create_ministack();
             }
 
             tss
@@ -66,7 +66,7 @@ pub struct GdtInfo {
     tss: Vec<SegmentSelector>,
 }
 
-fn create_stack() -> VirtAddr {
+pub fn create_ministack() -> VirtAddr {
     let pages = STACK_ALLOCATOR.alloc_range(STACK_SIZE);
     let rsp = pages.end.start_address();
     for page in pages {
