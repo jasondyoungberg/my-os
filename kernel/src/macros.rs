@@ -1,4 +1,4 @@
-use core::fmt;
+use core::{arch::x86_64::_rdtsc, fmt};
 
 use x86_64::instructions::interrupts::without_interrupts;
 
@@ -16,19 +16,29 @@ pub fn _print(args: fmt::Arguments) {
 
 pub unsafe fn force_print(args: fmt::Arguments) {
     use fmt::Write;
+
+    let tsc = unsafe { _rdtsc() };
     loop {
         if let Some(mut debug_console) = DEBUG_CONSOLE.try_lock() {
             let _ = debug_console.write_fmt(args);
             break;
         }
-        // unsafe { DEBUG_CONSOLE.force_unlock() }
+
+        if tsc + 1_000_000_000 < unsafe { _rdtsc() } {
+            unsafe { DEBUG_CONSOLE.force_unlock() }
+        }
     }
+
+    let tsc = unsafe { _rdtsc() };
     loop {
         if let Some(mut video_console) = VIDEO_CONSOLE.try_lock() {
             let _ = video_console.write_fmt(args);
             break;
         }
-        // unsafe { VIDEO_CONSOLE.force_unlock() }
+
+        if tsc + 1_000_000_000 < unsafe { _rdtsc() } {
+            unsafe { DEBUG_CONSOLE.force_unlock() }
+        }
     }
 }
 

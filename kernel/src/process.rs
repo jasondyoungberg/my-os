@@ -6,7 +6,9 @@ use alloc::{
 };
 use async_channel::{Receiver, Sender};
 use crossbeam::queue::SegQueue;
+use spin::Lazy;
 use x86_64::{
+    instructions::hlt,
     registers::{
         control::{Cr3, Cr3Flags},
         rflags::RFlags,
@@ -23,8 +25,10 @@ use x86_64::{
 
 use crate::{
     allocation::frame::MyFrameAllocator,
-    gdt::GDT,
+    gdt::{create_ministack, GDT},
+    gsdata::{self, GsData},
     mapping::{map_page, new_page_table, physical_to_virtual, MEMORY_OFFSET},
+    SMP_RESPONSE,
 };
 
 static QUEUE: SegQueue<Process> = SegQueue::new();
@@ -175,11 +179,11 @@ impl Process {
     }
 
     pub fn switch(
-        active: &mut Option<Self>,
+        gsdata: &mut GsData,
         stack_frame: &mut InterruptStackFrameValue,
         registers: &mut Registers,
     ) {
-        if let Some(mut old) = active.take() {
+        if let Some(mut old) = gsdata.process.take() {
             assert!(old.state.is_running(), "old process already paused");
             old.state = ProcessState::Paused {
                 regs: registers.clone(),
@@ -204,9 +208,16 @@ impl Process {
 
             unsafe { Cr3::write(new.page_table_frame, Cr3Flags::empty()) }
 
-            active.replace(new);
+            assert!(gsdata.process.replace(new).is_none());
         } else {
-            stack_frame.instruction_pointer = VirtAddr::from_ptr(do_nothing as *const ());
+            // stack_frame.instruction_pointer = VirtAddr::from_ptr(do_nothing as *const ());
+            *stack_frame = InterruptStackFrameValue::new(
+                VirtAddr::from_ptr(do_nothing as *const ()),
+                GDT.kernel_code,
+                RFlags::INTERRUPT_FLAG,
+                NOTHING_STACKS[gsdata.cpuid],
+                GDT.kernel_data,
+            )
         }
     }
 }
@@ -284,16 +295,17 @@ impl Registers {
     };
 }
 
-#[naked]
-extern "C" fn do_nothing() -> ! {
-    unsafe {
-        asm!(
-            "
-            2:
-            hlt
-            jmp 2b
-            ",
-            options(noreturn)
-        );
+fn do_nothing() -> ! {
+    loop {
+        hlt();
     }
 }
+
+static NOTHING_STACKS: Lazy<Vec<VirtAddr>> = Lazy::new(|| {
+    let cpu_count = SMP_RESPONSE.cpus().len();
+    let mut stacks = Vec::with_capacity(cpu_count);
+    for _ in 0..cpu_count {
+        stacks.push(create_ministack());
+    }
+    stacks
+});

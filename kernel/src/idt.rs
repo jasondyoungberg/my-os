@@ -126,9 +126,8 @@ extern "x86-interrupt" fn timer(_stack_frame: InterruptStackFrame) {
 
 extern "C" fn timer_inner(stack_frame: &mut InterruptStackFrameValue, registers: &mut Registers) {
     let gsdata = unsafe { GsData::load().unwrap() };
-    print!("{}.", gsdata.cpuid);
 
-    Process::switch(&mut gsdata.process, stack_frame, registers);
+    Process::switch(gsdata, stack_frame, registers);
 
     gsdata.lapic.signal_eoi();
 }

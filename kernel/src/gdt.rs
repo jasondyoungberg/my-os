@@ -67,6 +67,7 @@ pub struct GdtInfo {
 }
 
 pub fn create_ministack() -> VirtAddr {
+    STACK_ALLOCATOR.alloc(); // gaurd page
     let pages = STACK_ALLOCATOR.alloc_range(STACK_SIZE);
     let rsp = pages.end.start_address();
     for page in pages {

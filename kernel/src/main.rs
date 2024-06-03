@@ -152,7 +152,7 @@ extern "C" fn root_process() -> ! {
     let process = gsdata.process.as_mut().unwrap();
 
     // process.create_user("hello", load_file("/bin/hello"));
-    process.create_user("loop", load_file("/bin/loop"));
+    // process.create_user("loop", load_file("/bin/loop"));
 
     log::error!("error");
     log::warn!("warn");

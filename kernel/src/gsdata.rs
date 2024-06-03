@@ -43,7 +43,7 @@ impl GsData {
     /// # Safety
     /// This function is unsafe because it can create multiple mutable references to the same data.
     /// Make sure to drop the returned reference before calling this function again.
-    pub unsafe fn load() -> Option<&'static mut Self> {
+    pub unsafe fn load<'a>() -> Option<&'a mut Self> {
         let addr = GsBase::read();
 
         if addr.as_u64() < 0xFFFF_FFFF_8000_0000 {
@@ -62,7 +62,7 @@ impl GsData {
     /// # Safety
     /// This function is unsafe because it can create multiple mutable references to the same data.
     /// Make sure to drop the returned reference before calling this function again.
-    pub unsafe fn load_kernel() -> Option<&'static mut Self> {
+    pub unsafe fn load_kernel<'a>() -> Option<&'a mut Self> {
         let addr = KernelGsBase::read();
 
         if addr.as_u64() < 0xFFFF_FFFF_8000_0000 {
