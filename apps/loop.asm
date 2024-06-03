@@ -9,11 +9,10 @@ mov rsi, msg
 mov rdx, msg.len
 syscall
 
-mov rax, 60
-mov rdi, 0
+mov rax, 24
 syscall
 
 jmp main
 
-msg: db `Hello, World!\n`
+msg: db `Loopy!\n`
     .len EQU $ - msg

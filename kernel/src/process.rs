@@ -23,7 +23,6 @@ use x86_64::{
 
 use crate::{
     allocation::frame::MyFrameAllocator,
-    dbg,
     gdt::GDT,
     mapping::{map_page, new_page_table, physical_to_virtual, MEMORY_OFFSET},
 };
@@ -35,8 +34,8 @@ pub struct Process {
     name: String,
     state: ProcessState,
 
-    signal_down: Receiver<SignalDown>,
     signal_up: Sender<SignalUp>,
+    signal_down: Receiver<SignalDown>,
 
     children: Vec<Subprocess>,
 
@@ -80,8 +79,8 @@ impl Process {
                     GDT.kernel_data,
                 ),
             },
-            signal_down: async_channel::unbounded::<SignalDown>().1,
             signal_up: async_channel::unbounded::<SignalUp>().0,
+            signal_down: async_channel::unbounded::<SignalDown>().1,
             children: Vec::new(),
             page_table,
             page_table_frame,
@@ -91,7 +90,7 @@ impl Process {
         QUEUE.push(root);
     }
 
-    pub fn create_user(&mut self, code: &[u8]) {
+    pub fn create_user(&mut self, name: &str, code: &[u8]) {
         let stack_start_addr = VirtAddr::new(0x1_0000_0000);
         let stack_end_addr = stack_start_addr + 64 * 1024;
         let stack_page_start = Page::containing_address(stack_start_addr);
@@ -139,8 +138,16 @@ impl Process {
             }
         }
 
-        let root = Self {
-            name: "root".to_string(),
+        let signal_down = async_channel::unbounded::<SignalDown>();
+        let signal_up = async_channel::unbounded::<SignalUp>();
+
+        self.children.push(Subprocess::Active {
+            signal_up: signal_up.1,
+            signal_down: signal_down.0,
+        });
+
+        let process = Self {
+            name: name.to_string(),
             state: ProcessState::Paused {
                 regs: Registers::ZERO,
                 stack_frame: InterruptStackFrameValue::new(
@@ -151,15 +158,20 @@ impl Process {
                     GDT.user_data,
                 ),
             },
-            signal_down: async_channel::unbounded::<SignalDown>().1,
-            signal_up: async_channel::unbounded::<SignalUp>().0,
+            signal_up: signal_up.0,
+            signal_down: signal_down.1,
             children: Vec::new(),
             page_table,
             page_table_frame,
             stack: stack_pages,
         };
 
-        QUEUE.push(root);
+        QUEUE.push(process);
+    }
+
+    pub fn exit(&mut self, code: i64) {
+        self.state = ProcessState::Dying;
+        let _ = self.signal_up.try_send(SignalUp::Exit(code));
     }
 
     pub fn switch(
@@ -185,6 +197,7 @@ impl Process {
                     *stack_frame = new_stack_frame;
                     *registers = regs;
                 }
+                ProcessState::Dying => panic!("new process already dying"),
                 ProcessState::Running => panic!("new process already running"),
             }
             new.state = ProcessState::Running;
@@ -201,6 +214,7 @@ impl Process {
 #[derive(Debug)]
 pub enum ProcessState {
     Running,
+    Dying,
     Paused {
         regs: Registers,
         stack_frame: InterruptStackFrameValue,

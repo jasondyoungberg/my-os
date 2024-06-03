@@ -1,19 +1,8 @@
 use core::fmt;
 
-use spin::{Lazy, Mutex};
 use x86_64::instructions::interrupts::without_interrupts;
 
-use crate::{
-    drivers::{debug_console::DebugConsole, display::Display, video_console::VideoConsole},
-    FRAMEBUFFER_RESPONSE,
-};
-
-static DEBUG_CONSOLE: Mutex<DebugConsole> = Mutex::new(DebugConsole);
-static VIDEO_CONSOLE: Lazy<Mutex<VideoConsole>> = Lazy::new(|| {
-    let framebuffer = FRAMEBUFFER_RESPONSE.framebuffers().next().unwrap();
-    let console = VideoConsole::new(Display::new(&framebuffer));
-    Mutex::new(console)
-});
+use crate::logger::{DEBUG_CONSOLE, VIDEO_CONSOLE};
 
 pub fn _print(args: fmt::Arguments) {
     use fmt::Write;
@@ -61,7 +50,7 @@ macro_rules! dbg {
     };
     ($val:expr $(,)?) => {
         match $val {
-            tmp => {
+            ref tmp => {
                 $crate::println!("[{}:{}:{}] {} = {:#?}",
                     file!(), line!(), column!(), stringify!($val), &tmp);
                 tmp

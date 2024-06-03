@@ -13,7 +13,6 @@ use gdt::create_ministack;
 use gsdata::GsData;
 use process::Process;
 use spin::Lazy;
-use x86_64::VirtAddr;
 
 extern crate alloc;
 
@@ -22,6 +21,7 @@ mod drivers;
 mod gdt;
 mod gsdata;
 mod idt;
+mod logger;
 mod macros;
 mod mapping;
 mod process;
@@ -92,7 +92,9 @@ extern "C" fn _start() -> ! {
     assert!(MODULE_REQUEST.get_response().is_some());
     assert!(HHDP_REQUEST.get_response().is_some());
 
-    println!("Starting CPUs");
+    logger::init();
+
+    log::info!("Starting CPUs");
     let bsp_lapic_id = SMP_RESPONSE.bsp_lapic_id();
     SMP_RESPONSE
         .cpus()
@@ -121,7 +123,7 @@ extern "C" fn smp_start(this_cpu: &limine::smp::Cpu) -> ! {
 
     let cpuid = cpuid.map(|(i, _)| i + 1).unwrap_or(0);
 
-    println!("Hello from CPU {}", cpuid);
+    log::info!("CPU {cpuid} starting");
 
     gdt::init(cpuid);
     idt::init();
@@ -139,7 +141,6 @@ extern "C" fn smp_start(this_cpu: &limine::smp::Cpu) -> ! {
     x86_64::instructions::interrupts::enable();
 
     loop {
-        println!("CPU {} is doing nothing", cpuid);
         x86_64::instructions::hlt();
     }
 }
@@ -150,10 +151,16 @@ extern "C" fn root_process() -> ! {
     let gsdata = unsafe { GsData::load_kernel().unwrap() };
     let process = gsdata.process.as_mut().unwrap();
 
-    process.create_user(load_file("/bin/hello"));
+    // process.create_user("hello", load_file("/bin/hello"));
+    process.create_user("loop", load_file("/bin/loop"));
+
+    log::error!("error");
+    log::warn!("warn");
+    log::info!("info");
+    log::debug!("debug");
+    log::trace!("trace");
 
     loop {
-        println!("Root is doing nothing");
         x86_64::instructions::hlt();
     }
 }

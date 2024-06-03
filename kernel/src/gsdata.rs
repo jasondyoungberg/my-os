@@ -14,7 +14,7 @@ pub struct GsData {
     self_ptr: VirtAddr,
     magic: [u8; 8],
     syscall_rsp: VirtAddr,
-    sysret_rsp: VirtAddr,
+    pub sysret_rsp: VirtAddr,
     pub cpuid: usize,
     pub process: Option<Process>,
     pub lapic: LocalApic<'static>,

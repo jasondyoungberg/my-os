@@ -25,6 +25,8 @@ pub struct VideoConsole {
     display: Display,
     cursor_x: usize,
     cursor_y: usize,
+    pub color_fg: Color,
+    pub color_bg: Color,
 }
 unsafe impl Send for VideoConsole {}
 
@@ -34,6 +36,8 @@ impl VideoConsole {
             display,
             cursor_x: 0,
             cursor_y: 0,
+            color_fg: Color::new(255, 255, 255),
+            color_bg: Color::new(0, 0, 0),
         }
     }
 
@@ -58,9 +62,9 @@ impl VideoConsole {
                         let bit = glyph[byte_index] >> bit_index & 1;
 
                         let color = if bit == 1 {
-                            Color::new(0, 128, 255)
+                            self.color_fg
                         } else {
-                            Color::new(0, 0, 0)
+                            self.color_bg
                         };
 
                         self.display.set_pixel(

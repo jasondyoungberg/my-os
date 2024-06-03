@@ -80,6 +80,7 @@ apps:
 	rm -rf apps/.dist
 	mkdir -p apps/.dist
 	cd apps && nasm hello.asm -o .dist/hello
+	cd apps && nasm loop.asm -o .dist/loop
 
 .PHONY: kernel
 kernel: apps
