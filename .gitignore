@@ -1,9 +1,0 @@
-/limine
-/ovmf
-*.iso
-*.hdd
-/.vscode
-**/target
-/**/.dist
-/stdlib/Cargo.lock
-
