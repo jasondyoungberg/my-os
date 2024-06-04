@@ -30,4 +30,4 @@ inline uint32_t inl(uint16_t port) {
     return ret;
 }
 
-inline void io_wait(void) { outb(0x80, 0); }
+inline void io_wait() { outb(0x80, 0); }

@@ -5,6 +5,7 @@
 #include "memory/memops.h"
 #include "panic.h"
 #include "requests.h"
+#include "structures/gdt.h"
 #include <stdbool.h>
 
 // The following will be our kernel's entry point.
@@ -21,6 +22,8 @@ void _start(void) {
     if (framebuffer_request.response == NULL ||
         framebuffer_request.response->framebuffer_count < 1)
         panic("No framebuffer available");
+
+    gdt_init();
 
     for (;;)
         for (int t = 0; t < 256; t++)
