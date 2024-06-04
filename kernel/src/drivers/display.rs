@@ -46,22 +46,37 @@ impl Display {
         self.buffer[pixel_offset + 2] = color.r;
     }
 
-    pub fn scroll(&mut self, x: isize, y: isize) {
-        let offset = x * self.bytes_per_pixel as isize + y * self.bytes_per_row as isize;
-
-        if offset < 0 {
-            self.buffer.rotate_left(offset.unsigned_abs());
-        } else {
-            self.buffer.rotate_right(offset as usize);
+    pub fn get_pixel(&self, x: usize, y: usize) -> Color {
+        if x >= self.width || y >= self.height {
+            return Color::new(0, 0, 0);
         }
+
+        let pixel_offset = y * self.bytes_per_row + x * self.bytes_per_pixel;
+
+        Color::new(
+            self.buffer[pixel_offset + 2],
+            self.buffer[pixel_offset + 1],
+            self.buffer[pixel_offset],
+        )
     }
 
-    pub fn clear(&mut self, color: Color) {
-        for y in 0..self.height {
-            for x in 0..self.width {
-                self.set_pixel(x, y, color);
-            }
-        }
+    // pub fn scroll(&mut self, x: isize, y: isize) {
+    //     let offset = x * self.bytes_per_pixel as isize + y * self.bytes_per_row as isize;
+
+    //     if offset < 0 {
+    //         self.buffer.rotate_left(offset.unsigned_abs());
+    //     } else {
+    //         self.buffer.rotate_right(offset as usize);
+    //     }
+    // }
+
+    pub fn scroll_down(&mut self, dist: usize) {
+        self.buffer.copy_within(dist * self.bytes_per_row.., 0);
+        self.buffer[self.total_bytes - dist * self.bytes_per_row..].fill(0);
+    }
+
+    pub fn clear(&mut self) {
+        self.buffer.fill(0);
     }
 
     pub fn width(&self) -> usize {

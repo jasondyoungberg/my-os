@@ -8,7 +8,10 @@
 
 use core::slice;
 
-use drivers::lapic;
+use drivers::{
+    display::{Color, Display},
+    lapic,
+};
 use gdt::create_ministack;
 use gsdata::GsData;
 use process::Process;

@@ -98,12 +98,7 @@ impl VideoConsole {
     }
 
     fn scroll(&mut self) {
-        for y in 0..FONT.height() {
-            for x in 0..self.display.width() {
-                self.display.set_pixel(x, y, Color::new(0, 0, 0));
-            }
-        }
-        self.display.scroll(0, -(FONT.height() as isize));
+        self.display.scroll_down(FONT.height());
         self.cursor_y -= 1;
     }
 }
