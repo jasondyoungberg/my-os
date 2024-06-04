@@ -26,7 +26,7 @@ pub fn init() {
         GDT.kernel_code,
         GDT.kernel_data,
     )
-    .unwrap();
+    .expect("error setting up syscall star");
     SFMask::write(RFlags::INTERRUPT_FLAG | RFlags::TRAP_FLAG);
 
     unsafe { Efer::write(Efer::read() | EferFlags::SYSTEM_CALL_EXTENSIONS) };

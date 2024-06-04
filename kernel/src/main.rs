@@ -58,41 +58,51 @@ static MODULE_REQUEST: limine::request::ModuleRequest = limine::request::ModuleR
 #[link_section = ".requests"]
 static HHDM_REQUEST: limine::request::HhdmRequest = limine::request::HhdmRequest::new();
 
-static FRAMEBUFFER_RESPONSE: Lazy<&limine::response::FramebufferResponse> =
-    Lazy::new(|| FRAMEBUFFER_REQUEST.get_response().unwrap());
-static MEMORY_MAP_RESPONSE: Lazy<&limine::response::MemoryMapResponse> =
-    Lazy::new(|| MEMORY_MAP_REQUEST.get_response().unwrap());
+static FRAMEBUFFER_RESPONSE: Lazy<&limine::response::FramebufferResponse> = Lazy::new(|| {
+    FRAMEBUFFER_REQUEST
+        .get_response()
+        .expect("no framebuffer response")
+});
+static MEMORY_MAP_RESPONSE: Lazy<&limine::response::MemoryMapResponse> = Lazy::new(|| {
+    MEMORY_MAP_REQUEST
+        .get_response()
+        .expect("no memory map response")
+});
 static SMP_RESPONSE: Lazy<&limine::response::SmpResponse> =
-    Lazy::new(|| SMP_REQUEST.get_response().unwrap());
-static STACK_SIZE_RESPONSE: Lazy<&limine::response::StackSizeResponse> =
-    Lazy::new(|| STACK_SIZE_REQUEST.get_response().unwrap());
+    Lazy::new(|| SMP_REQUEST.get_response().expect("no smp response"));
+static STACK_SIZE_RESPONSE: Lazy<&limine::response::StackSizeResponse> = Lazy::new(|| {
+    STACK_SIZE_REQUEST
+        .get_response()
+        .expect("no stack size response")
+});
 static MODULE_RESPONSE: Lazy<&limine::response::ModuleResponse> =
-    Lazy::new(|| MODULE_REQUEST.get_response().unwrap());
+    Lazy::new(|| MODULE_REQUEST.get_response().expect("no module response"));
 static HHDM_RESPONSE: Lazy<&limine::response::HhdmResponse> =
-    Lazy::new(|| HHDM_REQUEST.get_response().unwrap());
+    Lazy::new(|| HHDM_REQUEST.get_response().expect("no hhdm response"));
 
-fn load_file(name: &str) -> &'static [u8] {
+fn load_file(name: &str) -> Option<&'static [u8]> {
     let file = MODULE_RESPONSE
         .modules()
         .iter()
-        .find(|file| file.path() == name.as_bytes())
-        .unwrap();
+        .find(|file| file.path() == name.as_bytes())?;
+
     let addr = file.addr();
     let size = file.size() as usize;
-    unsafe { slice::from_raw_parts(addr, size) }
+    let slice = unsafe { slice::from_raw_parts(addr, size) };
+    Some(slice)
 }
 
 #[no_mangle]
 extern "C" fn _start() -> ! {
-    assert!(BASE_REVISION.is_supported());
-    assert!(FRAMEBUFFER_REQUEST.get_response().is_some());
-    assert!(MEMORY_MAP_REQUEST.get_response().is_some());
-    assert!(SMP_REQUEST.get_response().is_some());
-    assert!(STACK_SIZE_REQUEST.get_response().is_some());
-    assert!(MODULE_REQUEST.get_response().is_some());
-    assert!(HHDM_REQUEST.get_response().is_some());
-
     logger::init();
+    log::debug!("{:?}\n", BASE_REVISION);
+    log::debug!("{:?}\n", *FRAMEBUFFER_RESPONSE);
+    log::debug!("{:?}\n", FRAMEBUFFER_RESPONSE.framebuffers().next());
+    log::debug!("{:?}\n", *MEMORY_MAP_RESPONSE);
+    log::debug!("{:?}\n", *SMP_RESPONSE);
+    log::debug!("{:?}\n", *STACK_SIZE_RESPONSE);
+    log::debug!("{:?}\n", *MODULE_RESPONSE);
+    log::debug!("{:?}\n", *HHDM_RESPONSE);
 
     log::info!("Starting CPUs");
     let bsp_lapic_id = SMP_RESPONSE.bsp_lapic_id();
@@ -123,21 +133,26 @@ extern "C" fn smp_start(this_cpu: &limine::smp::Cpu) -> ! {
 
     let cpuid = cpuid.map(|(i, _)| i + 1).unwrap_or(0);
 
-    log::info!("CPU {cpuid} starting");
+    log::info!("CPU {cpuid} is started");
 
+    log::trace!("CPU {cpuid} initializing tss/gdt/idt");
     gdt::init(cpuid);
     idt::init();
 
+    log::trace!("CPU {cpuid} initializing lapic");
     let mut lapic = lapic::LocalApic::new();
     lapic.init();
     GsData::init(create_ministack(), cpuid, lapic);
 
+    log::trace!("CPU {cpuid} initializing syscall");
     syscall::init();
 
     if cpuid == 0 {
+        log::trace!("spawning root process");
         Process::create_root(root_process);
     }
 
+    log::info!("CPU {cpuid} is ready");
     x86_64::instructions::interrupts::enable();
 
     loop {
@@ -146,19 +161,25 @@ extern "C" fn smp_start(this_cpu: &limine::smp::Cpu) -> ! {
 }
 
 extern "C" fn root_process() -> ! {
-    println!("Hello from root");
+    log::info!("root process started");
 
-    let gsdata = unsafe { GsData::load_kernel().unwrap() };
-    let process = gsdata.process.as_mut().unwrap();
+    let gsdata = unsafe { GsData::load_kernel().expect("root process gsdata is missing") };
+    let process = gsdata
+        .process
+        .as_mut()
+        .expect("root process gsdata.process is missing");
 
-    // process.create_user("hello", load_file("/bin/hello"));
-    // process.create_user("loop", load_file("/bin/loop"));
+    if let Some(file) = load_file("/bin/hello") {
+        process.create_user("hello", file);
+    } else {
+        log::warn!("failed to load /bin/hello");
+    }
 
-    log::error!("error");
-    log::warn!("warn");
-    log::info!("info");
-    log::debug!("debug");
-    log::trace!("trace");
+    if let Some(file) = load_file("/bin/loop") {
+        process.create_user("echo", file);
+    } else {
+        log::warn!("failed to load /bin/loop");
+    }
 
     loop {
         x86_64::instructions::hlt();
@@ -169,7 +190,7 @@ extern "C" fn root_process() -> ! {
 fn rust_panic(info: &core::panic::PanicInfo) -> ! {
     x86_64::instructions::interrupts::disable();
 
-    unsafe { macros::force_print(format_args!("{}\n", info)) };
+    log::error!("{}\n", info);
 
     loop {
         x86_64::instructions::hlt();
