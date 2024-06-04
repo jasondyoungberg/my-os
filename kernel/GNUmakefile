@@ -26,7 +26,7 @@ override DEFAULT_KLD := ld.lld
 $(eval $(call DEFAULT_VAR,KLD,$(DEFAULT_KLD)))
 
 # User controllable C flags.
-override DEFAULT_KCFLAGS := -g -O2 -pipe
+override DEFAULT_KCFLAGS := -g -O2 -pipe -pedantic
 $(eval $(call DEFAULT_VAR,KCFLAGS,$(DEFAULT_KCFLAGS)))
 
 # User controllable C preprocessor flags. We set none by default.

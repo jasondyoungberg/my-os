@@ -37,6 +37,6 @@ void _start(void) {
     outb(0xe9, 0x21);
 
     for (;;) {
-        asm("hlt");
+        __asm__("hlt");
     }
 }
