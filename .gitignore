@@ -1,7 +1,0 @@
-/limine
-/ovmf
-/.fsroot
-*.iso
-*.hdd
-qemu.log
-**/.dist
