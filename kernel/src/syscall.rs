@@ -203,6 +203,5 @@ extern "C" fn fake_irq_inner(
     stack_frame: &mut InterruptStackFrameValue,
     registers: &mut Registers,
 ) {
-    let gsdata = unsafe { GsData::load().unwrap() };
-    Process::switch(gsdata, stack_frame, registers);
+    Process::switch(stack_frame, registers);
 }

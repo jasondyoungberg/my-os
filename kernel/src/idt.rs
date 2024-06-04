@@ -11,7 +11,7 @@ use x86_64::{
 
 use crate::{
     gsdata::GsData,
-    print, println,
+    println,
     process::{Process, Registers},
 };
 
@@ -125,9 +125,8 @@ extern "x86-interrupt" fn timer(_stack_frame: InterruptStackFrame) {
 }
 
 extern "C" fn timer_inner(stack_frame: &mut InterruptStackFrameValue, registers: &mut Registers) {
-    let gsdata = unsafe { GsData::load().unwrap() };
+    Process::switch(stack_frame, registers);
 
-    Process::switch(gsdata, stack_frame, registers);
-
+    let gsdata = unsafe { GsData::load() }.expect("Unable to load gsdata");
     gsdata.lapic.signal_eoi();
 }

@@ -14,7 +14,7 @@ static FONT: Lazy<Font> = Lazy::new(|| {
         .modules()
         .iter()
         .find(|file| file.path().starts_with(b"/font/"))
-        .unwrap();
+        .expect("no font found");
     let addr = file.addr();
     let size = file.size() as usize;
     let slice = unsafe { slice::from_raw_parts(addr, size) };

@@ -8,10 +8,7 @@
 
 use core::slice;
 
-use drivers::{
-    display::{Color, Display},
-    lapic,
-};
+use drivers::lapic;
 use gdt::create_ministack;
 use gsdata::GsData;
 use process::Process;
@@ -166,10 +163,9 @@ extern "C" fn smp_start(this_cpu: &limine::smp::Cpu) -> ! {
 extern "C" fn root_process() -> ! {
     log::info!("root process started");
 
-    let gsdata = unsafe { GsData::load_kernel().expect("root process gsdata is missing") };
-    let process = gsdata
-        .process
-        .as_mut()
+    let process = unsafe { GsData::process() }
+        .ok()
+        .flatten()
         .expect("root process gsdata.process is missing");
 
     if let Some(file) = load_file("/bin/hello") {

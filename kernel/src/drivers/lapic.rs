@@ -51,29 +51,16 @@ impl LocalApic<'_> {
         };
 
         let ptr = page.start_address().as_mut_ptr::<u32>();
+        let base = NonNull::new(ptr).expect("Failed to create NonNull");
         unsafe {
-            let local_apic_id =
-                VolatilePtr::new_restricted(ReadWrite, NonNull::new(ptr.offset(0x20 / 4)).unwrap());
-            let local_apic_version =
-                VolatilePtr::new_restricted(ReadOnly, NonNull::new(ptr.offset(0x30 / 4)).unwrap());
-            let eoi =
-                VolatilePtr::new_restricted(WriteOnly, NonNull::new(ptr.offset(0xb0 / 4)).unwrap());
-            let spurios_interrupt_vector =
-                VolatilePtr::new_restricted(ReadWrite, NonNull::new(ptr.offset(0xf0 / 4)).unwrap());
-            let lvt_timer = VolatilePtr::new_restricted(
-                ReadWrite,
-                NonNull::new(ptr.offset(0x320 / 4)).unwrap(),
-            );
-            let initial_count = VolatilePtr::new_restricted(
-                ReadWrite,
-                NonNull::new(ptr.offset(0x380 / 4)).unwrap(),
-            );
-            let current_count =
-                VolatilePtr::new_restricted(ReadOnly, NonNull::new(ptr.offset(0x390 / 4)).unwrap());
-            let divide_configuration = VolatilePtr::new_restricted(
-                ReadWrite,
-                NonNull::new(ptr.offset(0x3e0 / 4)).unwrap(),
-            );
+            let local_apic_id = VolatilePtr::new(base.byte_add(0x20));
+            let local_apic_version = VolatilePtr::new(base.byte_add(0x30)).read_only();
+            let eoi = VolatilePtr::new(base.byte_add(0xb0)).write_only();
+            let spurios_interrupt_vector = VolatilePtr::new(base.byte_add(0xf0));
+            let lvt_timer = VolatilePtr::new(base.byte_add(0x320));
+            let initial_count = VolatilePtr::new(base.byte_add(0x380));
+            let current_count = VolatilePtr::new(base.byte_add(0x390)).read_only();
+            let divide_configuration = VolatilePtr::new(base.byte_add(0x3e0));
 
             Self {
                 apic_base_msr,

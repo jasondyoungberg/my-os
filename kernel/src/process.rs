@@ -1,5 +1,3 @@
-use core::arch::asm;
-
 use alloc::{
     string::{String, ToString},
     vec::Vec,
@@ -26,7 +24,7 @@ use x86_64::{
 use crate::{
     allocation::frame::MyFrameAllocator,
     gdt::{create_ministack, GDT},
-    gsdata::{self, GsData},
+    gsdata::GsData,
     mapping::{map_page, new_page_table, physical_to_virtual, MEMORY_OFFSET},
     SMP_RESPONSE,
 };
@@ -178,13 +176,17 @@ impl Process {
         let _ = self.signal_up.try_send(SignalUp::Exit(code));
     }
 
-    pub fn switch(
-        gsdata: &mut GsData,
-        stack_frame: &mut InterruptStackFrameValue,
-        registers: &mut Registers,
-    ) {
-        if let Some(mut old) = gsdata.process.take() {
-            assert!(old.state.is_running(), "old process already paused");
+    pub fn switch(stack_frame: &mut InterruptStackFrameValue, registers: &mut Registers) {
+        if let Some(mut old) = GsData::process_take().ok().flatten() {
+            if matches!(
+                old.state,
+                ProcessState::Paused {
+                    regs: _,
+                    stack_frame: _
+                }
+            ) {
+                log::error!("old process already paused: {:?}", old.name);
+            }
             old.state = ProcessState::Paused {
                 regs: registers.clone(),
                 stack_frame: *stack_frame,
@@ -208,16 +210,19 @@ impl Process {
 
             unsafe { Cr3::write(new.page_table_frame, Cr3Flags::empty()) }
 
-            assert!(gsdata.process.replace(new).is_none());
+            let old_process = GsData::process_replace(new).ok().flatten();
+            if let Some(old_process) = old_process {
+                log::error!("old process not taken: {:?}", old_process.name);
+            }
         } else {
-            // stack_frame.instruction_pointer = VirtAddr::from_ptr(do_nothing as *const ());
+            let cpuid = GsData::cpuid().expect("Unable to get cpuid");
             *stack_frame = InterruptStackFrameValue::new(
                 VirtAddr::from_ptr(do_nothing as *const ()),
                 GDT.kernel_code,
                 RFlags::INTERRUPT_FLAG,
-                NOTHING_STACKS[gsdata.cpuid],
+                NOTHING_STACKS[cpuid],
                 GDT.kernel_data,
-            )
+            );
         }
     }
 }
@@ -230,11 +235,6 @@ pub enum ProcessState {
         regs: Registers,
         stack_frame: InterruptStackFrameValue,
     },
-}
-impl ProcessState {
-    pub fn is_running(&self) -> bool {
-        matches!(self, Self::Running)
-    }
 }
 
 #[derive(Debug)]
