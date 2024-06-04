@@ -1,4 +1,5 @@
 #include "display.h"
+
 #include "requests.h"
 
 void set_pixel(uint32_t x, uint32_t y, struct Color color) {

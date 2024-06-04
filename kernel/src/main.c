@@ -1,13 +1,15 @@
-#include <stdbool.h>
-
+#include "alloc.h"
+#include "debugcon.h"
 #include "display.h"
 #include "io.h"
 #include "mem_ops.h"
 #include "requests.h"
+#include <stdbool.h>
 
 // Halt and catch fire function.
 static void hcf(void) {
     asm("cli");
+    kprint_str("halting...\n");
     for (;;) {
         asm("hlt");
     }
@@ -17,6 +19,8 @@ static void hcf(void) {
 // If renaming _start() to something else, make sure to change the
 // linker script accordingly.
 void _start(void) {
+    kprint_str("Hello, world!\n");
+
     // Ensure the bootloader actually understands our base revision (see spec).
     if (LIMINE_BASE_REVISION_SUPPORTED == false) {
         hcf();
@@ -27,16 +31,6 @@ void _start(void) {
         framebuffer_request.response->framebuffer_count < 1) {
         hcf();
     }
-
-    // Fetch the first framebuffer.
-    // struct limine_framebuffer *framebuffer =
-    //     framebuffer_request.response->framebuffers[0];
-
-    // Note: we assume the framebuffer model is RGB with 32-bit pixels.
-    // for (size_t i = 0; i < 100; i++) {
-    //     volatile uint32_t *fb_ptr = framebuffer->address;
-    //     fb_ptr[i * (framebuffer->pitch / 4) + i] = 0xffffff;
-    // }
 
     for (;;) {
         for (int t = 0; t < 256; t++) {
