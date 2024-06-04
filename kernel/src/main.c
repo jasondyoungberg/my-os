@@ -1,5 +1,6 @@
 #include <stdbool.h>
 
+#include "display.h"
 #include "io.h"
 #include "mem_ops.h"
 #include "requests.h"
@@ -28,13 +29,23 @@ void _start(void) {
     }
 
     // Fetch the first framebuffer.
-    struct limine_framebuffer *framebuffer =
-        framebuffer_request.response->framebuffers[0];
+    // struct limine_framebuffer *framebuffer =
+    //     framebuffer_request.response->framebuffers[0];
 
     // Note: we assume the framebuffer model is RGB with 32-bit pixels.
-    for (size_t i = 0; i < 100; i++) {
-        volatile uint32_t *fb_ptr = framebuffer->address;
-        fb_ptr[i * (framebuffer->pitch / 4) + i] = 0xffffff;
+    // for (size_t i = 0; i < 100; i++) {
+    //     volatile uint32_t *fb_ptr = framebuffer->address;
+    //     fb_ptr[i * (framebuffer->pitch / 4) + i] = 0xffffff;
+    // }
+
+    for (;;) {
+        for (int t = 0; t < 256; t++) {
+            for (int y = 0; y < display_height(); y++) {
+                for (int x = 0; x < display_width(); x++) {
+                    set_pixel(x, y, (struct Color){x, y, t});
+                }
+            }
+        }
     }
 
     outb(0xe9, 0x21);
