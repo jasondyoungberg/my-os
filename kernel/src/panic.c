@@ -5,9 +5,7 @@
 void panic(const char *msg) {
     __asm__("cli");
 
-    kprint_str("Kernel panic: ");
-    kprint_str(msg);
-    kprintln();
+    kprintf("Kernel panic:\n%s\n", msg);
 
     for (;;) {
         __asm__("hlt");

@@ -11,7 +11,7 @@
 // If renaming _start() to something else, make sure to change the
 // linker script accordingly.
 void _start(void) {
-    kprint_str("Hello, world!\n");
+    kprintf("Hello, world!\n");
 
     // Ensure the bootloader actually understands our base revision (see spec).
     if (LIMINE_BASE_REVISION_SUPPORTED == false) {
@@ -24,17 +24,11 @@ void _start(void) {
         panic("No framebuffer available");
     }
 
-    for (;;) {
-        for (int t = 0; t < 256; t++) {
-            for (int y = 0; y < display_height(); y++) {
-                for (int x = 0; x < display_width(); x++) {
+    for (;;)
+        for (int t = 0; t < 256; t++)
+            for (int y = 0; y < display_height(); y++)
+                for (int x = 0; x < display_width(); x++)
                     set_pixel(x, y, (struct Color){x, y, t});
-                }
-            }
-        }
-    }
-
-    outb(0xe9, 0x21);
 
     for (;;) {
         __asm__("hlt");
