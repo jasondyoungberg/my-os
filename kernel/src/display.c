@@ -11,14 +11,14 @@ void set_pixel(uint32_t x, uint32_t y, struct Color color) {
         (color.r << 16) | (color.g << 8) | color.b;
 }
 
-uint32_t display_width() {
+int display_width() {
     struct limine_framebuffer *framebuffer =
         framebuffer_request.response->framebuffers[0];
 
     return framebuffer->width;
 }
 
-uint32_t display_height() {
+int display_height() {
     struct limine_framebuffer *framebuffer =
         framebuffer_request.response->framebuffers[0];
 

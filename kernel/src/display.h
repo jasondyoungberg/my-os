@@ -9,7 +9,7 @@ struct Color {
 };
 
 void set_pixel(uint32_t x, uint32_t y, struct Color color);
-uint32_t display_width();
-uint32_t display_height();
+int display_width();
+int display_height();
 
 #endif
