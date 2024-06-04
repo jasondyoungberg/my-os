@@ -16,6 +16,7 @@ endef
 QEMU_ARGS := \
 	-M q35 \
 	-m 2G \
+	-debugcon stdio \
 
 ifeq ($(UEFI),1)
 	QEMU_ARGS += -bios ovmf/OVMF.fd

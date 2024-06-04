@@ -18,11 +18,11 @@ endef
 # It is suggested to use a custom built cross toolchain to build a kernel.
 # We are using the standard "cc" here, it may work by using
 # the host system's toolchain, but this is not guaranteed.
-override DEFAULT_KCC := cc
+override DEFAULT_KCC := clang
 $(eval $(call DEFAULT_VAR,KCC,$(DEFAULT_KCC)))
 
 # Same thing for "ld" (the linker).
-override DEFAULT_KLD := ld
+override DEFAULT_KLD := ld.lld
 $(eval $(call DEFAULT_VAR,KLD,$(DEFAULT_KLD)))
 
 # User controllable C flags.
