@@ -13,6 +13,18 @@ define DEFAULT_VAR =
     endif
 endef
 
+QEMU_ARGS := \
+	-M q35 \
+	-m 2G \
+
+ifeq ($(UEFI),1)
+	QEMU_ARGS += -bios ovmf/OVMF.fd
+endif
+
+ifeq ($(KVM),1)
+	QEMU_ARGS += -enable-kvm
+endif
+
 .PHONY: all
 all: $(IMAGE_NAME).iso
 
@@ -21,19 +33,15 @@ all-hdd: $(IMAGE_NAME).hdd
 
 .PHONY: run
 run: $(IMAGE_NAME).iso
-	qemu-system-x86_64 -M q35 -m 2G -cdrom $(IMAGE_NAME).iso -boot d
+	qemu-system-x86_64 $(QEMU_ARGS) -cdrom $(IMAGE_NAME).iso -boot d
 
-.PHONY: run-uefi
-run-uefi: ovmf $(IMAGE_NAME).iso
-	qemu-system-x86_64 -M q35 -m 2G -bios ovmf/OVMF.fd -cdrom $(IMAGE_NAME).iso -boot d
+.PHONY: debug
+debug: $(IMAGE_NAME).iso
+	qemu-system-x86_64 $(QEMU_ARGS) -cdrom $(IMAGE_NAME).iso -boot d -s -S
 
 .PHONY: run-hdd
 run-hdd: $(IMAGE_NAME).hdd
 	qemu-system-x86_64 -M q35 -m 2G -hda $(IMAGE_NAME).hdd
-
-.PHONY: run-hdd-uefi
-run-hdd-uefi: ovmf $(IMAGE_NAME).hdd
-	qemu-system-x86_64 -M q35 -m 2G -bios ovmf/OVMF.fd -hda $(IMAGE_NAME).hdd
 
 ovmf:
 	mkdir -p ovmf
