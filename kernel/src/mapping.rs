@@ -8,9 +8,9 @@ use x86_64::{
     PhysAddr, VirtAddr,
 };
 
-use crate::{allocation::frame::MyFrameAllocator, HHDP_RESPONSE};
+use crate::{allocation::frame::MyFrameAllocator, HHDM_RESPONSE};
 
-pub static MEMORY_OFFSET: Lazy<u64> = Lazy::new(|| HHDP_RESPONSE.offset());
+pub static MEMORY_OFFSET: Lazy<u64> = Lazy::new(|| HHDM_RESPONSE.offset());
 
 static KERNEL_MAPPER: Lazy<RwLock<OffsetPageTable>> = Lazy::new(|| {
     let (l4_frame, _) = Cr3::read();

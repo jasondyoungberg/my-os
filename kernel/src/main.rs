@@ -56,7 +56,7 @@ static MODULE_REQUEST: limine::request::ModuleRequest = limine::request::ModuleR
 
 #[used]
 #[link_section = ".requests"]
-static HHDP_REQUEST: limine::request::HhdmRequest = limine::request::HhdmRequest::new();
+static HHDM_REQUEST: limine::request::HhdmRequest = limine::request::HhdmRequest::new();
 
 static FRAMEBUFFER_RESPONSE: Lazy<&limine::response::FramebufferResponse> =
     Lazy::new(|| FRAMEBUFFER_REQUEST.get_response().unwrap());
@@ -68,8 +68,8 @@ static STACK_SIZE_RESPONSE: Lazy<&limine::response::StackSizeResponse> =
     Lazy::new(|| STACK_SIZE_REQUEST.get_response().unwrap());
 static MODULE_RESPONSE: Lazy<&limine::response::ModuleResponse> =
     Lazy::new(|| MODULE_REQUEST.get_response().unwrap());
-static HHDP_RESPONSE: Lazy<&limine::response::HhdmResponse> =
-    Lazy::new(|| HHDP_REQUEST.get_response().unwrap());
+static HHDM_RESPONSE: Lazy<&limine::response::HhdmResponse> =
+    Lazy::new(|| HHDM_REQUEST.get_response().unwrap());
 
 fn load_file(name: &str) -> &'static [u8] {
     let file = MODULE_RESPONSE
@@ -90,7 +90,7 @@ extern "C" fn _start() -> ! {
     assert!(SMP_REQUEST.get_response().is_some());
     assert!(STACK_SIZE_REQUEST.get_response().is_some());
     assert!(MODULE_REQUEST.get_response().is_some());
-    assert!(HHDP_REQUEST.get_response().is_some());
+    assert!(HHDM_REQUEST.get_response().is_some());
 
     logger::init();
 
