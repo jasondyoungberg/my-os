@@ -3,17 +3,9 @@
 #include "display.h"
 #include "io.h"
 #include "mem_ops.h"
+#include "panic.h"
 #include "requests.h"
 #include <stdbool.h>
-
-// Halt and catch fire function.
-static void hcf(void) {
-    asm("cli");
-    kprint_str("halting...\n");
-    for (;;) {
-        asm("hlt");
-    }
-}
 
 // The following will be our kernel's entry point.
 // If renaming _start() to something else, make sure to change the
@@ -23,13 +15,13 @@ void _start(void) {
 
     // Ensure the bootloader actually understands our base revision (see spec).
     if (LIMINE_BASE_REVISION_SUPPORTED == false) {
-        hcf();
+        panic("Bootloader revision not supported");
     }
 
     // Ensure we got a framebuffer.
     if (framebuffer_request.response == NULL ||
         framebuffer_request.response->framebuffer_count < 1) {
-        hcf();
+        panic("No framebuffer available");
     }
 
     for (;;) {
@@ -44,6 +36,7 @@ void _start(void) {
 
     outb(0xe9, 0x21);
 
-    // We're done, just hang...
-    hcf();
+    for (;;) {
+        asm("hlt");
+    }
 }
