@@ -1,5 +1,5 @@
-#ifndef MEM_OPS_H
-#define MEM_OPS_H
+#ifndef MEMOPS_H_
+#define MEMOPS_H_
 #include <stddef.h>
 #include <stdint.h>
 

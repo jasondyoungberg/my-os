@@ -1,5 +1,5 @@
-#ifndef DEBUGCON_H
-#define DEBUGCON_H
+#ifndef DEBUGCON_H_
+#define DEBUGCON_H_
 
 #include <stdint.h>
 

@@ -1,5 +1,5 @@
-#ifndef REQUESTS_H
-#define REQUESTS_H
+#ifndef REQUESTS_H_
+#define REQUESTS_H_
 #include <limine.h>
 #include <stdint.h>
 

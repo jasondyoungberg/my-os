@@ -1,8 +1,8 @@
-#include "alloc.h"
 #include "debugcon.h"
 #include "display.h"
 #include "io.h"
-#include "mem_ops.h"
+#include "memory/alloc.h"
+#include "memory/memops.h"
 #include "panic.h"
 #include "requests.h"
 #include <stdbool.h>

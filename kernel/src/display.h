@@ -1,5 +1,5 @@
-#ifndef DISPLAY_H
-#define DISPLAY_H
+#ifndef DISPLAY_H_
+#define DISPLAY_H_
 #include <stdint.h>
 
 struct Color {

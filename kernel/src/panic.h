@@ -1,5 +1,5 @@
-#ifndef PANIC_H
-#define PANIC_H
+#ifndef PANIC_H_
+#define PANIC_H_
 
 void panic(const char *msg);
 
