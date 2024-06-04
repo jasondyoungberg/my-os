@@ -1,5 +1,6 @@
 #ifndef FUNCTIONS_H
 #define FUNCTIONS_H
+#include <stdint.h>
 
 void outb(uint16_t port, uint8_t val);
 void outw(uint16_t port, uint16_t val);

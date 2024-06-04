@@ -1,5 +1,7 @@
 #ifndef MEM_OPS_H
 #define MEM_OPS_H
+#include <stddef.h>
+#include <stdint.h>
 
 void *memcpy(void *dest, const void *src, size_t n);
 void *memset(void *s, int c, size_t n);
