@@ -25,6 +25,7 @@ mod logger;
 mod macros;
 mod mapping;
 mod process;
+mod root;
 mod syscall;
 
 #[used]
@@ -149,36 +150,11 @@ extern "C" fn smp_start(this_cpu: &limine::smp::Cpu) -> ! {
 
     if cpuid == 0 {
         log::trace!("spawning root process");
-        Process::create_root(root_process);
+        Process::create_root(root::main);
     }
 
     log::info!("CPU {cpuid} is ready");
     x86_64::instructions::interrupts::enable();
-
-    loop {
-        x86_64::instructions::hlt();
-    }
-}
-
-extern "C" fn root_process() -> ! {
-    log::info!("root process started");
-
-    let process = unsafe { GsData::process() }
-        .ok()
-        .flatten()
-        .expect("root process gsdata.process is missing");
-
-    if let Some(file) = load_file("/bin/hello") {
-        process.create_user("hello", file);
-    } else {
-        log::warn!("failed to load /bin/hello");
-    }
-
-    if let Some(file) = load_file("/bin/loop") {
-        process.create_user("echo", file);
-    } else {
-        log::warn!("failed to load /bin/loop");
-    }
 
     loop {
         x86_64::instructions::hlt();

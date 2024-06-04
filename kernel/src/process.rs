@@ -39,7 +39,7 @@ pub struct Process {
     signal_up: Sender<SignalUp>,
     signal_down: Receiver<SignalDown>,
 
-    children: Vec<Subprocess>,
+    pub children: Vec<Subprocess>,
 
     page_table_frame: PhysFrame,
     page_table: &'static mut PageTable,
@@ -92,7 +92,7 @@ impl Process {
         QUEUE.push(root);
     }
 
-    pub fn create_user(&mut self, name: &str, code: &[u8]) {
+    pub fn create_user(&mut self, name: &str, code: &[u8]) -> usize {
         let stack_start_addr = VirtAddr::new(0x1_0000_0000);
         let stack_end_addr = stack_start_addr + 64 * 1024;
         let stack_page_start = Page::containing_address(stack_start_addr);
@@ -143,7 +143,11 @@ impl Process {
         let signal_down = async_channel::unbounded::<SignalDown>();
         let signal_up = async_channel::unbounded::<SignalUp>();
 
-        self.children.push(Subprocess::Active {
+        let child_id = self.children.len();
+
+        self.children.push(Subprocess {
+            state: SubprocessState::Alive,
+            name: name.to_string(),
             signal_up: signal_up.1,
             signal_down: signal_down.0,
         });
@@ -169,6 +173,8 @@ impl Process {
         };
 
         QUEUE.push(process);
+
+        child_id
     }
 
     pub fn exit(&mut self, code: i64) {
@@ -176,22 +182,50 @@ impl Process {
         let _ = self.signal_up.try_send(SignalUp::Exit(code));
     }
 
+    fn update(&mut self) {
+        while let Ok(signal) = self.signal_down.try_recv() {
+            match signal {
+                SignalDown::Kill => {
+                    self.state = ProcessState::Dying;
+                    let _ = self.signal_up.try_send(SignalUp::Exit(-1));
+                }
+            }
+        }
+
+        for child in self.children.iter_mut() {
+            while let Ok(signal) = child.signal_up.try_recv() {
+                match signal {
+                    SignalUp::Exit(code) => {
+                        child.state = SubprocessState::Dead(code);
+                    }
+                }
+            }
+        }
+    }
+
     pub fn switch(stack_frame: &mut InterruptStackFrameValue, registers: &mut Registers) {
         if let Some(mut old) = GsData::process_take().ok().flatten() {
-            if matches!(
-                old.state,
+            match old.state {
+                ProcessState::Running => {
+                    old.state = ProcessState::Paused {
+                        regs: registers.clone(),
+                        stack_frame: *stack_frame,
+                    };
+                    QUEUE.push(old);
+                }
+                ProcessState::Dying => (),
                 ProcessState::Paused {
                     regs: _,
-                    stack_frame: _
+                    stack_frame: _,
+                } => {
+                    log::error!("old process already paused: {:?}", old.name);
+                    old.state = ProcessState::Paused {
+                        regs: registers.clone(),
+                        stack_frame: *stack_frame,
+                    };
+                    QUEUE.push(old);
                 }
-            ) {
-                log::error!("old process already paused: {:?}", old.name);
             }
-            old.state = ProcessState::Paused {
-                regs: registers.clone(),
-                stack_frame: *stack_frame,
-            };
-            QUEUE.push(old);
         }
 
         if let Some(mut new) = QUEUE.pop() {
@@ -209,6 +243,8 @@ impl Process {
             new.state = ProcessState::Running;
 
             unsafe { Cr3::write(new.page_table_frame, Cr3Flags::empty()) }
+
+            new.update();
 
             let old_process = GsData::process_replace(new).ok().flatten();
             if let Some(old_process) = old_process {
@@ -238,11 +274,16 @@ pub enum ProcessState {
 }
 
 #[derive(Debug)]
-pub enum Subprocess {
-    Active {
-        signal_up: Receiver<SignalUp>,
-        signal_down: Sender<SignalDown>,
-    },
+pub struct Subprocess {
+    pub name: String,
+    pub state: SubprocessState,
+    signal_up: Receiver<SignalUp>,
+    signal_down: Sender<SignalDown>,
+}
+
+#[derive(Debug)]
+pub enum SubprocessState {
+    Alive,
     Dead(i64),
 }
 
@@ -257,7 +298,7 @@ pub enum SignalUp {
 }
 
 #[repr(C)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct Registers {
     pub rax: u64,
     pub rbx: u64,

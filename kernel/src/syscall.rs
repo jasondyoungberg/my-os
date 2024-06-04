@@ -100,6 +100,7 @@ extern "C" fn handle_syscall_inner(registers: &mut Registers) {
     let ret = match num {
         1 => write(arg1, arg2, arg3),
         24 => sched_yield(registers),
+        60 => exit(arg1),
         _ => {
             log::warn!("unknown syscall {num}");
             0
@@ -124,7 +125,6 @@ fn write(_fd: u64, buf: u64, len: u64) -> u64 {
 }
 
 fn sched_yield(registers: &mut Registers) -> u64 {
-    log::trace!("sched_yield");
     let ret = 0;
 
     registers.rax = ret;
@@ -141,6 +141,22 @@ fn sched_yield(registers: &mut Registers) -> u64 {
     );
 
     fake_irq(&mut stack_frame, registers);
+}
+
+fn exit(code: u64) -> u64 {
+    let mut process = GsData::process_take().unwrap().unwrap();
+    process.exit(code as i64);
+
+    fake_irq(
+        &mut InterruptStackFrameValue::new(
+            VirtAddr::zero(),
+            GDT.user_code,
+            RFlags::INTERRUPT_FLAG,
+            VirtAddr::zero(),
+            GDT.user_data,
+        ),
+        &mut Registers::default(),
+    );
 }
 
 #[naked]
