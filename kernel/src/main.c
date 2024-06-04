@@ -14,15 +14,13 @@ void _start(void) {
     kprintf("Hello, world!\n");
 
     // Ensure the bootloader actually understands our base revision (see spec).
-    if (LIMINE_BASE_REVISION_SUPPORTED == false) {
+    if (LIMINE_BASE_REVISION_SUPPORTED == false)
         panic("Bootloader revision not supported");
-    }
 
     // Ensure we got a framebuffer.
     if (framebuffer_request.response == NULL ||
-        framebuffer_request.response->framebuffer_count < 1) {
+        framebuffer_request.response->framebuffer_count < 1)
         panic("No framebuffer available");
-    }
 
     for (;;)
         for (int t = 0; t < 256; t++)
@@ -30,7 +28,6 @@ void _start(void) {
                 for (int x = 0; x < display_width(); x++)
                     set_pixel(x, y, (struct Color){x, y, t});
 
-    for (;;) {
+    for (;;)
         __asm__("hlt");
-    }
 }

@@ -7,7 +7,6 @@ void panic(const char *msg) {
 
     kprintf("Kernel panic:\n%s\n", msg);
 
-    for (;;) {
+    for (;;)
         __asm__("hlt");
-    }
 }
