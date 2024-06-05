@@ -16,6 +16,7 @@ endef
 QEMU_ARGS := \
 	-M q35 \
 	-m 2G \
+	-smp 4 \
 	-debugcon stdio \
 	--no-reboot \
 	--no-shutdown \

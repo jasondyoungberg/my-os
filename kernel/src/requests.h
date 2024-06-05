@@ -5,5 +5,6 @@
 
 extern volatile uint64_t limine_base_revision[3];
 extern volatile struct limine_framebuffer_request framebuffer_request;
+extern volatile struct limine_smp_request smp_request;
 
 #endif

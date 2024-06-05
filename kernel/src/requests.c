@@ -17,6 +17,9 @@ __attribute__((used, section(".requests"))) volatile LIMINE_BASE_REVISION(2)
         used, section(".requests"))) volatile struct limine_framebuffer_request
     framebuffer_request = {.id = LIMINE_FRAMEBUFFER_REQUEST, .revision = 0};
 
+__attribute__((used, section(".requests"))) volatile struct limine_smp_request
+    smp_request = {.id = LIMINE_SMP_REQUEST, .revision = 0};
+
 // Finally, define the start and end markers for the Limine requests.
 // These can also be moved anywhere, to any .c file, as seen fit.
 

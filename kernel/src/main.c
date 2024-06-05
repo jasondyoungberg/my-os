@@ -7,7 +7,10 @@
 #include "requests.h"
 #include "structures/gdt.h"
 #include "structures/idt.h"
+#include <limine.h>
 #include <stdbool.h>
+
+void smp_start(struct limine_smp_info *cpu);
 
 // The following will be our kernel's entry point.
 // If renaming _start() to something else, make sure to change the
@@ -24,6 +27,14 @@ void _start(void) {
         framebuffer_request.response->framebuffer_count < 1)
         panic("No framebuffer available");
 
+    if (smp_request.response == NULL)
+        panic("SMP request failed");
+
+    for (int i = 0; i < smp_request.response->cpu_count; i++) {
+        struct limine_smp_info *cpu = smp_request.response->cpus[i];
+        cpu->goto_address = &smp_start;
+    }
+
     gdt_init();
     idt_init();
 
@@ -36,6 +47,12 @@ void _start(void) {
                 for (int x = 0; x < display_width(); x++)
                     set_pixel(x, y, (struct Color){x, y, t});
 
+    for (;;)
+        __asm__("hlt");
+}
+
+void smp_start(struct limine_smp_info *cpu) {
+    kprintf("CPU %d started\n", cpu->lapic_id);
     for (;;)
         __asm__("hlt");
 }

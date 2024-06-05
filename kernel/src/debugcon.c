@@ -1,7 +1,9 @@
 #include "debugcon.h"
 
 #include "io.h"
+#include "spinlock.h"
 #include <stdarg.h>
+#include <stdatomic.h>
 
 #define ERROR_MESSAGE "<err>"
 
@@ -11,10 +13,14 @@ static void kprint_ptr(const void *ptr);
 static void kprint_char(char c);
 static void kprint_str(const char *str);
 
+static atomic_flag lock = ATOMIC_FLAG_INIT;
+
 // https://cplusplus.com/reference/cstdio/printf/
 void kprintf(const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
+
+    acquire(&lock);
 
     while (*fmt) {
         if (*fmt == '%') {
@@ -110,6 +116,8 @@ void kprintf(const char *fmt, ...) {
         }
         fmt++;
     }
+
+    release(&lock);
 
     va_end(args);
 }
