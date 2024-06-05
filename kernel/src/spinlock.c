@@ -1,14 +1,31 @@
 #include "spinlock.h"
 
+#include "registers/rflags.h"
 #include <stdatomic.h>
+#include <stdbool.h>
 
-void acquire(atomic_flag *lock) {
-    while (atomic_flag_test_and_set_explicit(lock, memory_order_acquire)) {
-        /* use whatever is appropriate for your target arch here */
-        __builtin_ia32_pause();
+#define IF_DISABLED 1
+#define IF_ENABLED 2
+
+void acquire(atomic_int *lock) {
+    int val = read_rflags() & RFLAGS_IF ? IF_ENABLED : IF_DISABLED;
+
+    __asm__ volatile("cli");
+
+    while (1) {
+        int expected = 0;
+        if (atomic_compare_exchange_weak_explicit(lock, &expected, val,
+                                                  memory_order_acquire,
+                                                  memory_order_relaxed)) {
+            break;
+        }
+        __builtin_ia32_pause(); // voluntary CPU yield
     }
 }
 
-void release(atomic_flag *lock) {
-    atomic_flag_clear_explicit(lock, memory_order_release);
+void release(atomic_int *lock) {
+    int val = atomic_exchange(lock, 0);
+
+    if (val == IF_ENABLED)
+        __asm__ volatile("sti");
 }

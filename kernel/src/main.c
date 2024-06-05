@@ -30,7 +30,7 @@ void _start(void) {
     if (smp_request.response == NULL)
         panic("SMP request failed");
 
-    for (int i = 0; i < smp_request.response->cpu_count; i++) {
+    for (unsigned int i = 0; i < smp_request.response->cpu_count; i++) {
         struct limine_smp_info *cpu = smp_request.response->cpus[i];
         cpu->goto_address = &smp_start;
     }

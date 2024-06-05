@@ -13,7 +13,7 @@ static void kprint_ptr(const void *ptr);
 static void kprint_char(char c);
 static void kprint_str(const char *str);
 
-static atomic_flag lock = ATOMIC_FLAG_INIT;
+static atomic_int lock = 0;
 
 // https://cplusplus.com/reference/cstdio/printf/
 void kprintf(const char *fmt, ...) {
