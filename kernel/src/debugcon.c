@@ -5,11 +5,7 @@
 
 #define ERROR_MESSAGE "<err>"
 
-static void kprint_short(short val, int base);
-static void kprint_int(int val, int base);
 static void kprint_signed(long val, int base);
-static void kprint_ushort(unsigned short val, int base);
-static void kprint_uint(unsigned int val, int base);
 static void kprint_unsigned(unsigned long val, int base);
 static void kprint_ptr(const void *ptr);
 static void kprint_char(char c);
@@ -127,8 +123,6 @@ static void kprint_str(const char *str) {
     }
 }
 
-static void kprint_short(short val, int base) { kprint_signed(val, base); }
-static void kprint_int(int val, int base) { kprint_signed(val, base); }
 static void kprint_signed(long val, int base) {
     if (val < 0) {
         kprint_char('-');
@@ -138,20 +132,16 @@ static void kprint_signed(long val, int base) {
     kprint_unsigned(val, base);
 }
 
-static void kprint_ushort(unsigned short val, int base) {
-    kprint_unsigned(val, base);
-}
-static void kprint_uint(unsigned int val, int base) {
-    kprint_unsigned(val, base);
-}
 static void kprint_unsigned(unsigned long val, int base) {
     if (val == 0) {
         kprint_char('0');
         return;
     }
 
-    if (base < 8 || base > 16)
-        return kprint_str("error");
+    if (base < 8 || base > 16) {
+        kprint_str("error");
+        return;
+    }
 
     char buf[24];
     int i = 0;
