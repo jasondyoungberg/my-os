@@ -80,7 +80,7 @@ typedef struct {
 void exception_handler(int vector, stackFrame_t *stack_frame, uint64_t err_code,
                        registers_t *regs) {
     kprintf(
-        "\nINT %d (%d) recieved\nRIP: %4x:%16lx\nRSP: %4x:%16lx\nRFLAGS: %8x\n",
+        "\nINT %d (%d) recieved\nRIP: %4x:%16x\nRSP: %4x:%16x\nRFLAGS: %8x\n",
         vector, err_code, stack_frame->cs, stack_frame->rip, stack_frame->ss,
         stack_frame->rsp, stack_frame->rflags);
 }

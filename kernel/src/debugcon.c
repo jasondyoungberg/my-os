@@ -8,7 +8,6 @@
 static void kprint_signed(long val, int padding);
 static void kprint_unsigned(unsigned long val, int padding);
 static void kprint_hex(unsigned long val, int padding);
-static void kprint_oct(unsigned long val, int padding);
 static void kprint_base(unsigned long val, int padding, int base);
 
 static void kprint_ptr(const void *ptr);
@@ -17,17 +16,11 @@ static void kprint_str(const char *str);
 
 static atomic_int lock = 0;
 
-static enum state {
-    StateNormal,
-    StateFlags,
-    StateWidth,
-    StatePrecision,
-    StateLenth,
-    StateSpecifier
-};
-static enum length { LengthHalf, LengthNormal, LengthLong };
+static enum state { StateNormal, StatePadding, StateSpecifier };
 
-// https://cplusplus.com/reference/cstdio/printf/
+/// @brief Formats the data
+/// @param fmt The format string
+/// @param ... The data to print
 void kprintf(const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
@@ -35,8 +28,7 @@ void kprintf(const char *fmt, ...) {
     acquire(&lock);
 
     enum state state = StateNormal;
-    int width = 0;
-    enum length length = LengthNormal;
+    int padding = -1;
 
     while (*fmt) {
         switch (state) {
@@ -44,8 +36,12 @@ void kprintf(const char *fmt, ...) {
         case StateNormal:
             switch (*fmt) {
             case '%':
-                state = StateFlags;
                 fmt++;
+                if (*fmt == '%') {
+                    kprint_char('%');
+                } else {
+                    state = StatePadding;
+                }
                 break;
             default:
                 kprint_char(*fmt);
@@ -54,67 +50,19 @@ void kprintf(const char *fmt, ...) {
             }
             break;
 
-        case StateFlags:
-            switch (*fmt) {
-            case '-':
-            case '+':
-            case ' ':
-            case '#':
-            case '0':
-                kprint_str("<todo>");
-                fmt++;
-                break;
-            default:
-                state = StateWidth;
-                break;
-            }
-            break;
-
-        case StateWidth:
+        case StatePadding:
             switch (*fmt) {
             case '0' ... '9':
-                width *= 10;
-                width += (*fmt) - '0';
-                fmt++;
-                break;
-            case '*':
-                kprint_str("<todo>");
-                fmt++;
-                break;
-            case '.':
-                state = StatePrecision;
-                fmt++;
-                break;
-            default:
-                state = StateLenth;
-                break;
-            }
-            break;
+                if (padding == -1)
+                    padding = 0;
 
-        case StatePrecision:
-            switch (*fmt) {
-            case '0' ... '9':
-            case '*':
-                kprint_str("<todo>");
+                padding *= 10;
+                padding += (*fmt) - '0';
                 fmt++;
                 break;
             default:
-                state = StateLenth;
-                break;
-            }
-            break;
-
-        case StateLenth:
-            switch (*fmt) {
-            case 'h':
-                length = LengthHalf;
-                fmt++;
-                break;
-            case 'l':
-                length = LengthLong;
-                fmt++;
-                break;
-            default:
+                if (padding == -1)
+                    padding = 1;
                 state = StateSpecifier;
                 break;
             }
@@ -130,88 +78,29 @@ void kprintf(const char *fmt, ...) {
                 break;
             case 'd':
             case 'i':
-                switch (length) {
-                case LengthHalf:
-                    kprint_signed((short)va_arg(args, int), width);
-                    break;
-                case LengthNormal:
-                    kprint_signed(va_arg(args, int), width);
-                    break;
-                case LengthLong:
-                    kprint_signed(va_arg(args, long), width);
-                    break;
-                default:
-                    kprint_str("<err>");
-                    break;
-                }
-                break;
-            case 'o':
-                switch (length) {
-                case LengthHalf:
-                    kprint_oct((unsigned short)va_arg(args, unsigned int),
-                               width);
-                    break;
-                case LengthNormal:
-                    kprint_oct(va_arg(args, unsigned int), width);
-                    break;
-                case LengthLong:
-                    kprint_oct(va_arg(args, unsigned long), width);
-                    break;
-                default:
-                    kprint_str("<err>");
-                    break;
-                }
+                kprint_signed(va_arg(args, long), padding);
                 break;
             case 'x':
             case 'X':
-                switch (length) {
-                case LengthHalf:
-                    kprint_hex((unsigned short)va_arg(args, unsigned int),
-                               width);
-                    break;
-                case LengthNormal:
-                    kprint_hex(va_arg(args, unsigned int), width);
-                    break;
-                case LengthLong:
-                    kprint_hex(va_arg(args, unsigned long), width);
-                    break;
-                default:
-                    kprint_str("<err>");
-                    break;
-                }
+                kprint_hex(va_arg(args, unsigned long), padding);
                 break;
             case 'u':
-                switch (length) {
-                case LengthHalf:
-                    kprint_unsigned((unsigned short)va_arg(args, unsigned int),
-                                    width);
-                    break;
-                case LengthNormal:
-                    kprint_unsigned(va_arg(args, unsigned int), width);
-                    break;
-                case LengthLong:
-                    kprint_unsigned(va_arg(args, unsigned long), width);
-                    break;
-                default:
-                    kprint_str("<err>");
-                    break;
-                }
-                break;
-            case 'n':
-                kprint_str("<todo>");
+                kprint_unsigned(va_arg(args, unsigned long), padding);
                 break;
             case 'p':
                 kprint_ptr(va_arg(args, const void *));
                 break;
+            default:
+                kprint_str("<fmt error>");
+                break;
             }
             state = StateNormal;
-            width = 0;
-            length = LengthNormal;
+            padding = 0;
             fmt++;
             break;
 
         default:
-            kprint_str("<err>");
+            kprint_str("<internal error>");
             fmt++;
             break;
         }
@@ -246,18 +135,12 @@ static void kprint_unsigned(unsigned long val, int padding) {
 static void kprint_hex(unsigned long val, int padding) {
     kprint_base(val, padding, 16);
 }
-static void kprint_oct(unsigned long val, int padding) {
-    kprint_base(val, padding, 8);
-}
 
 static void kprint_base(unsigned long val, int padding, int base) {
-    if (base < 8 || base > 16 || padding > 32) {
-        kprint_str("<err>");
+    if (base < 10 || base > 16 || padding < 0) {
+        kprint_str("<internal error>");
         return;
     }
-
-    if (padding < 1)
-        padding++;
 
     char buf[32];
     int i = 0;
