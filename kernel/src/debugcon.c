@@ -3,6 +3,19 @@
 #include "io.h"
 #include <stdarg.h>
 
+#define ERROR_MESSAGE "<err>"
+
+static void kprint_short(short val, int base);
+static void kprint_int(int val, int base);
+static void kprint_signed(long val, int base);
+static void kprint_ushort(unsigned short val, int base);
+static void kprint_uint(unsigned int val, int base);
+static void kprint_unsigned(unsigned long val, int base);
+static void kprint_ptr(const void *ptr);
+static void kprint_char(char c);
+static void kprint_str(const char *str);
+
+// https://cplusplus.com/reference/cstdio/printf/
 void kprintf(const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
@@ -11,26 +24,89 @@ void kprintf(const char *fmt, ...) {
         if (*fmt == '%') {
             fmt++;
             switch (*fmt) {
-            case 'd': // Decimal
-                kprint_dec(va_arg(args, long));
+            case 'd':
+            case 'i':
+                kprint_signed(va_arg(args, int), 10);
                 break;
-            case 'c': // Char
-                kprint_char(va_arg(args, int));
+            case 'u':
+                kprint_unsigned(va_arg(args, unsigned int), 10);
                 break;
-            case 's': // String
+            case 'o':
+                kprint_unsigned(va_arg(args, unsigned int), 8);
+                break;
+            case 'x':
+            case 'X':
+                kprint_unsigned(va_arg(args, unsigned int), 16);
+                break;
+            case 'c':
+                kprint_char((char)va_arg(args, int));
+                break;
+            case 's':
                 kprint_str(va_arg(args, const char *));
                 break;
-            case 'x': // Hexadecimal
-                kprint_hex(va_arg(args, unsigned long));
-                break;
-            case 'p': // Pointer
+            case 'p':
                 kprint_ptr(va_arg(args, const void *));
                 break;
+
+            case 'h':
+                fmt++;
+                switch (*fmt) {
+                case 'd':
+                case 'i':
+                    kprint_signed((short)va_arg(args, int), 10);
+                    break;
+                case 'u':
+                    kprint_unsigned((unsigned short)va_arg(args, unsigned int),
+                                    10);
+                    break;
+                case 'o':
+                    kprint_unsigned((unsigned short)va_arg(args, unsigned int),
+                                    8);
+                    break;
+                case 'x':
+                case 'X':
+                    kprint_unsigned((unsigned short)va_arg(args, unsigned int),
+                                    16);
+                    break;
+                default:
+                    kprint_char('%');
+                    kprint_char('h');
+                    kprint_char(*fmt);
+                    break;
+                }
+                break;
+
+            case 'l':
+                fmt++;
+                switch (*fmt) {
+                case 'd':
+                case 'i':
+                    kprint_signed(va_arg(args, long), 10);
+                    break;
+                case 'u':
+                    kprint_unsigned(va_arg(args, unsigned long), 10);
+                    break;
+                case 'o':
+                    kprint_unsigned(va_arg(args, unsigned long), 8);
+                    break;
+                case 'x':
+                case 'X':
+                    kprint_unsigned(va_arg(args, unsigned long), 16);
+                    break;
+                default:
+                    kprint_char('%');
+                    kprint_char('l');
+                    kprint_char(*fmt);
+                    break;
+                }
+                break;
+
             case '%':
                 kprint_char('%');
                 break;
             default:
-                kprint_char('?');
+                kprint_char('%');
+                kprint_char(*fmt);
                 break;
             }
         } else {
@@ -42,31 +118,46 @@ void kprintf(const char *fmt, ...) {
     va_end(args);
 }
 
-void kprint_char(char c) { outb(0xe9, c); }
+static void kprint_char(char c) { outb(0xe9, c); }
 
-void kprint_str(const char *str) {
+static void kprint_str(const char *str) {
     while (*str) {
         kprint_char(*str);
         str++;
     }
 }
 
-void kprint_dec(long val) {
+static void kprint_short(short val, int base) { kprint_signed(val, base); }
+static void kprint_int(int val, int base) { kprint_signed(val, base); }
+static void kprint_signed(long val, int base) {
     if (val < 0) {
         kprint_char('-');
         val = -val;
     }
 
+    kprint_unsigned(val, base);
+}
+
+static void kprint_ushort(unsigned short val, int base) {
+    kprint_unsigned(val, base);
+}
+static void kprint_uint(unsigned int val, int base) {
+    kprint_unsigned(val, base);
+}
+static void kprint_unsigned(unsigned long val, int base) {
     if (val == 0) {
         kprint_char('0');
         return;
     }
 
-    char buf[19];
+    if (base < 8 || base > 16)
+        return kprint_str("error");
+
+    char buf[24];
     int i = 0;
     while (val > 0) {
-        buf[i++] = '0' + (val % 10);
-        val /= 10;
+        buf[i++] = "0123456789abcdef"[val % base];
+        val /= base;
     }
 
     for (int j = i - 1; j >= 0; j--) {
@@ -74,28 +165,7 @@ void kprint_dec(long val) {
     }
 }
 
-void kprint_hex(unsigned long val) {
-    kprint_str("0x");
-
-    if (val == 0) {
-        kprint_char('0');
-        return;
-    }
-
-    char buf[16];
-    int i = 0;
-    while (val > 0) {
-        buf[i++] = "0123456789abcdef"[val % 16];
-        val /= 16;
-    }
-
-    for (int j = i - 1; j >= 0; j--) {
-        kprint_char(buf[j]);
-    }
-}
-
-void kprint_ptr(const void *ptr) {
-    kprint_str("0x");
+static void kprint_ptr(const void *ptr) {
     uint64_t val = (uint64_t)ptr;
     for (int i = 44; i >= 0; i -= 4) {
         kprint_char("0123456789abcdef"[(val >> i) & 0xf]);

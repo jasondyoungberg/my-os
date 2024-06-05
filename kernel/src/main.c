@@ -27,8 +27,6 @@ void _start(void) {
     gdt_init();
     idt_init();
 
-    __asm__("int3");
-
     // page fault
     // *(int *)0 = 0;
 
