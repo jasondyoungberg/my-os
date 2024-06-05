@@ -38,9 +38,6 @@ void _start(void) {
     gdt_init();
     idt_init();
 
-    // page fault
-    // *(int *)0 = 0;
-
     for (;;)
         for (int t = 0; t < 256; t++)
             for (int y = 0; y < display_height(); y++)
