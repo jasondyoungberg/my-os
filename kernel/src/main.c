@@ -6,6 +6,7 @@
 #include "panic.h"
 #include "requests.h"
 #include "structures/gdt.h"
+#include "structures/idt.h"
 #include <stdbool.h>
 
 // The following will be our kernel's entry point.
@@ -24,6 +25,12 @@ void _start(void) {
         panic("No framebuffer available");
 
     gdt_init();
+    idt_init();
+
+    __asm__("int3");
+
+    // page fault
+    // *(int *)0 = 0;
 
     for (;;)
         for (int t = 0; t < 256; t++)
