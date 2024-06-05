@@ -30,10 +30,24 @@ void _start(void) {
     if (smp_request.response == NULL)
         panic("SMP request failed");
 
+    struct limine_smp_info *bsp_cpu;
     for (unsigned int i = 0; i < smp_request.response->cpu_count; i++) {
         struct limine_smp_info *cpu = smp_request.response->cpus[i];
-        cpu->goto_address = &smp_start;
+        if (cpu->lapic_id == smp_request.response->bsp_lapic_id) {
+            bsp_cpu = cpu;
+        } else {
+            cpu->goto_address = &smp_start;
+        }
     }
+
+    smp_start(bsp_cpu);
+
+    for (;;)
+        __asm__("hlt");
+}
+
+void smp_start(struct limine_smp_info *cpu) {
+    kprintf("CPU %d started\n", cpu->lapic_id);
 
     gdt_init();
     idt_init();
@@ -44,12 +58,6 @@ void _start(void) {
                 for (int x = 0; x < display_width(); x++)
                     set_pixel(x, y, (struct Color){x, y, t});
 
-    for (;;)
-        __asm__("hlt");
-}
-
-void smp_start(struct limine_smp_info *cpu) {
-    kprintf("CPU %d started\n", cpu->lapic_id);
     for (;;)
         __asm__("hlt");
 }

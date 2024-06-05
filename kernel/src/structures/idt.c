@@ -44,7 +44,7 @@ void idt_init() {
     idtr.base = (uintptr_t)&idt[0];
     idtr.limit = (uint16_t)sizeof(idt_entry_t) * 256 - 1;
 
-    for (uint8_t vector = 0; vector < 32; vector++) {
+    for (int vector = 0; vector < 256; vector++) {
         idt_set_descriptor(vector, isr_stub_table[vector], 0x8E);
     }
 
@@ -79,8 +79,8 @@ typedef struct {
 
 void exception_handler(int vector, stackFrame_t *stack_frame, uint64_t err_code,
                        registers_t *regs) {
-    kprintf("INT %d (%d) recieved\n", vector, err_code);
-    kprintf("RIP: %4x:%16lx\n", stack_frame->cs, stack_frame->rip);
-    kprintf("RSP: %4x:%16lx\n", stack_frame->ss, stack_frame->rsp);
-    kprintf("RFLAGS: %8x\n", stack_frame->rflags);
+    kprintf(
+        "\nINT %d (%d) recieved\nRIP: %4x:%16lx\nRSP: %4x:%16lx\nRFLAGS: %8x\n",
+        vector, err_code, stack_frame->cs, stack_frame->rip, stack_frame->ss,
+        stack_frame->rsp, stack_frame->rflags);
 }
