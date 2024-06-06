@@ -1,6 +1,8 @@
 #include "idt.h"
 
 #include "debugcon.h"
+#include "panic.h"
+#include "registers/control.h"
 #include <stdint.h>
 
 typedef struct {
@@ -79,8 +81,90 @@ typedef struct {
 
 void exception_handler(int vector, stackFrame_t *stack_frame, uint64_t err_code,
                        registers_t *regs) {
-    kprintf(
-        "\nINT %d (%d) recieved\nRIP: %4x:%16x\nRSP: %4x:%16x\nRFLAGS: %8x\n",
-        vector, err_code, stack_frame->cs, stack_frame->rip, stack_frame->ss,
-        stack_frame->rsp, stack_frame->rflags);
+    switch (vector) {
+    case 0:
+        kprintf("Divide Error\n\tRIP: %p\n", stack_frame->rip);
+        break;
+    case 1:
+        kprintf("Debug\n\tRIP: %p\n", stack_frame->rip);
+        break;
+    case 2:
+        kprintf("NMI Interrupt\n\tRIP: %p\n", stack_frame->rip);
+        panic("");
+        break;
+    case 3:
+        kprintf("Breakpoint\n\tRIP: %p\n", stack_frame->rip);
+        break;
+    case 4:
+        kprintf("Overflow\n\tRIP: %p\n", stack_frame->rip);
+        break;
+    case 5:
+        kprintf("BOUND Range Exceeded\n\tRIP: %p\n", stack_frame->rip);
+        panic("");
+        break;
+    case 6:
+        kprintf("Invalid Opcode\n\tRIP: %p\n", stack_frame->rip);
+        panic("");
+        break;
+    case 7:
+        kprintf("Device Not Available\n\tRIP: %p\n", stack_frame->rip);
+        panic("");
+        break;
+    case 8:
+        kprintf("Double Fault\n\tRIP: %p\n", stack_frame->rip);
+        panic("");
+        break;
+    case 10:
+        kprintf("Invalid TSS (%d)\n\tRIP: %p\n", err_code, stack_frame->rip);
+        panic("");
+        break;
+    case 11:
+        kprintf("Segment Not Present (%d)\n\tRIP: %p\n", err_code,
+                stack_frame->rip);
+        panic("");
+        break;
+    case 12:
+        kprintf("Stack-Segment Fault (%d)\n\tRIP: %p\n", err_code,
+                stack_frame->rip);
+        panic("");
+        break;
+    case 13:
+        kprintf("General Protection (%d)\n\tRIP: %p\n", err_code,
+                stack_frame->rip);
+        panic("");
+        break;
+    case 14:
+        kprintf("Page fault (%d)\n\tRIP: %p\n\tCR2: %p\n", err_code,
+                stack_frame->rip, read_cr2());
+        panic("");
+        break;
+    case 16:
+        kprintf("Math Fault\n\tRIP: %p\n", stack_frame->rip);
+        panic("");
+        break;
+    case 17:
+        kprintf("Alignment Check\n\tRIP: %p\n", stack_frame->rip);
+        panic("");
+        break;
+    case 18:
+        kprintf("Machine Check\n\tRIP: %p\n", stack_frame->rip);
+        panic("");
+        break;
+    case 19:
+        kprintf("SIMD Floating-Point Exception\n\tRIP: %p\n", stack_frame->rip);
+        panic("");
+        break;
+    case 20:
+        kprintf("Virtualization Exception\n\tRIP: %p\n", stack_frame->rip);
+        panic("");
+        break;
+    case 21:
+        kprintf("Control Protection Exception (%d)\n\tRIP: %p\n", err_code,
+                stack_frame->rip);
+        panic("");
+        break;
+    default:
+        kprintf("\nINT %d\n", vector);
+        break;
+    }
 }
