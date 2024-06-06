@@ -1,5 +1,5 @@
-#ifndef REGISTERS_RFLAGS_H_
-#define REGISTERS_RFLAGS_H_
+#ifndef REGISTERS_H_
+#define REGISTERS_H_
 
 #include <stdint.h>
 
@@ -23,6 +23,10 @@
 #define RFLAGS_ID (1 << 21)     // ID Flag
 
 uint64_t read_rflags();
+uint64_t read_cr0();
+uint64_t read_cr2();
+uint64_t read_cr3();
+
 void write_rflags(uint64_t);
 
 #endif

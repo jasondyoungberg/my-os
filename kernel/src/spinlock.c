@@ -1,6 +1,6 @@
 #include "spinlock.h"
 
-#include "registers/rflags.h"
+#include "registers.h"
 #include <stdatomic.h>
 #include <stdbool.h>
 

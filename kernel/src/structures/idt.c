@@ -2,7 +2,7 @@
 
 #include "debugcon.h"
 #include "panic.h"
-#include "registers/control.h"
+#include "registers.h"
 #include <stdint.h>
 
 typedef struct {
