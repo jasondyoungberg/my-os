@@ -1,8 +1,4 @@
-#ifndef STRUCTURES_PAGING_H_
-#define STRUCTURES_PAGING_H_
-
+#pragma once
 #include <stdint.h>
 
-void *convert_phys_to_virt(uint64_t phys);
-
-#endif
+void* convert_phys_to_virt(uint64_t phys);

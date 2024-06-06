@@ -54,6 +54,7 @@ override KCFLAGS += \
 	-fno-stack-protector \
 	-fno-stack-check \
 	-fno-lto \
+	# -fsanitize=undefined \
 	-fPIE \
 	-m64 \
 	-march=x86-64 \

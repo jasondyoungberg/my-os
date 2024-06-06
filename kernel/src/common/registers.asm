@@ -6,12 +6,6 @@ read_rflags:
     pop rax
     ret
 
-global write_rflags
-write_rflags:
-    push rdi
-    popf
-    ret
-
 global read_cr0
 read_cr0:
     mov rax, cr0
@@ -30,4 +24,11 @@ read_cr3:
 global read_cr4
 read_cr4:
     mov rax, cr4
+    ret
+
+
+global write_rflags
+write_rflags:
+    push rdi
+    popf
     ret

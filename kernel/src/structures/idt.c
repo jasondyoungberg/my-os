@@ -1,8 +1,8 @@
 #include "idt.h"
 
-#include "debugcon.h"
-#include "panic.h"
-#include "registers.h"
+#include "common/console.h"
+#include "common/panic.h"
+#include "common/registers.h"
 #include <stdint.h>
 
 typedef struct {
@@ -28,10 +28,10 @@ typedef struct {
 
 static idtr_t idtr;
 
-extern void *isr_stub_table[];
+extern void* isr_stub_table[];
 
-void idt_set_descriptor(uint8_t vector, void *isr, uint8_t flags) {
-    idt_entry_t *descriptor = &idt[vector];
+void idt_set_descriptor(uint8_t vector, void* isr, uint8_t flags) {
+    idt_entry_t* descriptor = &idt[vector];
 
     descriptor->isr_low = (uint64_t)isr & 0xFFFF;
     descriptor->kernel_cs = 0x08;
@@ -79,8 +79,8 @@ typedef struct {
     uint64_t r15;
 } registers_t;
 
-void exception_handler(int vector, stackFrame_t *stack_frame, uint64_t err_code,
-                       registers_t *regs) {
+void exception_handler(int vector, stackFrame_t* stack_frame, uint64_t err_code,
+                       registers_t* regs) {
     switch (vector) {
     case 0:
         kprintf("Divide Error\n\tRIP: %p\n", stack_frame->rip);

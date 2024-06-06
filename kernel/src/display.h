@@ -1,5 +1,4 @@
-#ifndef DISPLAY_H_
-#define DISPLAY_H_
+#pragma once
 #include <stdint.h>
 
 struct Color {
@@ -11,5 +10,3 @@ struct Color {
 void set_pixel(uint32_t x, uint32_t y, struct Color color);
 int display_width();
 int display_height();
-
-#endif

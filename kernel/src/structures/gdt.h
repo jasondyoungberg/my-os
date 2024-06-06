@@ -1,6 +1,3 @@
-#ifndef STRUCTURES_GDT_H_
-#define STRUCTURES_GDT_H_
+#pragma once
 
 void gdt_init();
-
-#endif

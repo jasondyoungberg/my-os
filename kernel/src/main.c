@@ -1,17 +1,17 @@
-#include "debugcon.h"
+#include "common/console.h"
+#include "common/io.h"
+#include "common/memory.h"
+#include "common/panic.h"
 #include "display.h"
-#include "io.h"
-#include "memory/alloc.h"
-#include "memory/frame_alloc.h"
-#include "memory/memops.h"
-#include "panic.h"
+#include "memory/frame.h"
+#include "memory/heap.h"
 #include "requests.h"
 #include "structures/gdt.h"
 #include "structures/idt.h"
 #include <limine.h>
 #include <stdbool.h>
 
-void smp_start(struct limine_smp_info *cpu);
+void smp_start(struct limine_smp_info* cpu);
 
 // The following will be our kernel's entry point.
 // If renaming _start() to something else, make sure to change the
@@ -39,9 +39,9 @@ void _start(void) {
 
     init_frame_alloc();
 
-    struct limine_smp_info *bsp_cpu = NULL;
+    struct limine_smp_info* bsp_cpu = NULL;
     for (unsigned int i = 0; i < smp_request.response->cpu_count; i++) {
-        struct limine_smp_info *cpu = smp_request.response->cpus[i];
+        struct limine_smp_info* cpu = smp_request.response->cpus[i];
         if (cpu->lapic_id == smp_request.response->bsp_lapic_id) {
             bsp_cpu = cpu;
         } else {
@@ -59,7 +59,7 @@ void _start(void) {
         __asm__("hlt");
 }
 
-void smp_start(struct limine_smp_info *cpu) {
+void smp_start(struct limine_smp_info* cpu) {
     kprintf("CPU %d started\n", cpu->lapic_id);
 
     gdt_init();

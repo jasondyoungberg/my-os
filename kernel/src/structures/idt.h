@@ -1,6 +1,3 @@
-#ifndef STRUCTURES_IDT_H_
-#define STRUCTURES_IDT_H_
+#pragma once
 
 void idt_init();
-
-#endif

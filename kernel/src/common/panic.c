@@ -1,8 +1,8 @@
-#include "panic.h"
+#include "common/panic.h"
 
-#include "debugcon.h"
+#include "common/console.h"
 
-noreturn void panic(const char *fmt, ...) {
+noreturn void panic(const char* fmt, ...) {
     __asm__("cli");
 
     va_list args;

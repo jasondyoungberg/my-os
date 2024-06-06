@@ -1,5 +1,4 @@
-#ifndef REGISTERS_H_
-#define REGISTERS_H_
+#pragma once
 
 #include <stdint.h>
 
@@ -28,5 +27,3 @@ uint64_t read_cr2();
 uint64_t read_cr3();
 
 void write_rflags(uint64_t);
-
-#endif

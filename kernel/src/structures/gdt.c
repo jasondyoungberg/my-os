@@ -1,7 +1,7 @@
-#include "gdt.h"
+#include "structures/gdt.h"
 
-#include "memory/alloc.h"
-#include "panic.h"
+#include "common/panic.h"
+#include "memory/heap.h"
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -13,7 +13,7 @@
 extern void gdt_load(uint16_t, uint64_t);
 void gdt_init() {
     int entries = 5;
-    uint64_t *gdt = (uint64_t *)kmalloc(entries * sizeof(uint64_t));
+    uint64_t* gdt = (uint64_t*)kmalloc(entries * sizeof(uint64_t));
     if (gdt == NULL)
         panic("Failed to allocate memory for GDT");
 
