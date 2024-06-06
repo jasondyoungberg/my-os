@@ -49,6 +49,9 @@ void _start(void) {
         }
     }
 
+    // int k = 0x7fffffff;
+    // k += 1; // cause integer overflow
+
     if (bsp_cpu != NULL) {
         smp_start(bsp_cpu);
     } else {

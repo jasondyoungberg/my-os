@@ -20,6 +20,4 @@ void* kmalloc(size_t size) {
     return g_heap + addr;
 }
 
-void kfree(void* ptr) {
-    // Do nothing
-}
+void kfree(void* ptr) { (void)ptr; }

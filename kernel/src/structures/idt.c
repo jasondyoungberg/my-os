@@ -81,6 +81,7 @@ typedef struct {
 
 void exception_handler(int vector, stackFrame_t* stack_frame, uint64_t err_code,
                        registers_t* regs) {
+    (void)regs;
     switch (vector) {
     case 0:
         log_warn("Divide Error\n\tRIP: %p", stack_frame->rip);
