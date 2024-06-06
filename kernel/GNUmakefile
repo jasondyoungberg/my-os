@@ -96,6 +96,12 @@ override HEADER_DEPS := $(addprefix obj/,$(CFILES:.c=.c.d) $(ASFILES:.S=.S.d))
 .PHONY: all
 all: bin/$(KERNEL)
 
+# Tidy target for clang-tidy
+.PHONY: tidy
+tidy:
+	clang-tidy --config-file ../.clang-tidy $(addprefix src/,$(CFILES)) \
+		-- $(KCFLAGS) $(KCPPFLAGS)
+
 src/limine.h:
 	curl -Lo $@ https://github.com/limine-bootloader/limine/raw/trunk/limine.h
 
