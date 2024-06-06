@@ -1,6 +1,7 @@
 #include "idt.h"
 
 #include "common/console.h"
+#include "common/log.h"
 #include "common/registers.h"
 #include <stdint.h>
 

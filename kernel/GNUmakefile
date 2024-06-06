@@ -33,6 +33,10 @@ $(eval $(call DEFAULT_VAR,KLD,$(DEFAULT_KLD)))
 override DEFAULT_KCFLAGS := -g -O$(OPT) -pipe -pedantic
 $(eval $(call DEFAULT_VAR,KCFLAGS,$(DEFAULT_KCFLAGS)))
 
+ifeq ($(OPT),0)
+	override KCFLAGS += -fsanitize=undefined
+endif
+
 # User controllable C preprocessor flags. We set none by default.
 override DEFAULT_KCPPFLAGS :=
 $(eval $(call DEFAULT_VAR,KCPPFLAGS,$(DEFAULT_KCPPFLAGS)))
