@@ -2,10 +2,13 @@
 
 #include "debugcon.h"
 
-void panic(const char *msg) {
+void panic(const char *fmt, ...) {
     __asm__("cli");
 
-    kprintf("Kernel panic:\n%s\n", msg);
+    va_list args;
+    va_start(args, fmt);
+    vkprintf(fmt, args);
+    va_end(args);
 
     for (;;)
         __asm__("hlt");

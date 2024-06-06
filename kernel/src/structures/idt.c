@@ -89,8 +89,7 @@ void exception_handler(int vector, stackFrame_t *stack_frame, uint64_t err_code,
         kprintf("Debug\n\tRIP: %p\n", stack_frame->rip);
         break;
     case 2:
-        kprintf("NMI Interrupt\n\tRIP: %p\n", stack_frame->rip);
-        panic("");
+        panic("NMI Interrupt\n\tRIP: %p\n", stack_frame->rip);
         break;
     case 3:
         kprintf("Breakpoint\n\tRIP: %p\n", stack_frame->rip);
@@ -99,69 +98,54 @@ void exception_handler(int vector, stackFrame_t *stack_frame, uint64_t err_code,
         kprintf("Overflow\n\tRIP: %p\n", stack_frame->rip);
         break;
     case 5:
-        kprintf("BOUND Range Exceeded\n\tRIP: %p\n", stack_frame->rip);
-        panic("");
+        panic("BOUND Range Exceeded\n\tRIP: %p\n", stack_frame->rip);
         break;
     case 6:
-        kprintf("Invalid Opcode\n\tRIP: %p\n", stack_frame->rip);
-        panic("");
+        panic("Invalid Opcode\n\tRIP: %p\n", stack_frame->rip);
         break;
     case 7:
-        kprintf("Device Not Available\n\tRIP: %p\n", stack_frame->rip);
-        panic("");
+        panic("Device Not Available\n\tRIP: %p\n", stack_frame->rip);
         break;
     case 8:
-        kprintf("Double Fault\n\tRIP: %p\n", stack_frame->rip);
-        panic("");
+        panic("Double Fault\n\tRIP: %p\n", stack_frame->rip);
         break;
     case 10:
-        kprintf("Invalid TSS (%d)\n\tRIP: %p\n", err_code, stack_frame->rip);
-        panic("");
+        panic("Invalid TSS (%d)\n\tRIP: %p\n", err_code, stack_frame->rip);
         break;
     case 11:
-        kprintf("Segment Not Present (%d)\n\tRIP: %p\n", err_code,
-                stack_frame->rip);
-        panic("");
+        panic("Segment Not Present (%d)\n\tRIP: %p\n", err_code,
+              stack_frame->rip);
         break;
     case 12:
-        kprintf("Stack-Segment Fault (%d)\n\tRIP: %p\n", err_code,
-                stack_frame->rip);
-        panic("");
+        panic("Stack-Segment Fault (%d)\n\tRIP: %p\n", err_code,
+              stack_frame->rip);
         break;
     case 13:
-        kprintf("General Protection (%d)\n\tRIP: %p\n", err_code,
-                stack_frame->rip);
-        panic("");
+        panic("General Protection (%d)\n\tRIP: %p\n", err_code,
+              stack_frame->rip);
         break;
     case 14:
-        kprintf("Page fault (%d)\n\tRIP: %p\n\tCR2: %p\n", err_code,
-                stack_frame->rip, read_cr2());
-        panic("");
+        panic("Page fault (%d)\n\tRIP: %p\n\tCR2: %p\n", err_code,
+              stack_frame->rip, read_cr2());
         break;
     case 16:
-        kprintf("Math Fault\n\tRIP: %p\n", stack_frame->rip);
-        panic("");
+        panic("Math Fault\n\tRIP: %p\n", stack_frame->rip);
         break;
     case 17:
-        kprintf("Alignment Check\n\tRIP: %p\n", stack_frame->rip);
-        panic("");
+        panic("Alignment Check\n\tRIP: %p\n", stack_frame->rip);
         break;
     case 18:
-        kprintf("Machine Check\n\tRIP: %p\n", stack_frame->rip);
-        panic("");
+        panic("Machine Check\n\tRIP: %p\n", stack_frame->rip);
         break;
     case 19:
-        kprintf("SIMD Floating-Point Exception\n\tRIP: %p\n", stack_frame->rip);
-        panic("");
+        panic("SIMD Floating-Point Exception\n\tRIP: %p\n", stack_frame->rip);
         break;
     case 20:
-        kprintf("Virtualization Exception\n\tRIP: %p\n", stack_frame->rip);
-        panic("");
+        panic("Virtualization Exception\n\tRIP: %p\n", stack_frame->rip);
         break;
     case 21:
-        kprintf("Control Protection Exception (%d)\n\tRIP: %p\n", err_code,
-                stack_frame->rip);
-        panic("");
+        panic("Control Protection Exception (%d)\n\tRIP: %p\n", err_code,
+              stack_frame->rip);
         break;
     default:
         kprintf("\nINT %d\n", vector);

@@ -40,7 +40,11 @@ void _start(void) {
         }
     }
 
-    smp_start(bsp_cpu);
+    if (bsp_cpu != NULL) {
+        smp_start(bsp_cpu);
+    } else {
+        panic("no bsp");
+    }
 
     for (;;)
         __asm__("hlt");

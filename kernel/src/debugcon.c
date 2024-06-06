@@ -2,7 +2,6 @@
 
 #include "io.h"
 #include "spinlock.h"
-#include <stdarg.h>
 #include <stdatomic.h>
 
 static void kprint_signed(long val, int padding);
@@ -18,13 +17,14 @@ static atomic_int lock = 0;
 
 static enum state { StateNormal, StatePadding, StateSpecifier };
 
-/// @brief Formats the data
-/// @param fmt The format string
-/// @param ... The data to print
 void kprintf(const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
+    vkprintf(fmt, args);
+    va_end(args);
+}
 
+void vkprintf(const char *fmt, va_list args) {
     acquire(&lock);
 
     enum state state = StateNormal;
@@ -52,7 +52,16 @@ void kprintf(const char *fmt, ...) {
 
         case StatePadding:
             switch (*fmt) {
-            case '0' ... '9':
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
                 if (padding == -1)
                     padding = 0;
 
@@ -107,8 +116,6 @@ void kprintf(const char *fmt, ...) {
     }
 
     release(&lock);
-
-    va_end(args);
 }
 
 static void kprint_char(char c) { outb(0xe9, c); }

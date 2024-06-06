@@ -1,6 +1,8 @@
 #ifndef PANIC_H_
 #define PANIC_H_
 
-void panic(const char *msg);
+#include <stdnoreturn.h>
+
+void panic(const char *fmt, ...);
 
 #endif
