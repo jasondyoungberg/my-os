@@ -31,6 +31,12 @@ void _start(void) {
     if (smp_request.response == NULL)
         panic("SMP request failed");
 
+    if (memmap_request.response == NULL)
+        panic("Memory map request failed");
+
+    if (hhdm_request.response == NULL)
+        panic("HHDM request failed");
+
     init_frame_alloc();
 
     struct limine_smp_info *bsp_cpu;
