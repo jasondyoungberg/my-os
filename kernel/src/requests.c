@@ -20,6 +20,13 @@ __attribute__((used, section(".requests"))) volatile LIMINE_BASE_REVISION(2)
 __attribute__((used, section(".requests"))) volatile struct limine_smp_request
     smp_request = {.id = LIMINE_SMP_REQUEST, .revision = 0};
 
+__attribute__((used, section(".requests"))) volatile struct limine_hhdm_request
+    hhdm_request = {.id = LIMINE_HHDM_REQUEST, .revision = 0};
+
+__attribute__((used,
+               section(".requests"))) volatile struct limine_memmap_request
+    memmap_request = {.id = LIMINE_MEMMAP_REQUEST, .revision = 0};
+
 // Finally, define the start and end markers for the Limine requests.
 // These can also be moved anywhere, to any .c file, as seen fit.
 

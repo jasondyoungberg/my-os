@@ -2,6 +2,7 @@
 #include "display.h"
 #include "io.h"
 #include "memory/alloc.h"
+#include "memory/frame_alloc.h"
 #include "memory/memops.h"
 #include "panic.h"
 #include "requests.h"
@@ -29,6 +30,8 @@ void _start(void) {
 
     if (smp_request.response == NULL)
         panic("SMP request failed");
+
+    init_frame_alloc();
 
     struct limine_smp_info *bsp_cpu;
     for (unsigned int i = 0; i < smp_request.response->cpu_count; i++) {

@@ -1,5 +1,5 @@
-#ifndef MEMOPS_H_
-#define MEMOPS_H_
+#ifndef MEMORY_MEMOPS_H_
+#define MEMORY_MEMOPS_H_
 #include <stddef.h>
 #include <stdint.h>
 

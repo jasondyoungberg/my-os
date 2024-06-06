@@ -25,7 +25,7 @@ void kprintf(const char *fmt, ...) {
 }
 
 void vkprintf(const char *fmt, va_list args) {
-    acquire(&lock);
+    spin_acquire(&lock);
 
     enum state state = StateNormal;
     int padding = -1;
@@ -115,7 +115,7 @@ void vkprintf(const char *fmt, va_list args) {
         }
     }
 
-    release(&lock);
+    spin_release(&lock);
 }
 
 static void kprint_char(char c) { outb(0xe9, c); }

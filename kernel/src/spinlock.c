@@ -7,7 +7,7 @@
 #define IF_DISABLED 1
 #define IF_ENABLED 2
 
-void acquire(atomic_int *lock) {
+void spin_acquire(atomic_int *lock) {
     int val = read_rflags() & RFLAGS_IF ? IF_ENABLED : IF_DISABLED;
 
     __asm__ volatile("cli");
@@ -23,7 +23,7 @@ void acquire(atomic_int *lock) {
     }
 }
 
-void release(atomic_int *lock) {
+void spin_release(atomic_int *lock) {
     int val = atomic_exchange(lock, 0);
 
     if (val == IF_ENABLED)

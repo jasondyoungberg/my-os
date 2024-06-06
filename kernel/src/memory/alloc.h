@@ -1,5 +1,5 @@
-#ifndef ALLOC_H_
-#define ALLOC_H_
+#ifndef MEMORY_ALLOC_H_
+#define MEMORY_ALLOC_H_
 
 #include <stddef.h>
 
