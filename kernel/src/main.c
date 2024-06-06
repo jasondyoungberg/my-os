@@ -1,7 +1,7 @@
 #include "common/console.h"
 #include "common/io.h"
+#include "common/log.h"
 #include "common/memory.h"
-#include "common/panic.h"
 #include "display.h"
 #include "memory/frame.h"
 #include "memory/heap.h"
@@ -17,7 +17,7 @@ void smp_start(struct limine_smp_info* cpu);
 // If renaming _start() to something else, make sure to change the
 // linker script accordingly.
 void _start(void) {
-    kprintf("Hello, world!\n");
+    log_info("Hello, world!");
 
     // Ensure the bootloader actually understands our base revision (see spec).
     if (LIMINE_BASE_REVISION_SUPPORTED == false)
@@ -60,7 +60,7 @@ void _start(void) {
 }
 
 void smp_start(struct limine_smp_info* cpu) {
-    kprintf("CPU %d started\n", cpu->lapic_id);
+    log_info("CPU %d started", cpu->lapic_id);
 
     gdt_init();
     idt_init();

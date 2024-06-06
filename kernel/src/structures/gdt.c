@@ -1,6 +1,6 @@
 #include "structures/gdt.h"
 
-#include "common/panic.h"
+#include "common/log.h"
 #include "memory/heap.h"
 #include <stdint.h>
 #include <stdlib.h>

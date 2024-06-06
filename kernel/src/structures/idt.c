@@ -1,7 +1,6 @@
 #include "idt.h"
 
 #include "common/console.h"
-#include "common/panic.h"
 #include "common/registers.h"
 #include <stdint.h>
 
@@ -83,31 +82,31 @@ void exception_handler(int vector, stackFrame_t* stack_frame, uint64_t err_code,
                        registers_t* regs) {
     switch (vector) {
     case 0:
-        kprintf("Divide Error\n\tRIP: %p\n", stack_frame->rip);
+        log_warn("Divide Error\n\tRIP: %p", stack_frame->rip);
         break;
     case 1:
-        kprintf("Debug\n\tRIP: %p\n", stack_frame->rip);
+        log_info("Debug\n\tRIP: %p", stack_frame->rip);
         break;
     case 2:
-        panic("NMI Interrupt\n\tRIP: %p\n", stack_frame->rip);
+        panic("NMI Interrupt\n\tRIP: %p", stack_frame->rip);
         break;
     case 3:
-        kprintf("Breakpoint\n\tRIP: %p\n", stack_frame->rip);
+        log_info("Breakpoint\n\tRIP: %p", stack_frame->rip);
         break;
     case 4:
-        kprintf("Overflow\n\tRIP: %p\n", stack_frame->rip);
+        log_warn("Overflow\n\tRIP: %p", stack_frame->rip);
         break;
     case 5:
-        panic("BOUND Range Exceeded\n\tRIP: %p\n", stack_frame->rip);
+        panic("BOUND Range Exceeded\n\tRIP: %p", stack_frame->rip);
         break;
     case 6:
-        panic("Invalid Opcode\n\tRIP: %p\n", stack_frame->rip);
+        panic("Invalid Opcode\n\tRIP: %p", stack_frame->rip);
         break;
     case 7:
-        panic("Device Not Available\n\tRIP: %p\n", stack_frame->rip);
+        panic("Device Not Available\n\tRIP: %p", stack_frame->rip);
         break;
     case 8:
-        panic("Double Fault\n\tRIP: %p\n", stack_frame->rip);
+        panic("Double Fault\n\tRIP: %p", stack_frame->rip);
         break;
     case 10:
         panic("Invalid TSS (%d)\n\tRIP: %p\n", err_code, stack_frame->rip);
@@ -129,19 +128,19 @@ void exception_handler(int vector, stackFrame_t* stack_frame, uint64_t err_code,
               stack_frame->rip, read_cr2());
         break;
     case 16:
-        panic("Math Fault\n\tRIP: %p\n", stack_frame->rip);
+        panic("Math Fault\n\tRIP: %p", stack_frame->rip);
         break;
     case 17:
-        panic("Alignment Check\n\tRIP: %p\n", stack_frame->rip);
+        panic("Alignment Check\n\tRIP: %p", stack_frame->rip);
         break;
     case 18:
-        panic("Machine Check\n\tRIP: %p\n", stack_frame->rip);
+        panic("Machine Check\n\tRIP: %p", stack_frame->rip);
         break;
     case 19:
-        panic("SIMD Floating-Point Exception\n\tRIP: %p\n", stack_frame->rip);
+        panic("SIMD Floating-Point Exception\n\tRIP: %p", stack_frame->rip);
         break;
     case 20:
-        panic("Virtualization Exception\n\tRIP: %p\n", stack_frame->rip);
+        panic("Virtualization Exception\n\tRIP: %p", stack_frame->rip);
         break;
     case 21:
         panic("Control Protection Exception (%d)\n\tRIP: %p\n", err_code,
