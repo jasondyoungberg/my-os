@@ -13,10 +13,10 @@ struct FrameNode {
 };
 
 static struct FrameNode *head = 0;
-static atomic_int *lock = 0;
+static atomic_int lock = 0;
 
 void init_frame_alloc() {
-    spin_acquire(lock);
+    spin_acquire(&lock);
 
     struct limine_memmap_response mmap = *memmap_request.response;
     for (unsigned int i = 0; i < mmap.entry_count; i++) {
@@ -31,11 +31,11 @@ void init_frame_alloc() {
         head = node;
     }
 
-    spin_release(lock);
+    spin_release(&lock);
 }
 
 uint64_t frame_alloc() {
-    spin_acquire(lock);
+    spin_acquire(&lock);
 
     if (head == NULL)
         return 0;
@@ -49,13 +49,12 @@ uint64_t frame_alloc() {
         head = head->next;
     }
 
+    spin_release(&lock);
     return result;
-
-    spin_release(lock);
 }
 
 void frame_free(uint64_t frame) {
-    spin_acquire(lock);
+    spin_acquire(&lock);
 
     struct FrameNode *node = convert_phys_to_virt(frame);
     node->next = head;
@@ -63,5 +62,5 @@ void frame_free(uint64_t frame) {
     node->frames = 1;
     head = node;
 
-    spin_release(lock);
+    spin_release(&lock);
 }
