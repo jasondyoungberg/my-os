@@ -39,7 +39,7 @@ void _start(void) {
 
     init_frame_alloc();
 
-    struct limine_smp_info *bsp_cpu;
+    struct limine_smp_info *bsp_cpu = NULL;
     for (unsigned int i = 0; i < smp_request.response->cpu_count; i++) {
         struct limine_smp_info *cpu = smp_request.response->cpus[i];
         if (cpu->lapic_id == smp_request.response->bsp_lapic_id) {
