@@ -7,13 +7,17 @@ override KERNEL := kernel
 
 # Convenience macro to reliably declare user overridable variables.
 define DEFAULT_VAR =
-    ifeq ($(origin $1),default)
-        override $(1) := $(2)
-    endif
-    ifeq ($(origin $1),undefined)
-        override $(1) := $(2)
-    endif
+	ifeq ($(origin $1),default)
+		override $(1) := $(2)
+	endif
+	ifeq ($(origin $1),undefined)
+		override $(1) := $(2)
+	endif
 endef
+
+ifeq ($(OPT),)
+	override OPT = 0
+endif
 
 # It is suggested to use a custom built cross toolchain to build a kernel.
 # We are using the standard "cc" here, it may work by using
@@ -26,7 +30,7 @@ override DEFAULT_KLD := ld.lld
 $(eval $(call DEFAULT_VAR,KLD,$(DEFAULT_KLD)))
 
 # User controllable C flags.
-override DEFAULT_KCFLAGS := -g -O0 -pipe -pedantic
+override DEFAULT_KCFLAGS := -g -O$(OPT) -pipe -pedantic
 $(eval $(call DEFAULT_VAR,KCFLAGS,$(DEFAULT_KCFLAGS)))
 
 # User controllable C preprocessor flags. We set none by default.
@@ -43,42 +47,42 @@ $(eval $(call DEFAULT_VAR,KLDFLAGS,$(DEFAULT_KLDFLAGS)))
 
 # Internal C flags that should not be changed by the user.
 override KCFLAGS += \
-    -Wall \
-    -Wextra \
-    -std=gnu11 \
-    -ffreestanding \
-    -fno-stack-protector \
-    -fno-stack-check \
-    -fno-lto \
-    -fPIE \
-    -m64 \
-    -march=x86-64 \
-    -mno-80387 \
-    -mno-mmx \
-    -mno-sse \
-    -mno-sse2 \
-    -mno-red-zone
+	-Wall \
+	-Wextra \
+	-std=gnu11 \
+	-ffreestanding \
+	-fno-stack-protector \
+	-fno-stack-check \
+	-fno-lto \
+	-fPIE \
+	-m64 \
+	-march=x86-64 \
+	-mno-80387 \
+	-mno-mmx \
+	-mno-sse \
+	-mno-sse2 \
+	-mno-red-zone
 
 # Internal C preprocessor flags that should not be changed by the user.
 override KCPPFLAGS := \
-    -I src \
-    $(KCPPFLAGS) \
-    -MMD \
-    -MP
+	-I src \
+	$(KCPPFLAGS) \
+	-MMD \
+	-MP
 
 # Internal linker flags that should not be changed by the user.
 override KLDFLAGS += \
-    -m elf_x86_64 \
-    -nostdlib \
-    -pie \
-    -z text \
-    -z max-page-size=0x1000 \
-    -T linker.ld
+	-m elf_x86_64 \
+	-nostdlib \
+	-pie \
+	-z text \
+	-z max-page-size=0x1000 \
+	-T linker.ld
 
 # Internal nasm flags that should not be changed by the user.
 override KNASMFLAGS += \
-    -Wall \
-    -f elf64
+	-Wall \
+	-f elf64
 
 # Use "find" to glob all *.c, *.S, and *.asm files in the tree and obtain the
 # object and header dependency file names.
