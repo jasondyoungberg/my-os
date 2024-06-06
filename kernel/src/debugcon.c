@@ -15,7 +15,7 @@ static void kprint_str(const char *str);
 
 static atomic_int lock = 0;
 
-static enum state { StateNormal, StatePadding, StateSpecifier };
+enum state { StateNormal, StatePadding, StateSpecifier };
 
 void kprintf(const char *fmt, ...) {
     va_list args;
