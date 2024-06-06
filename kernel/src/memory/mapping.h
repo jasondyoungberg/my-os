@@ -11,4 +11,5 @@
 #define PAGEFLAG_PAT (1 << 7) // Page Attribute Table
 #define PAGEFLAG_G (1 << 8)   // Global
 
+void* hhdm(uint64_t);
 uint64_t map_page(void* ptr, uint64_t flags);

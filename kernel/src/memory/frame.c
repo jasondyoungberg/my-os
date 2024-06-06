@@ -1,8 +1,8 @@
 #include "memory/frame.h"
 
 #include "common/spinlock.h"
+#include "memory/mapping.h"
 #include "requests.h"
-#include "structures/paging.h"
 #include <limine.h>
 #include <stdatomic.h>
 
@@ -24,7 +24,7 @@ void init_frame_alloc() {
         if (entry->type != LIMINE_MEMMAP_USABLE)
             continue;
 
-        struct FrameNode* node = convert_phys_to_virt(entry->base);
+        struct FrameNode* node = hhdm(entry->base);
         node->next = g_head;
         node->phys = entry->base;
         node->frames = entry->length / 4096;
@@ -56,7 +56,7 @@ uint64_t frame_alloc() {
 void frame_free(uint64_t frame) {
     spin_acquire(&g_lock);
 
-    struct FrameNode* node = convert_phys_to_virt(frame);
+    struct FrameNode* node = hhdm(frame);
     node->next = g_head;
     node->phys = frame;
     node->frames = 1;
