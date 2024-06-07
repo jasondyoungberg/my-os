@@ -1,13 +1,14 @@
 use core::slice;
 
 use alloc::{string::String, vec::Vec};
+use x86_64::instructions::interrupts::without_interrupts;
 
 use crate::{gsdata::GsData, process, MODULE_RESPONSE};
 
 pub extern "C" fn main() -> ! {
     log::info!("root process started");
 
-    let mut living_children: Vec<usize> = {
+    let mut living_children: Vec<usize> = without_interrupts(|| {
         let mut process = GsData::load()
             .expect("root gsdata is missing")
             .process
@@ -20,6 +21,7 @@ pub extern "C" fn main() -> ! {
             .filter(|file| file.path().starts_with(b"/bin/"))
             .map(|file| {
                 let name = String::from_utf8_lossy(&file.path()[5..]);
+                log::info!("spawning {name}");
 
                 let addr = file.addr();
                 let size = file.size() as usize;
@@ -28,11 +30,11 @@ pub extern "C" fn main() -> ! {
             })
             .map(|(name, data)| process.create_user(&name, data))
             .collect()
-    };
+    });
 
     loop {
         x86_64::instructions::hlt();
-        {
+        without_interrupts(|| {
             let mut process = GsData::load()
                 .expect("root gsdata is missing")
                 .process
@@ -50,6 +52,6 @@ pub extern "C" fn main() -> ! {
                 },
                 None => false,
             });
-        }
+        });
     }
 }

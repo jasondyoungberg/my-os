@@ -3,7 +3,8 @@ use x86_64::{
     instructions::interrupts::without_interrupts,
     registers::control::Cr3,
     structures::paging::{
-        FrameAllocator, Mapper, OffsetPageTable, Page, PageTable, PageTableFlags, PhysFrame,
+        page::PageRange, FrameAllocator, Mapper, OffsetPageTable, Page, PageTable, PageTableFlags,
+        PhysFrame,
     },
     PhysAddr, VirtAddr,
 };
@@ -64,6 +65,18 @@ pub unsafe fn map_page(
 ) -> PhysFrame {
     let frame = MyFrameAllocator.allocate_frame().unwrap();
     unsafe { map_page_to_frame(mapper, page, frame, flags) };
+    frame
+}
+
+pub unsafe fn map_pages(
+    mapper: &mut OffsetPageTable,
+    pages: PageRange,
+    flags: PageTableFlags,
+) -> PhysFrame {
+    let frame = MyFrameAllocator.allocate_frame().unwrap();
+    for page in pages {
+        unsafe { map_page_to_frame(mapper, page, frame, flags) };
+    }
     frame
 }
 

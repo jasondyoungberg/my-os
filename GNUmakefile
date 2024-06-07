@@ -39,6 +39,7 @@ QEMU_ARGS := \
 	-debugcon stdio \
 	-D qemu.log \
 	-d int,cpu_reset,unimp,guest_errors \
+	-gdb tcp::1234
 
 ifeq ($(KVM),1)
 	QEMU_ARGS += -enable-kvm
@@ -60,7 +61,7 @@ run: $(IMAGE_NAME).iso ovmf
 
 .PHONY: debug
 debug: $(IMAGE_NAME).iso ovmf
-	qemu-system-x86_64 $(QEMU_ARGS) -cdrom $(IMAGE_NAME).iso -boot d -s -S
+	qemu-system-x86_64 $(QEMU_ARGS) -cdrom $(IMAGE_NAME).iso -boot d -S
 
 .PHONY: run-hdd
 run-hdd: $(IMAGE_NAME).hdd ovmf
@@ -81,6 +82,7 @@ apps:
 	mkdir -p apps/.dist
 	cd apps && nasm hello.asm -o .dist/hello
 	cd apps && nasm loop.asm -o .dist/loop
+	cd apps && nasm crash.asm -o .dist/crash
 
 .PHONY: kernel
 kernel: apps
@@ -88,21 +90,21 @@ kernel: apps
 
 .fsroot: limine/limine kernel files/*
 	rm -rf .fsroot
-	mkdir -p .fsroot/boot/limine
+	mkdir -p .fsroot/boot/
 	mkdir -p .fsroot/EFI/BOOT
 	mkdir -p .fsroot/bin
 
-	cp kernel/target/$(RUST_TARGET_SUBDIR)/$(RUST_PROFILE_SUBDIR)/kernel .fsroot/boot/
-	cp limine.cfg limine/limine-bios.sys limine/limine-bios-cd.bin limine/limine-uefi-cd.bin .fsroot/boot/limine/
+	cp kernel/target/$(RUST_TARGET_SUBDIR)/$(RUST_PROFILE_SUBDIR)/kernel limine.cfg .fsroot/
+	cp limine/limine-bios.sys limine/limine-bios-cd.bin limine/limine-uefi-cd.bin .fsroot/boot/
 	cp limine/BOOTX64.EFI limine/BOOTIA32.EFI .fsroot/EFI/BOOT/
 
 	cp -r files/* .fsroot/
 	cp -r apps/.dist/* .fsroot/bin/
 
 $(IMAGE_NAME).iso: .fsroot
-	xorriso -as mkisofs -b boot/limine/limine-bios-cd.bin \
+	xorriso -as mkisofs -b boot/limine-bios-cd.bin \
 		-no-emul-boot -boot-load-size 4 -boot-info-table \
-		--efi-boot boot/limine/limine-uefi-cd.bin \
+		--efi-boot boot/limine-uefi-cd.bin \
 		-efi-boot-part --efi-boot-image --protective-msdos-label \
 		.fsroot -o $(IMAGE_NAME).iso -quiet
 	./limine/limine bios-install $(IMAGE_NAME).iso --quiet
