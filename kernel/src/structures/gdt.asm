@@ -2,9 +2,7 @@ section .text
 
 global gdt_load
 gdt_load:
-    mov [rel gdtr], di
-    mov [rel gdtr+2], rsi
-    lgdt [rel gdtr]
+    lgdt [rdi]
     push 0x08
     lea rax, [rel .reload]
     push rax
@@ -18,8 +16,3 @@ gdt_load:
     mov ss, ax
     ret
 
-section .data
-
-gdtr:
-    dw 0
-    dq 0

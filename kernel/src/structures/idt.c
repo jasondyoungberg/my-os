@@ -30,7 +30,7 @@ static idtr_t idtr;
 
 extern void* isr_stub_table[];
 
-void idt_set_descriptor(uint8_t vector, void* isr, uint8_t flags) {
+void idt_set_descriptor(uint8_t vector, void* isr, uint8_t flags, uint8_t ist) {
     idt_entry_t* descriptor = &idt[vector];
 
     descriptor->isr_low = (uint64_t)isr & 0xFFFF;
@@ -47,7 +47,7 @@ void idt_init() {
     idtr.limit = (uint16_t)sizeof(idt_entry_t) * 256 - 1;
 
     for (int vector = 0; vector < 256; vector++) {
-        idt_set_descriptor(vector, isr_stub_table[vector], 0x8E);
+        idt_set_descriptor(vector, isr_stub_table[vector], 0x8E, 0);
     }
 
     __asm__ volatile("lidt %0" : : "m"(idtr));

@@ -1,4 +1,5 @@
 #include "memory/heap.h"
+#include "common/log.h"
 
 #include <stdatomic.h>
 #include <stdint.h>
@@ -13,10 +14,10 @@ void* kmalloc(size_t size) {
 
     size_t addr = atomic_fetch_add(&g_allocated, size);
 
-    if (addr > HEAP_SIZE) {
-        return NULL;
-    }
+    if (addr > HEAP_SIZE)
+        panic("kmalloc(%d) failed", size);
 
+    log_trace("kmalloc(%d)", size);
     return g_heap + addr;
 }
 

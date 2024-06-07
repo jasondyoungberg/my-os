@@ -92,9 +92,9 @@ void __ubsan_handle_negate_overflow(struct ubsan_overflow_data* data,
 void __ubsan_handle_divrem_overflow(struct ubsan_overflow_data* data,
                                     ubsan_value_handle_t lhs,
                                     ubsan_value_handle_t rhs) {
-    log_error("division remainder overflow @ %s:%u:%u (%x %x)",
+    log_error("division remainder overflow @ %s:%u:%u (%x %x %s)",
               data->location.filename, data->location.line,
-              data->location.column, lhs, rhs);
+              data->location.column, lhs, rhs, data->type->type_name);
 }
 
 struct ubsan_pointer_overflow_data {
@@ -104,9 +104,8 @@ struct ubsan_pointer_overflow_data {
 void __ubsan_handle_pointer_overflow(struct ubsan_pointer_overflow_data* data,
                                      ubsan_value_handle_t base,
                                      ubsan_value_handle_t result) {
-    log_error("division remainder overflow @ %s:%u:%u (%x %x)",
-              data->location.filename, data->location.line,
-              data->location.column, base, result);
+    log_error("pointer overflow @ %s:%u:%u (%x %x)", data->location.filename,
+              data->location.line, data->location.column, base, result);
 }
 
 struct ubsan_shift_out_of_bounds_data {
