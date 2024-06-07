@@ -39,6 +39,8 @@ QEMU_ARGS := \
 	-debugcon stdio \
 	-D qemu.log \
 	-d int,cpu_reset,unimp,guest_errors \
+	-no-reboot \
+	-no-shutdown \
 	-gdb tcp::1234
 
 ifeq ($(KVM),1)
