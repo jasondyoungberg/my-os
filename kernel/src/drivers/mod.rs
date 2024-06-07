@@ -3,4 +3,5 @@ pub mod display;
 pub mod lapic;
 pub mod ps2;
 pub mod psf2;
+pub mod sdt;
 pub mod video_console;
