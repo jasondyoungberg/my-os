@@ -1,5 +1,6 @@
 #include "memory/heap.h"
 #include "common/log.h"
+#include "common/memory.h"
 
 #include <stdatomic.h>
 #include <stdint.h>
@@ -19,6 +20,12 @@ void* kmalloc(size_t size) {
 
     log_trace("kmalloc(%d)", size);
     return g_heap + addr;
+}
+
+void* kmalloc_zero(size_t size) {
+    void* ptr = kmalloc(size);
+    memset(ptr, 0, size);
+    return ptr;
 }
 
 void kfree(void* ptr) { (void)ptr; }

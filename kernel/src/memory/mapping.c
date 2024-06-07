@@ -15,7 +15,7 @@ void map_init() {
     entry_t* l4_table = hhdm(read_cr3() & 0x0ffffffffffff000);
     for (int i = 256; i < 512; i++) {
         if (l4_table[i] == 0) {
-            l4_table[i] = frame_alloc() | PAGEFLAG_P | PAGEFLAG_RW;
+            l4_table[i] = frame_alloc_zero() | PAGEFLAG_P | PAGEFLAG_RW;
         }
     }
 }
@@ -29,28 +29,28 @@ uint64_t map_page(void* ptr, flags_t flags) {
 
     entry_t* l4_table = hhdm(read_cr3() & 0x0ffffffffffff000);
     if ((l4_table[l4_index] & PAGEFLAG_P) == 0) {
-        l4_table[l4_index] = frame_alloc() | flags | PAGEFLAG_P;
+        l4_table[l4_index] = frame_alloc_zero() | flags | PAGEFLAG_P;
     } else if ((l4_table[l4_index] & 0x1ff) != (flags | PAGEFLAG_P)) {
         panic("todo: mismatched page table flags");
     }
 
     entry_t* l3_table = hhdm(l4_table[l4_index] & 0x0ffffffffffff000);
     if ((l3_table[l3_index] & PAGEFLAG_P) == 0) {
-        l3_table[l3_index] = frame_alloc() | flags | PAGEFLAG_P;
+        l3_table[l3_index] = frame_alloc_zero() | flags | PAGEFLAG_P;
     } else if ((l3_table[l3_index] & 0x1ff) != (flags | PAGEFLAG_P)) {
         panic("todo: mismatched page table flags");
     }
 
     entry_t* l2_table = hhdm(l3_table[l3_index] & 0x0ffffffffffff000);
     if ((l2_table[l2_index] & PAGEFLAG_P) == 0) {
-        l2_table[l2_index] = frame_alloc() | flags | PAGEFLAG_P;
+        l2_table[l2_index] = frame_alloc_zero() | flags | PAGEFLAG_P;
     } else if ((l2_table[l2_index] & 0x1ff) != (flags | PAGEFLAG_P)) {
         panic("todo: mismatched page table flags");
     }
 
     entry_t* l1_table = hhdm(l2_table[l2_index] & 0x0ffffffffffff000);
     if ((l1_table[l1_index] & PAGEFLAG_P) == 0) {
-        l1_table[l1_index] = frame_alloc() | flags | PAGEFLAG_P;
+        l1_table[l1_index] = frame_alloc_zero() | flags | PAGEFLAG_P;
     } else if ((l1_table[l1_index] & 0x1ff) != (flags | PAGEFLAG_P)) {
         panic("todo: mismatched page table flags");
     }

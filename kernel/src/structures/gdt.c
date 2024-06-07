@@ -42,9 +42,10 @@ static void* create_stack();
 extern void gdt_load(gdtr_t*);
 void gdt_init() {
     int entries = 8;
-    gdt_entry_t* gdt = (gdt_entry_t*)kmalloc(entries * sizeof(gdt_entry_t));
-    gdtr_t* gdtr = (gdtr_t*)kmalloc(sizeof(gdtr_t));
-    tss_t* tss = (tss_t*)kmalloc(sizeof(tss_t));
+    gdt_entry_t* gdt =
+        (gdt_entry_t*)kmalloc_zero(entries * sizeof(gdt_entry_t));
+    gdtr_t* gdtr = (gdtr_t*)kmalloc_zero(sizeof(gdtr_t));
+    tss_t* tss = (tss_t*)kmalloc_zero(sizeof(tss_t));
 
     tss->rsp0 = create_stack();
     tss->ist1 = create_stack();
@@ -54,6 +55,7 @@ void gdt_init() {
     tss->ist5 = create_stack();
     tss->ist6 = create_stack();
     tss->ist7 = create_stack();
+    tss->iopb = 0xffff;
 
     uint64_t tss_limit = sizeof(tss_t) - 1;
     uint64_t tss_base1 = ((uint64_t)tss & 0x00ffffff) << 16;
