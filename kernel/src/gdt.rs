@@ -67,8 +67,8 @@ pub struct GdtInfo {
 }
 
 pub fn create_ministack() -> VirtAddr {
-    STACK_ALLOCATOR.alloc(); // gaurd page
-    let pages = STACK_ALLOCATOR.alloc_range(STACK_SIZE);
+    let mut pages = STACK_ALLOCATOR.alloc_range(STACK_SIZE + 4096);
+    pages.end -= 1;
     let rsp = pages.end.start_address();
     for page in pages {
         unsafe { map_kernel_page(page, PageTableFlags::PRESENT | PageTableFlags::WRITABLE) };

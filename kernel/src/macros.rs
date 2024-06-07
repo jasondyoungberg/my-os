@@ -37,7 +37,7 @@ pub unsafe fn force_print(args: fmt::Arguments) {
         }
 
         if tsc + 1_000_000_000 < unsafe { _rdtsc() } {
-            unsafe { DEBUG_CONSOLE.force_unlock() }
+            unsafe { VIDEO_CONSOLE.force_unlock() }
         }
     }
 }
