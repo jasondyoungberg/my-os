@@ -129,7 +129,7 @@ fn sched_yield(registers: &mut Registers) -> u64 {
 
     registers.rax = ret;
 
-    let gsdata = unsafe { GsData::load().unwrap() };
+    let gsdata = GsData::load().unwrap();
     let sysret_rsp = gsdata.sysret_rsp;
 
     let mut stack_frame = InterruptStackFrameValue::new(
@@ -144,7 +144,11 @@ fn sched_yield(registers: &mut Registers) -> u64 {
 }
 
 fn exit(code: u64) -> u64 {
-    let mut process = GsData::process_take().unwrap().unwrap();
+    let mut process = GsData::load()
+        .expect("root gsdata is missing")
+        .process
+        .lock();
+    let mut process = process.take().unwrap();
     process.exit(code as i64);
 
     fake_irq(

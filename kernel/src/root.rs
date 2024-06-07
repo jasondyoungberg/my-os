@@ -8,10 +8,11 @@ pub extern "C" fn main() -> ! {
     log::info!("root process started");
 
     let mut living_children: Vec<usize> = {
-        let process = unsafe { GsData::process() }
-            .ok()
-            .flatten()
-            .expect("root process gsdata.process is missing");
+        let mut process = GsData::load()
+            .expect("root gsdata is missing")
+            .process
+            .lock();
+        let process = process.as_mut().unwrap();
 
         MODULE_RESPONSE
             .modules()
@@ -32,10 +33,12 @@ pub extern "C" fn main() -> ! {
     loop {
         x86_64::instructions::hlt();
         {
-            let process = unsafe { GsData::process() }
-                .ok()
-                .flatten()
-                .expect("root process gsdata.process is missing");
+            let mut process = GsData::load()
+                .expect("root gsdata is missing")
+                .process
+                .lock();
+            let process = process.as_mut().unwrap();
+
             let children = &process.children;
             living_children.retain(|child_id| match children.get(*child_id) {
                 Some(child) => match child.state {

@@ -2,7 +2,7 @@ use alloc::vec::Vec;
 use spin::Lazy;
 use x86_64::{
     instructions::tables::load_tss,
-    registers::segmentation::{Segment, CS, SS},
+    registers::segmentation::{Segment, CS, DS, ES, SS},
     structures::{
         gdt::{Descriptor, GlobalDescriptorTable, SegmentSelector},
         paging::PageTableFlags,
@@ -81,6 +81,8 @@ pub fn init(cpuid: usize) {
 
     unsafe {
         CS::set_reg(GDT.kernel_code);
+        DS::set_reg(GDT.kernel_data);
+        ES::set_reg(GDT.kernel_data);
         SS::set_reg(GDT.kernel_data);
 
         load_tss(GDT.tss[cpuid])

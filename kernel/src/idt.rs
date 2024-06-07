@@ -127,6 +127,6 @@ extern "x86-interrupt" fn timer(_stack_frame: InterruptStackFrame) {
 extern "C" fn timer_inner(stack_frame: &mut InterruptStackFrameValue, registers: &mut Registers) {
     Process::switch(stack_frame, registers);
 
-    let gsdata = unsafe { GsData::load() }.expect("Unable to load gsdata");
-    gsdata.lapic.signal_eoi();
+    let gsdata = GsData::load().expect("Unable to load gsdata");
+    gsdata.lapic.lock().signal_eoi();
 }

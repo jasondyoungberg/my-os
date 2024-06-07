@@ -28,7 +28,6 @@ pub struct VideoConsole {
     pub color_fg: Color,
     pub color_bg: Color,
 }
-unsafe impl Send for VideoConsole {}
 
 impl VideoConsole {
     pub fn new(display: Display) -> Self {

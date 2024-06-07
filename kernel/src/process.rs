@@ -204,7 +204,7 @@ impl Process {
     }
 
     pub fn switch(stack_frame: &mut InterruptStackFrameValue, registers: &mut Registers) {
-        if let Some(mut old) = GsData::process_take().ok().flatten() {
+        if let Some(mut old) = GsData::load().unwrap().process.lock().take() {
             match old.state {
                 ProcessState::Running => {
                     old.state = ProcessState::Paused {
@@ -246,12 +246,12 @@ impl Process {
 
             new.update();
 
-            let old_process = GsData::process_replace(new).ok().flatten();
+            let old_process = GsData::load().unwrap().process.lock().replace(new);
             if let Some(old_process) = old_process {
                 log::error!("old process not taken: {:?}", old_process.name);
             }
         } else {
-            let cpuid = GsData::cpuid().expect("Unable to get cpuid");
+            let cpuid = GsData::load().expect("Unable to get gsdata").cpuid;
             *stack_frame = InterruptStackFrameValue::new(
                 VirtAddr::from_ptr(do_nothing as *const ()),
                 GDT.kernel_code,
