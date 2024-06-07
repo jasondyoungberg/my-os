@@ -10,6 +10,7 @@ use x86_64::{
 };
 
 use crate::{
+    drivers::lapic,
     gsdata::GsData,
     println,
     process::{Process, Registers},
@@ -39,7 +40,7 @@ static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
         idt.double_fault
             .set_handler_fn(double_fault)
             .set_stack_index(2);
-        idt[0x20].set_handler_fn(timer);
+        idt[lapic::TIMER_VECTOR].set_handler_fn(timer);
     }
 
     idt

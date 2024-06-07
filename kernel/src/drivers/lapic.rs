@@ -13,11 +13,14 @@ use x86_64::{
 
 use crate::{allocation::page::MMIO_ALLOCATOR, mapping::map_kernel_page_to_frame};
 
-const EOI: usize = 0xb0;
-const SPURIOUS_VECTOR: usize = 0xf0;
-const LVT_TIMER: usize = 0x320;
-const INITIAL_COUNT: usize = 0x380;
-const DIVIDE_CONFIG: usize = 0x3e0;
+pub const CMCI_VECTOR: u8 = 0x40;
+pub const TIMER_VECTOR: u8 = 0x41;
+pub const THERMAL_VECTOR: u8 = 0x42;
+pub const PERFORMANCE_VECTOR: u8 = 0x43;
+pub const LINT0_VECTOR: u8 = 0x44;
+pub const LINT1_VECTOR: u8 = 0x45;
+pub const ERROR_VECTOR: u8 = 0x46;
+pub const SPURIOS_VECTOR: u8 = 0x4F;
 
 #[derive(Debug)]
 pub struct LocalApic<'a> {
@@ -29,7 +32,15 @@ pub struct LocalApic<'a> {
     // ...
     spurios_interrupt_vector: VolatilePtr<'a, u32, ReadWrite>,
     // ...
+    lvt_cmci: VolatilePtr<'a, u32, ReadWrite>,
+    icr_low: VolatilePtr<'a, u32, ReadWrite>,
+    icr_high: VolatilePtr<'a, u32, ReadWrite>,
     lvt_timer: VolatilePtr<'a, u32, ReadWrite>,
+    lvt_thermal_sensor: VolatilePtr<'a, u32, ReadWrite>,
+    lvt_performance: VolatilePtr<'a, u32, ReadWrite>,
+    lvt_lint0: VolatilePtr<'a, u32, ReadWrite>,
+    lvt_lint1: VolatilePtr<'a, u32, ReadWrite>,
+    lvt_error: VolatilePtr<'a, u32, ReadWrite>,
     // ...
     initial_count: VolatilePtr<'a, u32, ReadWrite>,
     current_count: VolatilePtr<'a, u32, ReadOnly>,
@@ -57,7 +68,15 @@ impl LocalApic<'_> {
             let local_apic_version = VolatilePtr::new(base.byte_add(0x30)).read_only();
             let eoi = VolatilePtr::new(base.byte_add(0xb0)).write_only();
             let spurios_interrupt_vector = VolatilePtr::new(base.byte_add(0xf0));
+            let lvt_cmci = VolatilePtr::new(base.byte_add(0x2f0));
+            let icr_low = VolatilePtr::new(base.byte_add(0x300));
+            let icr_high = VolatilePtr::new(base.byte_add(0x310));
             let lvt_timer = VolatilePtr::new(base.byte_add(0x320));
+            let lvt_thermal_sensor = VolatilePtr::new(base.byte_add(0x330));
+            let lvt_performance = VolatilePtr::new(base.byte_add(0x340));
+            let lvt_lint0 = VolatilePtr::new(base.byte_add(0x350));
+            let lvt_lint1 = VolatilePtr::new(base.byte_add(0x360));
+            let lvt_error = VolatilePtr::new(base.byte_add(0x370));
             let initial_count = VolatilePtr::new(base.byte_add(0x380));
             let current_count = VolatilePtr::new(base.byte_add(0x390)).read_only();
             let divide_configuration = VolatilePtr::new(base.byte_add(0x3e0));
@@ -68,7 +87,15 @@ impl LocalApic<'_> {
                 local_apic_version,
                 eoi,
                 spurios_interrupt_vector,
+                lvt_cmci,
+                icr_low,
+                icr_high,
                 lvt_timer,
+                lvt_thermal_sensor,
+                lvt_performance,
+                lvt_lint0,
+                lvt_lint1,
+                lvt_error,
                 initial_count,
                 current_count,
                 divide_configuration,
@@ -83,17 +110,18 @@ impl LocalApic<'_> {
             unsafe { self.apic_base_msr.write(x) };
         }
 
-        {
-            let mut x = self.spurios_interrupt_vector.read();
-            x.set_bit(8, true);
-            self.spurios_interrupt_vector.write(x);
-        }
+        self.spurios_interrupt_vector
+            .write(0x0000_0100 | SPURIOS_VECTOR as u32); // apic enable
 
-        // self.0.write::<u32>(LVT_TIMER, 0x0002_0020);
-        self.lvt_timer.write(0x0002_0020);
+        self.lvt_timer.write(0x0002_0000 | TIMER_VECTOR as u32); // periodic
+        self.lvt_cmci.write(CMCI_VECTOR as u32);
+        self.lvt_lint0.write(LINT0_VECTOR as u32);
+        self.lvt_lint1.write(LINT1_VECTOR as u32);
+        self.lvt_error.write(ERROR_VECTOR as u32);
+        self.lvt_performance.write(PERFORMANCE_VECTOR as u32);
+        self.lvt_thermal_sensor.write(THERMAL_VECTOR as u32);
         self.divide_configuration.write(0b1011);
         self.initial_count.write(100_000_000);
-        // self.initial_count.write(25_000_000);
     }
 
     pub fn signal_eoi(&self) {
