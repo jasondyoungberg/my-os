@@ -78,7 +78,7 @@ void gdt_init() {
 static atomic_ulong g_stack_next = 0xffff900000000000;
 
 static void* create_stack() {
-    uint64_t start = atomic_fetch_and(&g_stack_next, TSS_STACK_SIZE);
+    uint64_t start = atomic_fetch_add(&g_stack_next, TSS_STACK_SIZE);
     uint64_t end = start + TSS_STACK_SIZE;
 
     for (uint64_t i = 0; i < TSS_STACK_SIZE; i += 4096) {

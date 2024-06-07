@@ -38,6 +38,7 @@ void _start(void) {
         panic("HHDM request failed");
 
     init_frame_alloc();
+    map_init();
 
     struct limine_smp_info* bsp_cpu = NULL;
     for (unsigned int i = 0; i < smp_request.response->cpu_count; i++) {

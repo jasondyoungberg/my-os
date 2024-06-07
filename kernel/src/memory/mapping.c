@@ -11,6 +11,15 @@ void* hhdm(uint64_t phys) {
 typedef uint64_t entry_t;
 typedef uint64_t flags_t;
 
+void map_init() {
+    entry_t* l4_table = hhdm(read_cr3() & 0x0ffffffffffff000);
+    for (int i = 256; i < 512; i++) {
+        if (l4_table[i] == 0) {
+            l4_table[i] = frame_alloc() | PAGEFLAG_P | PAGEFLAG_RW;
+        }
+    }
+}
+
 uint64_t map_page(void* ptr, flags_t flags) {
     const uint64_t virt = (uint64_t)ptr;
     const int64_t l4_index = (virt >> 12 >> 9 >> 9 >> 9) & 0x1ff;

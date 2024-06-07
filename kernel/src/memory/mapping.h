@@ -12,4 +12,5 @@
 #define PAGEFLAG_G (1 << 8)   // Global
 
 void* hhdm(uint64_t);
+void map_init();
 uint64_t map_page(void* ptr, uint64_t flags);
