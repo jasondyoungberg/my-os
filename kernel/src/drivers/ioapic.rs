@@ -32,7 +32,7 @@ pub const PRIMARY_ATA_VECTOR: u8 = 0x4E;
 pub const SECONDARY_ATA_VECTOR: u8 = 0x4F;
 
 pub const IOAPIC_RANGE_START: u8 = 0x40;
-pub const IOAPIC_RANGE_END: u8 = 0x7F;
+pub const IOAPIC_RANGE_END: u8 = 0xFF;
 
 pub static IOAPIC: Lazy<Mutex<Ioapic>> = Lazy::new(|| Mutex::new(Ioapic::new()));
 
@@ -82,6 +82,13 @@ impl Ioapic {
     }
 
     pub fn init(&mut self) {
+        log::info!(
+            "IOAPIC: {:#x} {:#x} {:#x}",
+            self.read(0),
+            self.read(1),
+            self.read(2)
+        );
+
         let entries = ((self.read(1) >> 16) & 0xFF) + 1;
         assert!(
             entries <= (IOAPIC_RANGE_END - IOAPIC_RANGE_START + 1) as u32,
@@ -129,13 +136,6 @@ impl Ioapic {
                 0,
             );
         }
-
-        log::info!(
-            "IOAPIC: {:#x} {:#x} {:#x}",
-            self.read(0),
-            self.read(1),
-            self.read(2)
-        );
     }
 
     fn map(

@@ -65,6 +65,7 @@ static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
         idt[lapic::TIMER_VECTOR].set_handler_fn(timer);
         idt[lapic::LINT0_VECTOR].set_handler_fn(lint0);
         idt[ioapic::KEYBOARD_VECTOR].set_handler_fn(ps2::keyboard_interrupt);
+        idt[ioapic::PIT_VECTOR].set_handler_fn(pit);
     }
 
     idt
