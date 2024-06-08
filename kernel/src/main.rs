@@ -8,9 +8,10 @@
 
 use core::slice;
 
-use drivers::lapic;
+use drivers::{acpi::acpi_tables, lapic};
 use gdt::create_ministack;
 use gsdata::GsData;
+use macros::force_print;
 use process::Process;
 use spin::Lazy;
 
@@ -59,6 +60,10 @@ static MODULE_REQUEST: limine::request::ModuleRequest = limine::request::ModuleR
 #[link_section = ".requests"]
 static HHDM_REQUEST: limine::request::HhdmRequest = limine::request::HhdmRequest::new();
 
+#[used]
+#[link_section = ".requests"]
+static RSDP_REQUEST: limine::request::RsdpRequest = limine::request::RsdpRequest::new();
+
 static FRAMEBUFFER_RESPONSE: Lazy<&limine::response::FramebufferResponse> = Lazy::new(|| {
     FRAMEBUFFER_REQUEST
         .get_response()
@@ -80,6 +85,8 @@ static MODULE_RESPONSE: Lazy<&limine::response::ModuleResponse> =
     Lazy::new(|| MODULE_REQUEST.get_response().expect("no module response"));
 static HHDM_RESPONSE: Lazy<&limine::response::HhdmResponse> =
     Lazy::new(|| HHDM_REQUEST.get_response().expect("no hhdm response"));
+static RSDP_RESPONSE: Lazy<&limine::response::RsdpResponse> =
+    Lazy::new(|| RSDP_REQUEST.get_response().expect("no rsdp response"));
 
 fn load_file(name: &str) -> Option<&'static [u8]> {
     let file = MODULE_RESPONSE
@@ -104,6 +111,8 @@ extern "C" fn _start() -> ! {
     log::debug!("{:?}\n", *STACK_SIZE_RESPONSE);
     log::debug!("{:?}\n", *MODULE_RESPONSE);
     log::debug!("{:?}\n", *HHDM_RESPONSE);
+    log::debug!("{:?}\n", *RSDP_RESPONSE);
+    log::debug!("{:?}\n", acpi_tables().platform_info());
 
     log::info!("Starting CPUs");
     let bsp_lapic_id = SMP_RESPONSE.bsp_lapic_id();
@@ -165,7 +174,8 @@ extern "C" fn smp_start(this_cpu: &limine::smp::Cpu) -> ! {
 fn rust_panic(info: &core::panic::PanicInfo) -> ! {
     x86_64::instructions::interrupts::disable();
 
-    log::error!("{}\n", info);
+    unsafe { force_print(format_args!("{}\n", info)) };
+    // log::error!("{}\n", info);
 
     loop {
         x86_64::instructions::hlt();
