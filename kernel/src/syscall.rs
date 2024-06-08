@@ -144,12 +144,13 @@ fn sched_yield(registers: &mut Registers) -> u64 {
 }
 
 fn exit(code: u64) -> u64 {
-    let mut process = GsData::load()
+    let mut process_lock = GsData::load()
         .expect("root gsdata is missing")
         .process
         .lock();
-    let mut process = process.take().unwrap();
+    let mut process = process_lock.take().unwrap();
     process.exit(code as i64);
+    drop(process_lock);
 
     fake_irq(
         &mut InterruptStackFrameValue::new(
