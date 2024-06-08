@@ -94,6 +94,10 @@ pub unsafe fn map_kernel_page(page: Page, flags: PageTableFlags) -> PhysFrame {
     })
 }
 
-pub fn physical_to_virtual(phys: PhysAddr) -> VirtAddr {
+pub fn hhdm(phys: PhysAddr) -> VirtAddr {
     VirtAddr::new(phys.as_u64() + *MEMORY_OFFSET)
+}
+
+pub fn hhdm_reverse(virt: VirtAddr) -> PhysAddr {
+    PhysAddr::new(virt.as_u64() - *MEMORY_OFFSET)
 }

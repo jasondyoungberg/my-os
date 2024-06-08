@@ -25,7 +25,7 @@ use crate::{
     allocation::frame::MyFrameAllocator,
     gdt::{create_ministack, GDT},
     gsdata::GsData,
-    mapping::{map_page, new_page_table, physical_to_virtual, MEMORY_OFFSET},
+    mapping::{map_page, new_page_table, hhdm, MEMORY_OFFSET},
     SMP_RESPONSE,
 };
 
@@ -132,7 +132,7 @@ impl Process {
                 )
             };
             if i * 4096 < code.len() {
-                let virt = physical_to_virtual(frame.start_address());
+                let virt = hhdm(frame.start_address());
                 let dest_ptr = virt.as_mut_ptr::<u8>();
                 let src_ptr = code.as_ptr().wrapping_add(i * 4096);
                 let len = core::cmp::min(4096, code.len() - i * 4096);
