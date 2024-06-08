@@ -13,6 +13,9 @@ use crate::{allocation::page::MMIO_ALLOCATOR, mapping::map_kernel_page_to_frame}
 
 use super::acpi::acpi_tables;
 
+pub const IOAPIC_RANGE_START: u8 = 0x40;
+pub const IOAPIC_RANGE_END: u8 = 0x57;
+
 pub static IOAPIC: Lazy<Mutex<Ioapic>> = Lazy::new(|| Mutex::new(Ioapic::new()));
 
 pub struct Ioapic {

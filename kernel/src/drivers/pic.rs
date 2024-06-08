@@ -1,7 +1,11 @@
+use core::ops::Range;
+
 use spin::Mutex;
 use x86_64::instructions::port::Port;
 
 pub const PIC_OFFSET: u8 = 0x20;
+pub const PIC_RANGE_START: u8 = PIC_OFFSET;
+pub const PIC_RANGE_END: u8 = PIC_OFFSET + 15;
 
 pub static PIC: Mutex<Pic> = Mutex::new(Pic::new());
 

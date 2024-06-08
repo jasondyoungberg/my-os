@@ -3,7 +3,10 @@ use core::slice;
 use alloc::{string::String, vec::Vec};
 use x86_64::instructions::interrupts::without_interrupts;
 
-use crate::{gsdata::GsData, process, MODULE_RESPONSE};
+use crate::{
+    gsdata::{self, GsData},
+    process, MODULE_RESPONSE,
+};
 
 pub extern "C" fn main() -> ! {
     log::info!("root process started");
@@ -35,10 +38,8 @@ pub extern "C" fn main() -> ! {
     loop {
         x86_64::instructions::hlt();
         without_interrupts(|| {
-            let mut process = GsData::load()
-                .expect("root gsdata is missing")
-                .process
-                .lock();
+            let gsdata = GsData::load().expect("root gsdata is missing");
+            let mut process = gsdata.process.lock();
             let process = process.as_mut().unwrap();
 
             let children = &process.children;
@@ -52,6 +53,9 @@ pub extern "C" fn main() -> ! {
                 },
                 None => false,
             });
+
+            let mut lapic = gsdata.lapic.lock();
+            lapic.send_ipi(0x39);
         });
     }
 }

@@ -10,7 +10,11 @@ use x86_64::{
 };
 
 use crate::{
-    drivers::lapic,
+    drivers::{
+        ioapic::{IOAPIC_RANGE_END, IOAPIC_RANGE_START},
+        lapic::{self, LAPIC_RANGE_END, LAPIC_RANGE_START},
+        pic::{PIC_RANGE_END, PIC_RANGE_START},
+    },
     gsdata::GsData,
     println,
     process::{Process, Registers},
@@ -18,15 +22,22 @@ use crate::{
 
 static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
     fn my_general_handler(stack_frame: InterruptStackFrame, index: u8, error_code: Option<u64>) {
-        if let Some(error_code) = error_code {
-            todo!(
-                "handle irq {} ({:?})\n{:#?}",
-                index,
-                error_code,
-                stack_frame
-            );
-        } else {
-            log::error!("int {:#x}", index);
+        match index {
+            0..32 => {
+                let error_code = error_code.unwrap_or(0);
+                panic!(
+                    "Exception: {:#x?}\nError code: {:#x?}\n{:#?}",
+                    index, error_code, stack_frame
+                );
+            }
+            PIC_RANGE_START..=PIC_RANGE_END => log::warn!("legacy interrupt {:#x}", index),
+            LAPIC_RANGE_START..=LAPIC_RANGE_END => {
+                log::warn!("local interrupt {:#x}", index);
+                let gsdata = GsData::load().expect("Unable to load gsdata");
+                gsdata.lapic.lock().signal_eoi();
+            }
+            IOAPIC_RANGE_START..=IOAPIC_RANGE_END => log::warn!("ioapic interrupt {:#x}", index),
+            _ => log::warn!("interrupt {:#x}", index),
         }
     }
 

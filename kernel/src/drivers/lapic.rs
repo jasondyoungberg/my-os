@@ -13,6 +13,9 @@ use x86_64::{
 
 use crate::{allocation::page::MMIO_ALLOCATOR, mapping::map_kernel_page_to_frame};
 
+pub const LAPIC_RANGE_START: u8 = 0x30;
+pub const LAPIC_RANGE_END: u8 = 0x3E;
+
 pub const CMCI_VECTOR: u8 = 0x30;
 pub const TIMER_VECTOR: u8 = 0x31;
 pub const THERMAL_VECTOR: u8 = 0x32;
@@ -122,6 +125,22 @@ impl LocalApic<'_> {
         self.lvt_thermal_sensor.write(THERMAL_VECTOR as u32);
         self.divide_configuration.write(0b1011);
         self.initial_count.write(100_000_000);
+    }
+
+    pub fn send_ipi(&mut self, vector: u8) {
+        let mut data: u64 = 0;
+        data.set_bits(0..=7, vector as u64);
+        data.set_bits(8..=10, 0b000); // fixed
+        data.set_bit(11, false); // dest: physical
+        data.set_bit(12, false); // delivery status: idle
+        data.set_bit(14, false); // level: deassert
+        data.set_bit(15, false); // trigger mode: edge
+        data.set_bits(18..=19, 0b11); // dest mode: all excluding self
+
+        log::info!("ipi: {:#x}", data);
+
+        self.icr_high.write(data.get_bits(32..=63) as u32);
+        self.icr_low.write(data as u32);
     }
 
     pub fn signal_eoi(&self) {
