@@ -50,9 +50,6 @@ pub extern "C" fn main() -> ! {
                 },
                 None => false,
             });
-
-            let mut lapic = gsdata.lapic.lock();
-            lapic.send_ipi(0x39);
         });
     }
 }
