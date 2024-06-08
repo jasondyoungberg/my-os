@@ -11,9 +11,10 @@ use x86_64::{
 
 use crate::{
     drivers::{
-        ioapic::{IOAPIC_RANGE_END, IOAPIC_RANGE_START},
+        ioapic::{self, IOAPIC_RANGE_END, IOAPIC_RANGE_START},
         lapic::{self, LAPIC_RANGE_END, LAPIC_RANGE_START},
         pic::{PIC_RANGE_END, PIC_RANGE_START},
+        ps2,
     },
     gsdata::GsData,
     println,
@@ -63,6 +64,7 @@ static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
             .set_stack_index(2);
         idt[lapic::TIMER_VECTOR].set_handler_fn(timer);
         idt[lapic::LINT0_VECTOR].set_handler_fn(lint0);
+        idt[ioapic::KEYBOARD_VECTOR].set_handler_fn(ps2::keyboard_interrupt);
     }
 
     idt
@@ -162,4 +164,12 @@ extern "x86-interrupt" fn lint0(_stack_frame: InterruptStackFrame) {
 
     let gsdata = GsData::load().expect("Unable to load gsdata");
     gsdata.lapic.lock().signal_eoi();
+}
+
+extern "x86-interrupt" fn pit(_stack_frame: InterruptStackFrame) {
+    GsData::load()
+        .expect("Unable to load gsdata")
+        .lapic
+        .lock()
+        .signal_eoi();
 }
