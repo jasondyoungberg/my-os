@@ -105,7 +105,7 @@ extern "C" fn _start() -> ! {
     logger::init();
     log::debug!("{:?}\n", BASE_REVISION);
     log::debug!("{:?}\n", *FRAMEBUFFER_RESPONSE);
-    log::debug!("{:?}\n", FRAMEBUFFER_RESPONSE.framebuffers().next());
+    // log::debug!("{:?}\n", FRAMEBUFFER_RESPONSE.framebuffers().next());
     log::debug!("{:?}\n", *MEMORY_MAP_RESPONSE);
     log::debug!("{:?}\n", *SMP_RESPONSE);
     log::debug!("{:?}\n", *STACK_SIZE_RESPONSE);

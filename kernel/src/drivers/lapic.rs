@@ -13,14 +13,14 @@ use x86_64::{
 
 use crate::{allocation::page::MMIO_ALLOCATOR, mapping::map_kernel_page_to_frame};
 
-pub const CMCI_VECTOR: u8 = 0x40;
-pub const TIMER_VECTOR: u8 = 0x41;
-pub const THERMAL_VECTOR: u8 = 0x42;
-pub const PERFORMANCE_VECTOR: u8 = 0x43;
-pub const LINT0_VECTOR: u8 = 0x44;
-pub const LINT1_VECTOR: u8 = 0x45;
-pub const ERROR_VECTOR: u8 = 0x46;
-pub const SPURIOS_VECTOR: u8 = 0x4F;
+pub const CMCI_VECTOR: u8 = 0x30;
+pub const TIMER_VECTOR: u8 = 0x31;
+pub const THERMAL_VECTOR: u8 = 0x32;
+pub const PERFORMANCE_VECTOR: u8 = 0x33;
+pub const LINT0_VECTOR: u8 = 0x34;
+pub const LINT1_VECTOR: u8 = 0x35;
+pub const ERROR_VECTOR: u8 = 0x36;
+pub const SPURIOS_VECTOR: u8 = 0x3F;
 
 #[derive(Debug)]
 pub struct LocalApic<'a> {
