@@ -3,10 +3,7 @@ use core::slice;
 use alloc::{string::String, vec::Vec};
 use x86_64::instructions::interrupts::without_interrupts;
 
-use crate::{
-    gsdata::{self, GsData},
-    process, MODULE_RESPONSE,
-};
+use crate::{gsdata::GsData, process, MODULE_RESPONSE};
 
 pub extern "C" fn main() -> ! {
     log::info!("root process started");

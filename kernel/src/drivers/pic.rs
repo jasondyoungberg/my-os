@@ -1,5 +1,3 @@
-use core::ops::Range;
-
 use spin::Mutex;
 use x86_64::instructions::port::Port;
 
