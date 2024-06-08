@@ -1,6 +1,7 @@
 use core::ptr::NonNull;
 
 use acpi::InterruptModel;
+use bitflags::bitflags;
 use spin::{Lazy, Mutex};
 use volatile::{access::ReadWrite, VolatileRef};
 use x86_64::{
@@ -60,7 +61,22 @@ impl Ioapic {
     }
 
     pub fn init(&mut self) {
-        todo!()
+        log::info!("IOAPIC: {:#x}", self.read(0x00));
+    }
+
+    fn map(
+        &mut self,
+        irq: u8,
+        vector: u8,
+        delivery_mode: DeliveryMode,
+        flags: IoapicFlags,
+        destination: u8,
+    ) {
+        let reg = 0x10 + irq * 2;
+        let data =
+            (vector as u64) | ((destination as u64) << 56) | (delivery_mode as u64) | flags.bits();
+        self.write(reg, data as u32);
+        self.write(reg + 1, (data >> 32) as u32);
     }
 
     fn read(&mut self, reg: u8) -> u32 {
@@ -71,5 +87,26 @@ impl Ioapic {
     fn write(&mut self, reg: u8, data: u32) {
         self.ioregsel.as_mut_ptr().write(reg as u32);
         self.iowin.as_mut_ptr().write(data);
+    }
+}
+
+#[repr(u8)]
+enum DeliveryMode {
+    Fixed = 0b000,
+    LowestPriority = 0b001,
+    Smi = 0b010,
+    Nmi = 0b100,
+    Init = 0b101,
+    ExtINT = 0b111,
+}
+
+bitflags! {
+    pub struct IoapicFlags: u64 {
+        const LOGICAL = 1 << 11;
+        const SEND_PENDING = 1 << 12;
+        const ACTIVE_LOW = 1 << 13;
+        const REMOTE_IRR = 1 << 14;
+        const LEVEL_TRIGGERED = 1 << 15;
+        const MASKED = 1 << 16;
     }
 }

@@ -8,7 +8,7 @@
 
 use core::slice;
 
-use drivers::{acpi::acpi_tables, lapic};
+use drivers::{acpi::acpi_tables, ioapic::IOAPIC, lapic};
 use gdt::create_ministack;
 use gsdata::GsData;
 use macros::force_print;
@@ -105,7 +105,6 @@ extern "C" fn _start() -> ! {
     logger::init();
     log::debug!("{:?}\n", BASE_REVISION);
     log::debug!("{:?}\n", *FRAMEBUFFER_RESPONSE);
-    // log::debug!("{:?}\n", FRAMEBUFFER_RESPONSE.framebuffers().next());
     log::debug!("{:?}\n", *MEMORY_MAP_RESPONSE);
     log::debug!("{:?}\n", *SMP_RESPONSE);
     log::debug!("{:?}\n", *STACK_SIZE_RESPONSE);
@@ -152,6 +151,12 @@ extern "C" fn smp_start(this_cpu: &limine::smp::Cpu) -> ! {
     log::trace!("CPU {cpuid} initializing lapic");
     let mut lapic = lapic::LocalApic::new();
     lapic.init();
+
+    if cpuid == 0 {
+        let mut ioapic = IOAPIC.lock();
+        ioapic.init();
+    }
+
     GsData::init(create_ministack(), cpuid, lapic);
 
     log::trace!("CPU {cpuid} initializing syscall");

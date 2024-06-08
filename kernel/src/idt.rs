@@ -26,7 +26,7 @@ static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
                 stack_frame
             );
         } else {
-            todo!("handle irq {}\n{:#?}", index, stack_frame);
+            log::warn!("int {}", index);
         }
     }
 
