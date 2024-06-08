@@ -8,7 +8,7 @@
 
 use core::slice;
 
-use drivers::{acpi::acpi_tables, ioapic::IOAPIC, lapic};
+use drivers::{acpi::acpi_tables, ioapic::IOAPIC, lapic, pic::PIC};
 use gdt::create_ministack;
 use gsdata::GsData;
 use macros::force_print;
@@ -153,8 +153,8 @@ extern "C" fn smp_start(this_cpu: &limine::smp::Cpu) -> ! {
     lapic.init();
 
     if cpuid == 0 {
-        let mut ioapic = IOAPIC.lock();
-        ioapic.init();
+        PIC.lock().init();
+        IOAPIC.lock().init();
     }
 
     GsData::init(create_ministack(), cpuid, lapic);

@@ -26,7 +26,7 @@ static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
                 stack_frame
             );
         } else {
-            log::warn!("int {}", index);
+            log::error!("int {:#x}", index);
         }
     }
 
@@ -41,6 +41,7 @@ static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
             .set_handler_fn(double_fault)
             .set_stack_index(2);
         idt[lapic::TIMER_VECTOR].set_handler_fn(timer);
+        idt[lapic::LINT0_VECTOR].set_handler_fn(lint0);
     }
 
     idt
@@ -127,6 +128,13 @@ extern "x86-interrupt" fn timer(_stack_frame: InterruptStackFrame) {
 
 extern "C" fn timer_inner(stack_frame: &mut InterruptStackFrameValue, registers: &mut Registers) {
     Process::switch(stack_frame, registers);
+
+    let gsdata = GsData::load().expect("Unable to load gsdata");
+    gsdata.lapic.lock().signal_eoi();
+}
+
+extern "x86-interrupt" fn lint0(_stack_frame: InterruptStackFrame) {
+    log::warn!("lint0");
 
     let gsdata = GsData::load().expect("Unable to load gsdata");
     gsdata.lapic.lock().signal_eoi();
