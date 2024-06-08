@@ -1,6 +1,9 @@
 use core::ptr::NonNull;
 
-use acpi::InterruptModel;
+use acpi::{
+    platform::interrupt::{Polarity, TriggerMode},
+    InterruptModel,
+};
 use bitflags::bitflags;
 use spin::{Lazy, Mutex};
 use volatile::{access::ReadWrite, VolatileRef};
@@ -13,8 +16,23 @@ use crate::{allocation::page::MMIO_ALLOCATOR, mapping::map_kernel_page_to_frame}
 
 use super::acpi::acpi_tables;
 
+pub const PIT_VECTOR: u8 = 0x40;
+pub const KEYBOARD_VECTOR: u8 = 0x41;
+pub const CASCADE_VECTOR: u8 = 0x42;
+pub const COM2_VECTOR: u8 = 0x43;
+pub const COM1_VECTOR: u8 = 0x44;
+pub const LPT2_VECTOR: u8 = 0x45;
+pub const FLOPPY_VECTOR: u8 = 0x46;
+pub const LPT1_VECTOR: u8 = 0x47;
+pub const RTC_VECTOR: u8 = 0x48;
+pub const ACPI_VECTOR: u8 = 0x49;
+pub const MOUSE_VECTOR: u8 = 0x4C;
+pub const COPROCESSOR_VECTOR: u8 = 0x4D;
+pub const PRIMARY_ATA_VECTOR: u8 = 0x4E;
+pub const SECONDARY_ATA_VECTOR: u8 = 0x4F;
+
 pub const IOAPIC_RANGE_START: u8 = 0x40;
-pub const IOAPIC_RANGE_END: u8 = 0x57;
+pub const IOAPIC_RANGE_END: u8 = 0x7F;
 
 pub static IOAPIC: Lazy<Mutex<Ioapic>> = Lazy::new(|| Mutex::new(Ioapic::new()));
 
@@ -64,7 +82,60 @@ impl Ioapic {
     }
 
     pub fn init(&mut self) {
-        log::info!("IOAPIC: {:#x}", self.read(0x00));
+        let entries = ((self.read(1) >> 16) & 0xFF) + 1;
+        assert!(
+            entries <= (IOAPIC_RANGE_END - IOAPIC_RANGE_START + 1) as u32,
+            "IOAPIC: Too many entries"
+        );
+
+        let tables = acpi_tables();
+        let interrupt_model = tables
+            .platform_info()
+            .expect("Failed to get platform info")
+            .interrupt_model;
+
+        let apic = match interrupt_model {
+            InterruptModel::Unknown => panic!("Unknown interrupt model"),
+            InterruptModel::Apic(apic) => apic,
+            _ => panic!("Unknown interrupt model"),
+        };
+
+        for i in 0..entries {
+            self.map(
+                i as u8,
+                IOAPIC_RANGE_START + i as u8,
+                DeliveryMode::Fixed,
+                IoapicFlags::empty(),
+                0,
+            );
+        }
+
+        for int_override in apic.interrupt_source_overrides.iter() {
+            let flags = match int_override.polarity {
+                Polarity::SameAsBus => IoapicFlags::empty(),
+                Polarity::ActiveHigh => IoapicFlags::empty(),
+                Polarity::ActiveLow => IoapicFlags::ACTIVE_LOW,
+            } | match int_override.trigger_mode {
+                TriggerMode::SameAsBus => IoapicFlags::empty(),
+                TriggerMode::Edge => IoapicFlags::empty(),
+                TriggerMode::Level => IoapicFlags::LEVEL_TRIGGERED,
+            };
+
+            self.map(
+                int_override.global_system_interrupt as u8,
+                int_override.isa_source + IOAPIC_RANGE_START,
+                DeliveryMode::Fixed,
+                flags,
+                0,
+            );
+        }
+
+        log::info!(
+            "IOAPIC: {:#x} {:#x} {:#x}",
+            self.read(0),
+            self.read(1),
+            self.read(2)
+        );
     }
 
     fn map(

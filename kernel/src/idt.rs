@@ -33,10 +33,20 @@ static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
             PIC_RANGE_START..=PIC_RANGE_END => log::warn!("legacy interrupt {:#x}", index),
             LAPIC_RANGE_START..=LAPIC_RANGE_END => {
                 log::warn!("local interrupt {:#x}", index);
-                let gsdata = GsData::load().expect("Unable to load gsdata");
-                gsdata.lapic.lock().signal_eoi();
+                GsData::load()
+                    .expect("Unable to load gsdata")
+                    .lapic
+                    .lock()
+                    .signal_eoi();
             }
-            IOAPIC_RANGE_START..=IOAPIC_RANGE_END => log::warn!("ioapic interrupt {:#x}", index),
+            IOAPIC_RANGE_START..=IOAPIC_RANGE_END => {
+                log::warn!("ioapic interrupt {:#x}", index);
+                GsData::load()
+                    .expect("Unable to load gsdata")
+                    .lapic
+                    .lock()
+                    .signal_eoi();
+            }
             _ => log::warn!("interrupt {:#x}", index),
         }
     }
@@ -140,8 +150,11 @@ extern "x86-interrupt" fn timer(_stack_frame: InterruptStackFrame) {
 extern "C" fn timer_inner(stack_frame: &mut InterruptStackFrameValue, registers: &mut Registers) {
     Process::switch(stack_frame, registers);
 
-    let gsdata = GsData::load().expect("Unable to load gsdata");
-    gsdata.lapic.lock().signal_eoi();
+    GsData::load()
+        .expect("Unable to load gsdata")
+        .lapic
+        .lock()
+        .signal_eoi();
 }
 
 extern "x86-interrupt" fn lint0(_stack_frame: InterruptStackFrame) {
