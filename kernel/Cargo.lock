@@ -131,7 +131,7 @@ dependencies = [
 [[package]]
 name = "limine"
 version = "0.2.0"
-source = "git+https://github.com/jasondyoungberg/limine-rs.git?branch=impl-debug#4f10e1fd5f67eb8d012192cf39dce4d1bb005b4c"
+source = "git+https://github.com/jasondyoungberg/limine-rs.git?branch=impl-debug#be62a173e2f2d98679dc3419d46a42b4473accb7"
 dependencies = [
  "bitflags",
 ]
