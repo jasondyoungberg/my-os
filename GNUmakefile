@@ -1,17 +1,39 @@
 # Nuke built-in rules and variables.
 override MAKEFLAGS += -rR
 
-override IMAGE_NAME := template
+override IMAGE_NAME := myos
 
-# Convenience macro to reliably declare user overridable variables.
-define DEFAULT_VAR =
-    ifeq ($(origin $1),default)
-        override $(1) := $(2)
-    endif
-    ifeq ($(origin $1),undefined)
-        override $(1) := $(2)
-    endif
-endef
+ifeq ($(CPUS),)
+	CPUS := 4
+endif
+
+QEMU_ARGS := \
+	-M q35 \
+	-m 1G \
+	-smp $(CPUS) \
+	-debugcon stdio \
+	-gdb tcp::1234 \
+	-no-reboot \
+	-no-shutdown \
+
+ifeq ($(KVM),1)
+	QEMU_ARGS += -enable-kvm
+endif
+
+ifeq ($(UEFI),1)
+	QEMU_ARGS += -bios ovmf/OVMF.fd
+run: ovmf
+run-hdd: ovmf
+endif
+
+override RUST_TARGET := x86_64-unknown-myos-kernel.json
+override RUST_PROFILE := dev
+
+override RUST_TARGET_SUBDIR := $(basename $(RUST_TARGET))
+override RUST_PROFILE_SUBDIR := $(RUST_PROFILE)
+ifeq ($(RUST_PROFILE),dev)
+    override RUST_PROFILE_SUBDIR := debug
+endif
 
 .PHONY: all
 all: $(IMAGE_NAME).iso
@@ -21,19 +43,11 @@ all-hdd: $(IMAGE_NAME).hdd
 
 .PHONY: run
 run: $(IMAGE_NAME).iso
-	qemu-system-x86_64 -M q35 -m 2G -cdrom $(IMAGE_NAME).iso -boot d
-
-.PHONY: run-uefi
-run-uefi: ovmf $(IMAGE_NAME).iso
-	qemu-system-x86_64 -M q35 -m 2G -bios ovmf/OVMF.fd -cdrom $(IMAGE_NAME).iso -boot d
+	qemu-system-x86_64 $(QEMU_ARGS) -cdrom $(IMAGE_NAME).iso -boot d
 
 .PHONY: run-hdd
 run-hdd: $(IMAGE_NAME).hdd
-	qemu-system-x86_64 -M q35 -m 2G -hda $(IMAGE_NAME).hdd
-
-.PHONY: run-hdd-uefi
-run-hdd-uefi: ovmf $(IMAGE_NAME).hdd
-	qemu-system-x86_64 -M q35 -m 2G -bios ovmf/OVMF.fd -hda $(IMAGE_NAME).hdd
+	qemu-system-x86_64 $(QEMU_ARGS) -hda $(IMAGE_NAME).hdd
 
 ovmf:
 	mkdir -p ovmf
@@ -46,40 +60,38 @@ limine/limine:
 
 .PHONY: kernel
 kernel:
-	$(MAKE) -C kernel
+	cd kernel && cargo build --target $(RUST_TARGET) --profile $(RUST_PROFILE)
 
-$(IMAGE_NAME).iso: limine/limine kernel
-	rm -rf iso_root
-	mkdir -p iso_root/boot
-	cp -v kernel/kernel iso_root/boot/
-	mkdir -p iso_root/boot/limine
-	cp -v limine.cfg limine/limine-bios.sys limine/limine-bios-cd.bin limine/limine-uefi-cd.bin iso_root/boot/limine/
-	mkdir -p iso_root/EFI/BOOT
-	cp -v limine/BOOTX64.EFI iso_root/EFI/BOOT/
-	cp -v limine/BOOTIA32.EFI iso_root/EFI/BOOT/
-	xorriso -as mkisofs -b boot/limine/limine-bios-cd.bin \
+.fsroot: limine/limine kernel
+	rm -rf .fsroot
+	mkdir -p .fsroot/boot
+	mkdir -p .fsroot/sys
+	mkdir -p .fsroot/EFI/BOOT
+
+	cp limine/BOOTIA32.EFI limine/BOOTX64.EFI .fsroot/EFI/BOOT/
+	cp limine.cfg limine/limine-bios.sys limine/limine-bios-cd.bin limine/limine-uefi-cd.bin .fsroot/boot/
+	cp kernel/target/$(RUST_TARGET_SUBDIR)/$(RUST_PROFILE_SUBDIR)/kernel .fsroot/sys
+
+
+$(IMAGE_NAME).iso: limine/limine .fsroot
+	xorriso -as mkisofs -b boot/limine-bios-cd.bin \
 		-no-emul-boot -boot-load-size 4 -boot-info-table \
-		--efi-boot boot/limine/limine-uefi-cd.bin \
+		--efi-boot boot/limine-uefi-cd.bin \
 		-efi-boot-part --efi-boot-image --protective-msdos-label \
-		iso_root -o $(IMAGE_NAME).iso
+		.fsroot -o $(IMAGE_NAME).iso
 	./limine/limine bios-install $(IMAGE_NAME).iso
-	rm -rf iso_root
 
-$(IMAGE_NAME).hdd: limine/limine kernel
+$(IMAGE_NAME).hdd: limine/limine .fsroot
 	rm -f $(IMAGE_NAME).hdd
 	dd if=/dev/zero bs=1M count=0 seek=64 of=$(IMAGE_NAME).hdd
 	sgdisk $(IMAGE_NAME).hdd -n 1:2048 -t 1:ef00
 	./limine/limine bios-install $(IMAGE_NAME).hdd
 	mformat -i $(IMAGE_NAME).hdd@@1M
-	mmd -i $(IMAGE_NAME).hdd@@1M ::/EFI ::/EFI/BOOT ::/boot ::/boot/limine
-	mcopy -i $(IMAGE_NAME).hdd@@1M kernel/kernel ::/boot
-	mcopy -i $(IMAGE_NAME).hdd@@1M limine.cfg limine/limine-bios.sys ::/boot/limine
-	mcopy -i $(IMAGE_NAME).hdd@@1M limine/BOOTX64.EFI ::/EFI/BOOT
-	mcopy -i $(IMAGE_NAME).hdd@@1M limine/BOOTIA32.EFI ::/EFI/BOOT
+	mcopy -i $(IMAGE_NAME).hdd@@1M -s .fsroot/* ::
 
 .PHONY: clean
 clean:
-	rm -rf iso_root $(IMAGE_NAME).iso $(IMAGE_NAME).hdd
+	rm -rf .fsroot $(IMAGE_NAME).iso $(IMAGE_NAME).hdd
 	$(MAKE) -C kernel clean
 
 .PHONY: distclean

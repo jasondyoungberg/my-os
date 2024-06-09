@@ -1,6 +1,8 @@
 #![no_std]
 #![no_main]
 
+mod debug;
+
 use core::arch::asm;
 
 use limine::request::FramebufferRequest;
@@ -10,9 +12,11 @@ use limine::BaseRevision;
 /// See specification for further info.
 // Be sure to mark all limine requests with #[used], otherwise they may be removed by the compiler.
 #[used]
+#[link_section = ".requests"]
 static BASE_REVISION: BaseRevision = BaseRevision::new();
 
 #[used]
+#[link_section = ".requests"]
 static FRAMEBUFFER_REQUEST: FramebufferRequest = FramebufferRequest::new();
 
 #[no_mangle]
@@ -20,6 +24,8 @@ unsafe extern "C" fn _start() -> ! {
     // All limine requests must also be referenced in a called function, otherwise they may be
     // removed by the linker.
     assert!(BASE_REVISION.is_supported());
+
+    println!("Hello, World!");
 
     if let Some(framebuffer_response) = FRAMEBUFFER_REQUEST.get_response() {
         if let Some(framebuffer) = framebuffer_response.framebuffers().next() {
@@ -38,7 +44,8 @@ unsafe extern "C" fn _start() -> ! {
 }
 
 #[panic_handler]
-fn rust_panic(_info: &core::panic::PanicInfo) -> ! {
+fn rust_panic(info: &core::panic::PanicInfo) -> ! {
+    println!("{}", info);
     hcf();
 }
 
