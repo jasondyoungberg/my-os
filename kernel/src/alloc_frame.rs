@@ -40,3 +40,12 @@ pub fn alloc_frame() -> Option<PhysFrame<Size4KiB>> {
     use x86_64::structures::paging::FrameAllocator;
     FrameAllocator.allocate_frame()
 }
+
+/// # Safety
+/// The caller must ensure that the passed frame is unused.
+pub unsafe fn dealloc_frame(frame: PhysFrame<Size4KiB>) {
+    use x86_64::structures::paging::FrameDeallocator;
+
+    // Safety: This is safe because the passed frame is unused.
+    unsafe { FrameAllocator.deallocate_frame(frame) };
+}

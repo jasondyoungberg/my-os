@@ -23,8 +23,8 @@
 #[cfg(not(target_arch = "x86_64"))]
 compile_error!("This should only be compiled for x86_64 targets.");
 
+pub mod alloc_frame;
 pub mod debug;
-pub mod frame_alloc;
 pub mod requests;
 
 use x86_64::instructions::{hlt, interrupts};
