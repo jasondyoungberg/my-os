@@ -22,26 +22,15 @@
 compile_error!("This should only be compiled for x86_64 targets.");
 
 mod debug;
+mod requests;
 
-use limine::request::FramebufferRequest;
-use limine::BaseRevision;
 use x86_64::instructions::{hlt, interrupts};
 
-#[used]
-#[link_section = ".requests"]
-static BASE_REVISION: BaseRevision = BaseRevision::new();
-
-#[used]
-#[link_section = ".requests"]
-static FRAMEBUFFER_REQUEST: FramebufferRequest = FramebufferRequest::new();
-
 /// # Safety
-/// This function should only be called once.
+/// This function should only be called by the bootloader.
 #[no_mangle]
 unsafe extern "C" fn _start() -> ! {
-    // All limine requests must also be referenced in a called function, otherwise they may be
-    // removed by the linker.
-    assert!(BASE_REVISION.is_supported());
+    requests::verify();
 
     println!("Hello, World!");
 
