@@ -11,7 +11,7 @@ use crate::requests::MEMORY_MAP_RESPONSE;
 static NEXT: AtomicU64 = AtomicU64::new(0);
 pub struct FrameAllocator;
 
-/// Safety: This is safe because it never returns the same frame twice.
+/// Safety: This is safe because it always increments the NEXT counter and never decrements it.
 unsafe impl paging::FrameAllocator<Size4KiB> for FrameAllocator {
     fn allocate_frame(&mut self) -> Option<paging::PhysFrame<Size4KiB>> {
         let index = NEXT.fetch_add(1, Ordering::Relaxed);
@@ -29,4 +29,14 @@ unsafe impl paging::FrameAllocator<Size4KiB> for FrameAllocator {
             })
             .nth(index as usize)
     }
+}
+
+impl paging::FrameDeallocator<Size4KiB> for FrameAllocator {
+    unsafe fn deallocate_frame(&mut self, _frame: PhysFrame<Size4KiB>) {}
+}
+
+#[allow(clippy::must_use_candidate)]
+pub fn alloc_frame() -> Option<PhysFrame<Size4KiB>> {
+    use x86_64::structures::paging::FrameAllocator;
+    FrameAllocator.allocate_frame()
 }

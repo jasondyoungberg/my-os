@@ -17,7 +17,7 @@
 )]
 #![allow(
     clippy::cast_possible_truncation, // Only x86_64 is supported
-    clippy::missing_panics_doc // This isn't a library
+    clippy::missing_panics_doc // This crate should never panic on recoverable errors
 )]
 
 #[cfg(not(target_arch = "x86_64"))]
