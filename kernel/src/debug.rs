@@ -12,8 +12,11 @@ impl Write for Console {
     }
 }
 
+#[doc(hidden)]
 pub fn _print(args: core::fmt::Arguments) {
-    Console.write_fmt(args).unwrap();
+    Console
+        .write_fmt(args)
+        .expect("Console should never return an error");
 }
 
 #[macro_export]

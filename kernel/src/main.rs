@@ -1,5 +1,6 @@
 #![no_std]
 #![no_main]
+#![deny(unsafe_op_in_unsafe_fn)]
 #![warn(
     clippy::all,
     clippy::correctness,
@@ -7,22 +8,24 @@
     clippy::pedantic,
     clippy::style,
     clippy::perf,
-    clippy::complexity
-)]
-#![deny(unsafe_op_in_unsafe_fn)]
-#![warn(
+    clippy::complexity,
     unused_unsafe,
     clippy::missing_safety_doc,
     clippy::multiple_unsafe_ops_per_block,
-    clippy::undocumented_unsafe_blocks
+    clippy::undocumented_unsafe_blocks,
+    clippy::unwrap_used
 )]
-#![allow(clippy::cast_possible_truncation)] // Only x86_64 is supported
+#![allow(
+    clippy::cast_possible_truncation, // Only x86_64 is supported
+    clippy::missing_panics_doc // This isn't a library
+)]
 
 #[cfg(not(target_arch = "x86_64"))]
 compile_error!("This should only be compiled for x86_64 targets.");
 
-mod debug;
-mod requests;
+pub mod debug;
+pub mod frame_alloc;
+pub mod requests;
 
 use x86_64::instructions::{hlt, interrupts};
 
