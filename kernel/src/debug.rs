@@ -5,9 +5,8 @@ struct Console;
 impl Write for Console {
     fn write_str(&mut self, s: &str) -> core::fmt::Result {
         for byte in s.bytes() {
-            unsafe {
-                asm!("out 0xe9, al", in("al") byte);
-            }
+            // Safety: This is safe because we are writing to qemu's debug port.
+            unsafe { asm!("out 0xe9, al", in("al") byte) };
         }
         Ok(())
     }
