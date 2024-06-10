@@ -10,7 +10,8 @@
             "remote": true,
             "cwd": "${workspaceRoot}/kernel",
             "gdbpath": "gdb",
-            "valuesFormatting": "parseText"
+            "valuesFormatting": "prettyPrinters",
+            "stopAtEntry": true
         }
     ]
 }
