@@ -5,7 +5,7 @@
             "name": "Debug",
             "type": "gdb",
             "request": "attach",
-            "executable": "./target/x86_64-myos/debug/kernel",
+            "executable": "../.fsroot/sys/kernel",
             "target": "localhost:1234",
             "remote": true,
             "cwd": "${workspaceRoot}/kernel",
