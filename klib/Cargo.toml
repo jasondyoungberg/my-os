@@ -1,5 +1,5 @@
 [package]
-name = "kernel"
+name = "klib"
 version = "0.1.0"
 edition = "2021"
 
@@ -24,7 +24,3 @@ unwrap_used = "warn"
 cast_possible_truncation = "allow"
 
 [dependencies]
-limine = "0.2.0"
-x86_64 = "0.15.1"
-spin = "0.9.8"
-klib = { path = "../klib" }
